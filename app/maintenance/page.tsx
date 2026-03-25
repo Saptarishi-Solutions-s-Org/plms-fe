@@ -24,7 +24,7 @@ export default function MaintenancePage() {
       </h1>
 
       <p className="text-gray-600 max-w-full mb-10">
-        We are enhancing the HRMS system with new features just for you. We will
+        We are enhancing the PLMS system with new features just for you. We will
         be back soon!
       </p>
 
