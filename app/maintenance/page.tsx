@@ -2,27 +2,10 @@
 
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { useSSE } from "@/contexts/SSEContext";
 import Image from "next/image";
 
 export default function MaintenancePage() {
-  const { subscribe } = useSSE();
   const router = useRouter();
-
-  useEffect(() => {
-    const unsubscribe = subscribe(async (event) => {
-      if (event.table === "org_rules") {
-        const res = await fetch("/api/maintenance");
-        const { maintenance } = await res.json();
-
-        if (!maintenance) {
-          router.replace("/");
-        }
-      }
-    });
-
-    return unsubscribe;
-  }, [subscribe, router]);
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-[#f6f7fb] px-6 text-center">
