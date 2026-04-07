@@ -56,6 +56,7 @@ function SidebarBrand() {
               width={100}
               height={40}
               priority
+              style={{ width: "auto", height: "auto" }}
             />
           ) : (
             <Image src="/sap.png" alt="Logo" width={32} height={32} priority />
@@ -66,21 +67,25 @@ function SidebarBrand() {
   );
 }
 
-const SidebarLink = ({ href, icon: Icon, label, pathname, orgCode }: any) => (
-  <SidebarMenuItem>
-    <SidebarMenuButton
-      onClick={() => (window.location.href = `/${orgCode}${href}`)}
-      className={
-        pathname === `/${orgCode}${href}`
-          ? "bg-gray-100 text-primary font-medium"
-          : ""
-      }
-    >
-      <Icon className="h-4 w-4" />
-      <span>{label}</span>
-    </SidebarMenuButton>
-  </SidebarMenuItem>
-);
+const SidebarLink = ({ href, icon: Icon, label, pathname, orgCode }: any) => {
+  const router = useRouter();
+
+  return (
+    <SidebarMenuItem>
+      <SidebarMenuButton
+        onClick={() => router.push(`/${orgCode}${href}`)}
+        className={
+          pathname === `/${orgCode}${href}`
+            ? "bg-gray-100 text-primary font-medium"
+            : ""
+        }
+      >
+        <Icon className="h-4 w-4" />
+        <span>{label}</span>
+      </SidebarMenuButton>
+    </SidebarMenuItem>
+  );
+};
 
 export default function Layout({ children }: any) {
   const [user, setUser] = useState<any>(null);
@@ -264,7 +269,9 @@ export default function Layout({ children }: any) {
           </div>
         </header>
 
-        <main className="flex-1 overflow-y-auto min-w-0">{children}</main>
+        <main className="flex-1 overflow-y-auto min-w-0">
+          {user && children}
+        </main>
       </SidebarInset>
 
       <LogoutConfirmationDialog

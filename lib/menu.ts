@@ -22,7 +22,7 @@ export const MENU_CONFIG: MenuGroup[] = [
     open: true,
     items: [
       {
-        href: "/organization",
+        href: "/dashboard/organization",
         icon: Building2,
         label: "Organization",
         module: "organization",
