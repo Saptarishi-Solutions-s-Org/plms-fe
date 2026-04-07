@@ -11,7 +11,7 @@ const poppins = Poppins({
 });
 
 export const metadata: Metadata = {
-  title: "Saptarishi Solutions",
+  title: "PLMS",
   description: "Developed by Team SRS",
 };
 
