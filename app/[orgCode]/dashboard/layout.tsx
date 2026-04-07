@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useRouter, usePathname, useParams } from "next/navigation";
+import { useState, useEffect } from "react";
+import Image from "next/image";
+import { usePathname, useRouter, useParams } from "next/navigation";
 
 import {
   Sidebar,
@@ -16,7 +17,10 @@ import {
   SidebarMenuItem,
   SidebarProvider,
   SidebarTrigger,
+  useSidebar,
 } from "@/components/ui/sidebar";
+
+import { ChevronDown, ChevronRight, LogOut, Home, User } from "lucide-react";
 
 import {
   Collapsible,
@@ -24,23 +28,71 @@ import {
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
 
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+} from "@/components/ui/dropdown-menu";
 
-import { ChevronDown, ChevronRight, LogOut } from "lucide-react";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { LogoutConfirmationDialog } from "@/components/commoncomponents/logout-confirmation-dialog";
 
 import { MENU_CONFIG } from "@/lib/menu";
 import { canAccess } from "@/lib/permissions";
 import { connectSocket, disconnectSocket } from "@/lib/socket";
 
+function SidebarBrand() {
+  const { open } = useSidebar();
+
+  return (
+    <SidebarMenu>
+      <SidebarMenuItem>
+        <SidebarMenuButton size="lg" className="flex justify-center">
+          {open ? (
+            <Image
+              src="/saptarishi.png"
+              alt="Logo"
+              width={100}
+              height={40}
+              priority
+            />
+          ) : (
+            <Image src="/sap.png" alt="Logo" width={32} height={32} priority />
+          )}
+        </SidebarMenuButton>
+      </SidebarMenuItem>
+    </SidebarMenu>
+  );
+}
+
+const SidebarLink = ({ href, icon: Icon, label, pathname, orgCode }: any) => (
+  <SidebarMenuItem>
+    <SidebarMenuButton
+      onClick={() => (window.location.href = `/${orgCode}${href}`)}
+      className={
+        pathname === `/${orgCode}${href}`
+          ? "bg-gray-100 text-primary font-medium"
+          : ""
+      }
+    >
+      <Icon className="h-4 w-4" />
+      <span>{label}</span>
+    </SidebarMenuButton>
+  </SidebarMenuItem>
+);
+
 export default function Layout({ children }: any) {
   const [user, setUser] = useState<any>(null);
   const [state, setState] = useState<any>({});
   const [loading, setLoading] = useState(true);
+  const [quote, setQuote] = useState("");
 
   const router = useRouter();
   const pathname = usePathname();
   const { orgCode } = useParams();
+
+  const [logoutOpen, setLogoutOpen] = useState(false);
 
   useEffect(() => {
     const stored = localStorage.getItem("user");
@@ -67,9 +119,19 @@ export default function Layout({ children }: any) {
 
     setLoading(false);
 
-    return () => {
-      disconnectSocket();
-    };
+    return () => disconnectSocket();
+  }, []);
+
+  useEffect(() => {
+    const quotes = [
+      "Consistency beats motivation",
+      "Small steps every day",
+      "Stay focused, stay sharp",
+    ];
+    const getRandom = () => quotes[Math.floor(Math.random() * quotes.length)];
+    setQuote(getRandom());
+    const i = setInterval(() => setQuote(getRandom()), 5000);
+    return () => clearInterval(i);
   }, []);
 
   const toggle = (key: string) => {
@@ -88,15 +150,17 @@ export default function Layout({ children }: any) {
 
   return (
     <SidebarProvider>
-      <Sidebar collapsible="icon">
-        <SidebarHeader>
-          <div className="text-center font-semibold text-lg">{orgCode}</div>
+      <Sidebar collapsible="icon" className="bg-white border-r">
+        <SidebarHeader className="bg-white">
+          <SidebarBrand />
         </SidebarHeader>
 
-        <SidebarContent>
+        <SidebarContent className="bg-white">
           {MENU_CONFIG.map((group) => {
             const items = group.items.filter((item) =>
-              canAccess(user, item.module, item.permission),
+              "public" in item
+                ? true
+                : canAccess(user, item.module, item.permission),
             );
 
             if (!items.length) return null;
@@ -107,14 +171,14 @@ export default function Layout({ children }: any) {
                 open={state[group.key]}
                 onOpenChange={() => toggle(group.key)}
               >
-                <SidebarGroup>
+                <SidebarGroup className="border-t">
                   <CollapsibleTrigger asChild>
-                    <SidebarGroupLabel className="flex justify-between cursor-pointer">
+                    <SidebarGroupLabel className="flex items-center justify-between cursor-pointer">
                       {group.label}
                       {state[group.key] ? (
-                        <ChevronDown className="w-4 h-4" />
+                        <ChevronDown className="h-4 w-4" />
                       ) : (
-                        <ChevronRight className="w-4 h-4" />
+                        <ChevronRight className="h-4 w-4" />
                       )}
                     </SidebarGroupLabel>
                   </CollapsibleTrigger>
@@ -122,27 +186,14 @@ export default function Layout({ children }: any) {
                   <CollapsibleContent>
                     <SidebarGroupContent>
                       <SidebarMenu>
-                        {items.map((item) => {
-                          const active = pathname === `/${orgCode}${item.href}`;
-
-                          return (
-                            <SidebarMenuItem key={item.href}>
-                              <SidebarMenuButton
-                                onClick={() =>
-                                  router.push(`/${orgCode}${item.href}`)
-                                }
-                                className={
-                                  active
-                                    ? "bg-primary text-white font-medium"
-                                    : ""
-                                }
-                              >
-                                <item.icon className="w-4 h-4" />
-                                {item.label}
-                              </SidebarMenuButton>
-                            </SidebarMenuItem>
-                          );
-                        })}
+                        {items.map((item) => (
+                          <SidebarLink
+                            key={item.href}
+                            {...item}
+                            pathname={pathname}
+                            orgCode={orgCode}
+                          />
+                        ))}
                       </SidebarMenu>
                     </SidebarGroupContent>
                   </CollapsibleContent>
@@ -153,29 +204,74 @@ export default function Layout({ children }: any) {
         </SidebarContent>
       </Sidebar>
 
-      <SidebarInset>
-        <header className="flex h-14 items-center justify-between border-b px-4">
-          <div className="flex items-center gap-2">
+      <SidebarInset className="min-w-0 h-screen flex flex-col overflow-hidden">
+        <header className="sticky top-0 z-40 flex h-14 items-center justify-between border-b bg-white px-3 sm:px-4 gap-2">
+          <div className="flex items-center gap-2 sm:gap-4 min-w-0">
             <SidebarTrigger />
-            <span className="font-medium">Dashboard</span>
+            <h1 className="text-xs sm:text-sm md:text-base font-semibold text-gray-700 truncate max-w-[70vw]">
+              <span className="block sm:hidden">PLMS</span>
+              <span className="hidden sm:block">{quote}</span>
+            </h1>
           </div>
 
           <div className="flex items-center gap-3">
-            <Avatar>
-              <AvatarFallback>
-                {user?.name?.slice(0, 2).toUpperCase()}
-              </AvatarFallback>
-            </Avatar>
+            <Home
+              className="h-5 w-5 text-blue-700 cursor-pointer"
+              onClick={() => router.push("/")}
+            />
 
-            <Button variant="destructive" size="sm" onClick={handleLogout}>
-              <LogOut className="w-4 h-4 mr-1" />
-              Logout
-            </Button>
+            <div className="w-[0.1px] h-5 bg-gray-300" />
+
+            {user && (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <div className="flex items-center gap-2 cursor-pointer hover:bg-gray-100 px-2 py-1 rounded-md transition">
+                    <Avatar className="h-7 w-7">
+                      <AvatarFallback>
+                        {user.name?.slice(0, 2).toUpperCase()}
+                      </AvatarFallback>
+                    </Avatar>
+
+                    <div className="hidden sm:block leading-tight">
+                      <p className="text-xs font-semibold truncate max-w-[140px]">
+                        {user.name}
+                      </p>
+                      <p className="text-[10px] text-muted-foreground truncate max-w-[140px]">
+                        {user.role}
+                      </p>
+                    </div>
+                  </div>
+                </DropdownMenuTrigger>
+
+                <DropdownMenuContent align="end" className="w-40 p-1">
+                  <DropdownMenuItem
+                    onClick={() => router.push(`/${orgCode}/profile`)}
+                  >
+                    <User className="h-4 w-4 mr-2" />
+                    Profile
+                  </DropdownMenuItem>
+
+                  <DropdownMenuItem
+                    onClick={() => setLogoutOpen(true)}
+                    className="text-red-600"
+                  >
+                    <LogOut className="h-4 w-4 mr-2" />
+                    Logout
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            )}
           </div>
         </header>
 
-        <main className="p-4">{children}</main>
+        <main className="flex-1 overflow-y-auto min-w-0">{children}</main>
       </SidebarInset>
+
+      <LogoutConfirmationDialog
+        open={logoutOpen}
+        onOpenChange={setLogoutOpen}
+        onConfirm={handleLogout}
+      />
     </SidebarProvider>
   );
 }

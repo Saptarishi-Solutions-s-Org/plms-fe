@@ -1,11 +1,8 @@
-import {
-  LayoutDashboard,
-  Users,
-  Building2,
-  FileText
-} from "lucide-react"
+import { LayoutDashboard, Building2, UserCheck, Gift } from "lucide-react";
 
-export const MENU_CONFIG = [
+import { MenuGroup } from "@/types/menu";
+
+export const MENU_CONFIG: MenuGroup[] = [
   {
     key: "main",
     label: "Main",
@@ -15,44 +12,36 @@ export const MENU_CONFIG = [
         href: "/dashboard",
         icon: LayoutDashboard,
         label: "Dashboard",
-        module: "dashboard",
-        permission: "view"
-      }
-    ]
+        public: true,
+      },
+    ],
   },
   {
-    key: "management",
-    label: "Management",
+    key: "core",
+    label: "Core",
     open: true,
     items: [
-      {
-        href: "/users",
-        icon: Users,
-        label: "Users",
-        module: "users",
-        permission: "view"
-      },
       {
         href: "/organization",
         icon: Building2,
         label: "Organization",
         module: "organization",
-        permission: "view"
-      }
-    ]
-  },
-  {
-    key: "reports",
-    label: "Reports",
-    open: true,
-    items: [
+        permission: "view",
+      },
       {
-        href: "/reports",
-        icon: FileText,
-        label: "Reports",
-        module: "reports",
-        permission: "view"
-      }
-    ]
-  }
-]
+        href: "/leads",
+        icon: UserCheck,
+        label: "Leads",
+        module: "lead",
+        permission: "view",
+      },
+      {
+        href: "/offers",
+        icon: Gift,
+        label: "Offers",
+        module: "offers",
+        permission: "view",
+      },
+    ],
+  },
+];

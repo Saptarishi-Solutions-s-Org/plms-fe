@@ -1,30 +1,35 @@
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+"use client"
 
-export default function DashboardPage() {
+import { useEffect, useState } from "react"
+
+import SystemAdminDashboard from "./roledashboards/system-admin-dashboard"
+
+function DefaultDashboard() {
   return (
-    <div className="grid gap-4 md:grid-cols-3">
-
-      <Card>
-        <CardHeader>
-          <CardTitle>Total Users</CardTitle>
-        </CardHeader>
-        <CardContent>120</CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>Active Sessions</CardTitle>
-        </CardHeader>
-        <CardContent>32</CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>Reports</CardTitle>
-        </CardHeader>
-        <CardContent>18</CardContent>
-      </Card>
-
+    <div className="space-y-5 p-4 sm:p-6">
+      <div>Dashboard</div>
     </div>
   )
+}
+
+const ROLE_DASHBOARD_MAP: Record<string, any> = {
+  "SYSTEM ADMIN": SystemAdminDashboard,
+}
+
+export default function DashboardPage() {
+  const [user, setUser] = useState<any>(null)
+
+  useEffect(() => {
+    const stored = localStorage.getItem("user")
+    if (stored) setUser(JSON.parse(stored))
+  }, [])
+
+  if (!user) return null
+
+  const role = user.role?.toUpperCase().trim()
+
+  const DashboardComponent =
+    ROLE_DASHBOARD_MAP[role] || DefaultDashboard
+
+  return <DashboardComponent />
 }
