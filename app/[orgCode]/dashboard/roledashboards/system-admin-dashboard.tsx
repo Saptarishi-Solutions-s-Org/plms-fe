@@ -19,7 +19,11 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 
+import { toast } from "sonner";
+
 import { Building2, Users } from "lucide-react";
+
+import { getSystemAdminDashboard } from "@/services/systemAdmin";
 
 export default function SystemAdminDashboard() {
   const [data, setData] = useState<any>(null);
@@ -34,22 +38,12 @@ export default function SystemAdminDashboard() {
 
   const fetchDashboard = async () => {
     try {
-      const res = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/odata/v4/system-admin/getDashboard()`,
-        {
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem("token")}`,
-          },
-        },
-      );
-
-      const json = await res.json();
-      const finalData = json.value || json;
-
+      const finalData = await getSystemAdminDashboard();
       setData(finalData);
       setSelectedRole(finalData.roles?.[0]?.orgRoleId);
     } catch (err) {
       console.error(err);
+      toast.error("Failed to load dashboard");
     }
   };
 
@@ -185,7 +179,10 @@ export default function SystemAdminDashboard() {
                     Feature
                   </TableHead>
                   {permissions.map((p) => (
-                    <TableHead key={p} className="text-xs sm:text-sm whitespace-nowrap text-center capitalize">
+                    <TableHead
+                      key={p}
+                      className="text-xs sm:text-sm whitespace-nowrap text-center capitalize"
+                    >
                       {p}
                     </TableHead>
                   ))}

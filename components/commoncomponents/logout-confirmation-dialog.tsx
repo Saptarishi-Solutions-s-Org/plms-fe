@@ -24,10 +24,12 @@ export function LogoutConfirmationDialog({
           <div className="flex justify-center">
             <Image
               src="/saptarishi.png"
-              alt="Saptarishi"
+              alt="Logo"
               width={100}
               height={100}
+              priority
               className="object-contain"
+              style={{ width: "auto", height: "auto" }}
             />
           </div>
           <AlertDialogTitle className="text-center text-base font-semibold text-gray-900">

@@ -1,17 +1,27 @@
-export async function api(path: string, options: any = {}) {
+export async function api(path: string, options: RequestInit = {}) {
   const token = localStorage.getItem("token");
 
   const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}${path}`, {
     ...options,
     headers: {
       "Content-Type": "application/json",
-      ...(token && { Authorization: `Bearer ${token}` }),
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      ...(options.headers || {}),
     },
   });
 
-  const data = await res.json();
+  let data: any = null;
 
-  if (!res.ok) throw new Error(data.error?.message || "Error");
+  try {
+    data = await res.json();
+  } catch {
+    data = null;
+  }
 
-  return data.value;
+  if (!res.ok) {
+    throw new Error(
+      data?.error?.message || data?.message || "Something went wrong",
+    );
+  }
+  return data?.value ?? data;
 }

@@ -63,11 +63,12 @@ export default function SetPasswordPage() {
         <div className="flex justify-center mt-6 sm:mt-8">
           <Image
             src="/saptarishi.png"
-            alt="Saptarishi"
+            alt="Logo"
             width={100}
             height={50}
             priority
             className="h-auto w-24 sm:w-28 md:w-32"
+            style={{ width: "auto", height: "auto" }}
           />
         </div>
 

@@ -11,7 +11,6 @@ import {
 import Image from "next/image";
 import { ErrorAlertDialogProps } from "@/types/dialog-types";
 
-
 export function ErrorAlertDialog({
   open,
   onOpenChange,
@@ -26,10 +25,12 @@ export function ErrorAlertDialog({
           <div className="flex justify-center">
             <Image
               src="/saptarishi.png"
-              alt="Saptarishi"
+              alt="Logo"
               width={100}
               height={100}
+              priority
               className="object-contain"
+              style={{ width: "auto", height: "auto" }}
             />
           </div>
 
@@ -50,7 +51,6 @@ export function ErrorAlertDialog({
             {actionText}
           </AlertDialogAction>
         </AlertDialogFooter>
-
       </AlertDialogContent>
     </AlertDialog>
   );

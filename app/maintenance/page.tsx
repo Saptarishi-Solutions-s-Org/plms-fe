@@ -12,10 +12,11 @@ export default function MaintenancePage() {
       <div className="mb-5">
         <Image
           src="/saptarishi.png"
-          alt="Saptarishi Solutions"
+          alt="Logo"
           width={100}
           height={90}
           priority
+          style={{ width: "auto", height: "auto" }}
         />
       </div>
 

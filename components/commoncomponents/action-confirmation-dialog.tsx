@@ -29,10 +29,12 @@ export function ActionConfirmationDialog({
           <div className="flex justify-center">
             <Image
               src="/saptarishi.png"
-              alt="Saptarishi"
+              alt="Logo"
               width={100}
               height={100}
+              priority
               className="object-contain"
+              style={{ width: "auto", height: "auto" }}
             />
           </div>
 

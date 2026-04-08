@@ -62,14 +62,20 @@ export default function LoginForm() {
         },
       );
 
-      const json = await res.json();
+      let data;
 
-      console.log("LOGIN RESPONSE:", json);
+      try {
+        const json = await res.json();
+        data = json?.value || json;
+      } catch {
+        const text = await res.text();
+        throw new Error(text);
+      }
 
-      const data = json?.value || json;
+      console.log("LOGIN RESPONSE:", data);
 
       if (!res.ok || !data?.token) {
-        throw new Error("Invalid response");
+        throw new Error(data?.message || "Invalid credentials");
       }
 
       if (remember) {
@@ -113,11 +119,10 @@ export default function LoginForm() {
             <Image
               src="/saptarishi.png"
               alt="Logo"
-              width={140}
-              height={44}
+              width={100}
+              height={40}
               priority
-              className="h-auto w-28 sm:w-28 md:w-32"
-              style={{ height: "auto" }}
+              style={{ width: "auto", height: "auto" }}
             />
           </CardHeader>
 

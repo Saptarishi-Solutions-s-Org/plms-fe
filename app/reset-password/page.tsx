@@ -74,11 +74,12 @@ export default function ResetPasswordPage() {
           <div className="flex justify-center mt-6 sm:mt-8">
             <Image
               src="/saptarishi.png"
-              alt="Saptarishi"
+              alt="Logo"
               width={100}
               height={50}
               priority
               className="h-auto w-24 sm:w-28 md:w-32"
+              style={{ width: "auto", height: "auto" }}
             />
           </div>
           <p className="text-sm text-red-700">Invalid or missing reset link.</p>
@@ -101,11 +102,12 @@ export default function ResetPasswordPage() {
         <div className="flex justify-center mt-6 sm:mt-8">
           <Image
             src="/saptarishi.png"
-            alt="Saptarishi"
+            alt="Logo"
             width={100}
             height={50}
             priority
             className="h-auto w-24 sm:w-28 md:w-32"
+            style={{ width: "auto", height: "auto" }}
           />
         </div>
 
