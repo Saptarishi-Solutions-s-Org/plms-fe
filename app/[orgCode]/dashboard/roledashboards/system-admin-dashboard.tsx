@@ -70,7 +70,7 @@ export default function SystemAdminDashboard() {
           Welcome back, {user.name}
         </h1>
         <p className="text-xs sm:text-sm text-blue-100 mt-1 tracking-wide">
-          Here's what's happening in your organization today
+          Here's what's happening in your Application today
         </p>
         <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 mt-3 text-xs sm:text-sm font-medium text-white">
           {/* Org Code */}

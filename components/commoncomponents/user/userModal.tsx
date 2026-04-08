@@ -121,17 +121,18 @@ export default function UserModal({
   }, [open, user]);
 
   const handleSubmit = async () => {
-    if (!user) {
-      const parsed = createUserSchema.safeParse(form);
+    const parsed = createUserSchema.safeParse({
+      ...form,
+      phone: String(form.phone),
+    });
 
-      if (!parsed.success) {
-        const fieldErrors: any = {};
-        parsed.error.issues.forEach((i) => {
-          fieldErrors[i.path[0]] = i.message;
-        });
-        setErrors(fieldErrors);
-        return;
-      }
+    if (!parsed.success) {
+      const fieldErrors: any = {};
+      parsed.error.issues.forEach((i) => {
+        fieldErrors[i.path[0]] = i.message;
+      });
+      setErrors(fieldErrors);
+      return;
     }
 
     setErrors({});
