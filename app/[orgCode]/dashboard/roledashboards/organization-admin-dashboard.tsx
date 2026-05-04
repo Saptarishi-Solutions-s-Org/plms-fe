@@ -22,7 +22,8 @@ import { AdminCardsProps, UserDetails } from "@/types/organizationadmindashboard
 export default function OrganizationAdminDashboard() {
 
 
-  const [openLeadForm, setOpenLeadForm] = useState(false);
+  const [open, setOpen] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   const [userdata, setuserdata] = useState<UserDetails[]>([]);
   const [stats, setStats] = useState<AdminCardsProps["stats"]>({
@@ -30,9 +31,19 @@ export default function OrganizationAdminDashboard() {
     active_users: 0,
     inactive_users: 0,
   });
+
+  const [filters, setFilters] = useState<{
+    status: string[];
+    role: string[];
+  }>({
+    status: [],
+    role: [],
+  });
   useEffect(() => {
     const fetchUsers = async () => {
       try {
+        setLoading(true);
+
         const data = await getOrganizationAdminDashboard();
 
         setuserdata(data.users);
@@ -44,11 +55,25 @@ export default function OrganizationAdminDashboard() {
 
       } catch (error) {
         console.error("Error fetching users:", error);
+      } finally {
+        setLoading(false);
       }
     };
 
     fetchUsers();
   }, []);
+
+  const filteredUsers = userdata.filter((user) => {
+    const statusMatch =
+      filters.status.length === 0 ||
+      filters.status.includes(user.is_active?.toString());
+
+    const roleMatch =
+      filters.role.length === 0 ||
+      filters.role.includes(user.role_name?.toLowerCase());
+
+    return statusMatch && roleMatch;
+  });
 
   return (
     <div className="w-full h-full p-5 ">
@@ -67,7 +92,7 @@ export default function OrganizationAdminDashboard() {
           </div>
 
           {/* Button + Dialog */}
-          <Dialog open={openLeadForm} onOpenChange={setOpenLeadForm}>
+          <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
               <Button
                 variant="outline"
@@ -87,29 +112,33 @@ export default function OrganizationAdminDashboard() {
                 </DialogDescription>
               </DialogHeader>
 
-              <AddLeadForm />
+              <AddLeadForm
+                onClose={() => {
+                  setOpen(false);
+                }}
+              />
             </DialogContent>
           </Dialog>
 
         </div>
 
-         <div className="mt-5">
-        <AdminCards stats={stats} />
-      </div>
-
-      <div className="mt-10">
-        <div className="flex">
-          <AdminFilters />
+        <div className="mt-5">
+          <AdminCards stats={stats} />
         </div>
 
-      </div>
+        <div className="mt-10">
+          <div className="flex">
+            <AdminFilters onApply={setFilters} />
+          </div>
+
+        </div>
 
 
-      <div className="mt-10">
-        <UserTable users={userdata} />
+        <div className="mt-10">
+          <UserTable users={filteredUsers} loading={loading} />
+        </div>
       </div>
-      </div>
-     
+
     </div>
   )
 }

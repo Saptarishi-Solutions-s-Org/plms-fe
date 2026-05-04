@@ -20,9 +20,7 @@ export const userFormSchema = z.object({
     state : z.string().min(1, "State is required").max(100),
 
     city : z.string().min(1, "City is required").max(100),
-
-    pinCode : z.string().min(1, "Pin code is required").max(20),
-
+    
     userRole : z.string().min(1, "User role is required").max(50),
 
     reportingManager : z.string().optional(),

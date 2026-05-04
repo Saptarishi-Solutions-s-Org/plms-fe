@@ -14,28 +14,29 @@ import { useForm } from "react-hook-form";
 import { userFormSchema } from "@/lib/validators/admin/userform";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Controller } from "react-hook-form";
-import { use, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { getCountries, getStatesByCountry } from "@/services/location";
 import { createOrganizationUser, getReportingManagers } from "@/services/organizationAdmin";
 import { toast } from "sonner";
 
 const GenderOptions = [
-    { value: "MALE", label: "Male" },
-    { value: "FEMALE", label: "Female" },
-    { value: "OTHER", label: "Other" },
+    { value: "Male", label: "Male" },
+    { value: "Female", label: "Female" },
+    { value: "Other", label: "Other" },
 ];
 
 const RoleOptions = [
-    { value: "MANAGER", label: "Manager" },
-    { value: "EXECUTIVE", label: "Executive" },
+    { value: "Manager", label: "Manager" },
+    { value: "Executive", label: "Executive" },
 ];
 
-const AddLeadForm = () => {
+const AddLeadForm = ({ onClose }: { onClose?: () => void }) => {
 
     const [countries, setCountries] = useState<any[]>([]);
     const [states, setStates] = useState<any[]>([]);
     const [managers, setManagers] = useState<any[]>([]);
 
+    const [isSubmitting, setIsSubmitting] = useState(false);
 
     const {
         register,
@@ -49,14 +50,13 @@ const AddLeadForm = () => {
         resolver: zodResolver(userFormSchema as any),
         defaultValues: {
             name: "",
-            dob: "",
+            dob: new Date(),
             email: "",
             phone: "",
             gender: "",
             country: "",
             state: "",
             city: "",
-            pinCode: "",
             userRole: "",
             reportingManager: "",
         },
@@ -64,8 +64,6 @@ const AddLeadForm = () => {
 
     const selectedCountry = watch("country");
     const selectedRole = watch("userRole");
-
-
 
     useEffect(() => {
         let isMounted = true;
@@ -87,7 +85,7 @@ const AddLeadForm = () => {
                     }
                 }
 
-                if (selectedRole === "EXECUTIVE") {
+                if (selectedRole === "Executive") {
                     const managerData = await getReportingManagers();
                     if (isMounted) setManagers(managerData);
                 } else {
@@ -111,35 +109,43 @@ const AddLeadForm = () => {
 
     const onSubmit = async (data: any) => {
         try {
+            setIsSubmitting(true);
+
             const payload = {
                 name: data.name,
                 email: data.email,
                 phone: data.phone,
                 gender: data.gender,
-                dob: data.date,
+                dob: data.dob,
                 state: data.state,
                 country: data.country,
+                city: data.city,
                 roleName:
-                    data.userRole === "MANAGER"
+                    data.userRole === "Manager"
                         ? "Manager"
                         : "Executive",
                 reportingManager: data.reportingManager || null,
             };
-            await createOrganizationUser(payload);
 
+            await createOrganizationUser(payload);
             toast.success("User created successfully!");
             reset();
+
+            if (onClose) onClose();
+
         } catch (err) {
-            console.error("Error creating user:", err);
             toast.error("Failed to create user.");
+        } finally {
+            setIsSubmitting(false);
         }
     };
 
     return (
         <div className="w-full overflow-y-auto p-1 scroll-smooth">
             <form onSubmit={handleSubmit(onSubmit)} className="w-full h-full" >
-                {/* PERSONAL DETAILS */}
-                <div className="flex flex-col gap-2">
+
+                {/* YOUR FULL FORM UI (UNCHANGED) */}
+                      <div className="flex flex-col gap-2">
                     <h2 className="text-lg font-bold text-blue-600">
                         Personal Details
                     </h2>
@@ -284,14 +290,6 @@ const AddLeadForm = () => {
                                 <Input id="city" type="text" placeholder="Enter city" {...register("city")} className={`border-2 ${errors.city ? "border-red-500" : "border-gray-300"}`} />
                                 <span className="text-sm text-red-500 ">{errors.city?.message}</span>
                             </div>
-
-                            <div className="flex flex-col gap-1 w-full ">
-                                <Label htmlFor="pinCode" required>
-                                    Pin Code
-                                </Label>
-                                <Input id="pinCode" type="text" placeholder="Enter pin code" {...register("pinCode")} className={`border-2 ${errors.pinCode ? "border-red-500" : "border-gray-300"}`} />
-                                <span className="text-sm text-red-500 ">{errors.pinCode?.message}</span>
-                            </div>
                         </div>
                     </div>
                 </div>
@@ -341,7 +339,7 @@ const AddLeadForm = () => {
                                     render={({ field }) => (
                                         <Select onValueChange={field.onChange} value={field.value}  >
                                             <SelectTrigger
-                                                disabled={selectedRole !== "EXECUTIVE"}
+                                                disabled={selectedRole !== "Executive"}
                                                 className={`w-full border-2 ${errors.reportingManager ? "border-red-500" : "border-gray-300"
                                                     }`}
                                             >
@@ -367,9 +365,10 @@ const AddLeadForm = () => {
                 <div className="mt-3">
                     <Button
                         type="submit"
+                        disabled={isSubmitting} 
                         className="bg-blue-500 hover:bg-blue-600 text-white w-full"
                     >
-                        Submit
+                        {isSubmitting ? "Submitting..." : "Submit"} 
                     </Button>
                 </div>
             </form>
@@ -378,3 +377,4 @@ const AddLeadForm = () => {
 };
 
 export default AddLeadForm;
+          

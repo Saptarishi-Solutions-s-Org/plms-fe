@@ -1,14 +1,13 @@
 
 export interface LeadFormData {
     name: string;
-    dob: string;
+    dob: Date;
     gender: string;
     email: string;
     phone: string;
     country: string;
     state: string;
     city: string;
-    pinCode: string;
     userRole: string;
     reportingManager: string;
 }

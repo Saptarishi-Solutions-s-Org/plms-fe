@@ -11,9 +11,7 @@ import { UserDetails } from "@/types/organizationadmindashboard/dashboardtypes"
 
 
 
-
-
-const UserTable = ({ users }: { users: UserDetails[] }) => {  
+const UserTable = ({ users, loading }: { users: UserDetails[]; loading: boolean }) => {  
 
     return (
         <div className="rounded-lg border border-gray-200 bg-white shadow-sm overflow-x-auto">
@@ -37,21 +35,29 @@ const UserTable = ({ users }: { users: UserDetails[] }) => {
                         </TableHead>
                     </TableRow>
                 </TableHeader>
+
                 <TableBody>
 
-                    {users.map((item, index) => (
-                        <TableRow key={index}>
-                            <TableCell>{index + 1}</TableCell>
-                            <TableCell>{item.name}</TableCell>
-                            <TableCell>{item.email || "-"}</TableCell>
-                            <TableCell>{item.role_name}</TableCell>
-                            <TableCell>{item.is_active ? "Active" : "Inactive"}</TableCell>
+                    {loading ? (
+                        <TableRow>
+                            <TableCell colSpan={5} className="text-center py-6">
+                                Loading...
+                            </TableCell>
                         </TableRow>
-                    ))}
+                    ) : (
+                        users.map((item, index) => (
+                            <TableRow key={index}>
+                                <TableCell>{index + 1}</TableCell>
+                                <TableCell>{item.name}</TableCell>
+                                <TableCell>{item.email || "-"}</TableCell>
+                                <TableCell>{item.role_name}</TableCell>
+                                <TableCell>{item.is_active ? "Active" : "Inactive"}</TableCell>
+                            </TableRow>
+                        ))
+                    )}
+
                 </TableBody>
             </Table>
-
-
         </div>
     )
 }
