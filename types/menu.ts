@@ -11,9 +11,11 @@ export type ProtectedMenuItem = {
   href: string
   icon: LucideIcon
   label: string
-  module: string
-  permission: string
+  roles?: string[]
+  modules?: string[] 
+  permissions?: string[]
 }
+
 
 export type MenuItem = PublicMenuItem | ProtectedMenuItem
 

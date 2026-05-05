@@ -165,7 +165,12 @@ export default function Layout({ children }: any) {
             const items = group.items.filter((item) =>
               "public" in item
                 ? true
-                : canAccess(user, item.module, item.permission),
+                : canAccess(
+                  user,
+                  item.modules ?? [],
+                  item.permissions ?? [],
+                  item
+                ),
             );
 
             if (!items.length) return null;
