@@ -11,6 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Spinner } from "@/components/ui/spinner";
+import { loginUser } from "@/services/auth";
 
 export default function LoginForm() {
   const router = useRouter();
@@ -26,20 +27,10 @@ export default function LoginForm() {
   useEffect(() => {
     setMounted(true);
 
-    const saved = localStorage.getItem("savedLogin");
+    const saved = localStorage.getItem("crmsavedLogin");
     if (saved) {
       setEmail(saved);
       setRemember(true);
-    }
-  }, []);
-
-  useEffect(() => {
-    const token = localStorage.getItem("token");
-    const user = localStorage.getItem("user");
-
-    if (token && user) {
-      const parsed = JSON.parse(user);
-      router.push(`/${parsed.orgCode}/dashboard`);
     }
   }, []);
 
@@ -53,47 +44,20 @@ export default function LoginForm() {
     try {
       setLoading(true);
 
-      const res = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/odata/v4/auth/login`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ email, password }),
-        },
-      );
-
-      let data;
-
-      try {
-        const json = await res.json();
-        data = json?.value || json;
-      } catch {
-        const text = await res.text();
-        throw new Error(text);
-      }
-
-      console.log("LOGIN RESPONSE:", data);
-
-      if (!res.ok || !data?.token) {
-        throw new Error(data?.message || "Invalid credentials");
-      }
+      const data = await loginUser(email, password);
 
       if (remember) {
-        localStorage.setItem("savedLogin", email);
+        localStorage.setItem("crmsavedLogin", email);
       } else {
-        localStorage.removeItem("savedLogin");
+        localStorage.removeItem("crmsavedLogin");
       }
-
-      localStorage.setItem("token", data.token);
-      localStorage.setItem("user", JSON.stringify(data.user));
-
-      document.cookie = `token=${data.token}; path=/`;
 
       toast.success("Login successful");
 
       router.push(`/${data.user.orgCode}/dashboard`);
     } catch (err) {
       console.error("LOGIN ERROR FE:", err);
+
       toast.error("Invalid credentials");
     } finally {
       setLoading(false);

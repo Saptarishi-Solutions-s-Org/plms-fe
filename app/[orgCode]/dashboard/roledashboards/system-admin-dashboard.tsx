@@ -20,19 +20,16 @@ import {
 } from "@/components/ui/select";
 
 import { toast } from "sonner";
-
 import { Building2, Users } from "lucide-react";
-
 import { getSystemAdminDashboard } from "@/services/systemAdmin";
+import { useAuth } from "@/context/AuthContext";
 
 export default function SystemAdminDashboard() {
   const [data, setData] = useState<any>(null);
   const [selectedRole, setSelectedRole] = useState<string>("");
-  const [user, setUser] = useState<any>(null);
+  const { user } = useAuth();
 
   useEffect(() => {
-    const storedUser = localStorage.getItem("user");
-    if (storedUser) setUser(JSON.parse(storedUser));
     fetchDashboard();
   }, []);
 

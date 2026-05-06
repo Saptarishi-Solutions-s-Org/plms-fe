@@ -41,6 +41,7 @@ import { LogoutConfirmationDialog } from "@/components/commoncomponents/logout-c
 import { MENU_CONFIG } from "@/lib/menu";
 import { canAccess } from "@/lib/permissions";
 import { connectSocket, disconnectSocket } from "@/lib/socket";
+import { useAuth } from "@/context/AuthContext";
 
 function SidebarBrand() {
   const { open } = useSidebar();
@@ -98,34 +99,34 @@ export default function Layout({ children }: any) {
   const { orgCode } = useParams();
 
   const [logoutOpen, setLogoutOpen] = useState(false);
+  const { user: authUser, logout } = useAuth();
 
   useEffect(() => {
-    const stored = localStorage.getItem("user");
-    const token = localStorage.getItem("token");
-
-    if (!stored || !token) {
-      router.replace("/");
+    if (!authUser) {
+      setLoading(false);
       return;
     }
 
-    const parsed = JSON.parse(stored);
+    if (authUser.orgCode !== orgCode) {
+      router.replace(`/${authUser.orgCode}/dashboard`);
 
-    if (parsed.orgCode !== orgCode) {
-      router.replace(`/${parsed.orgCode}/dashboard`);
       return;
     }
 
-    setUser(parsed);
-    connectSocket(token);
+    setUser(authUser);
+
+    connectSocket();
 
     const initial: any = {};
+
     MENU_CONFIG.forEach((g) => (initial[g.key] = g.open));
+
     setState(initial);
 
     setLoading(false);
 
     return () => disconnectSocket();
-  }, []);
+  }, [authUser]);
 
   useEffect(() => {
     const quotes = [
@@ -143,11 +144,11 @@ export default function Layout({ children }: any) {
     setState((prev: any) => ({ ...prev, [key]: !prev[key] }));
   };
 
-  const handleLogout = () => {
-    localStorage.removeItem("token");
-    localStorage.removeItem("user");
-    document.cookie = "token=; Max-Age=0; path=/";
+  const handleLogout = async () => {
+    await logout();
+
     disconnectSocket();
+
     router.replace("/");
   };
 

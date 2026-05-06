@@ -8,13 +8,18 @@ type ServerEvent = {
   timestamp?: number;
 };
 
-export function connectSocket(token: string) {
-  if (socket?.connected) return socket;
+export function connectSocket() {
+  if (socket?.connected) {
+    return socket;
+  }
 
   socket = io(process.env.NEXT_PUBLIC_SOCKET_URL as string, {
-    auth: { token },
+    withCredentials: true,
+
     transports: ["websocket"],
+
     reconnection: true,
+
     reconnectionAttempts: 5,
   });
 
@@ -27,7 +32,7 @@ export function connectSocket(token: string) {
   });
 
   socket.on("event", (data: ServerEvent) => {
-    console.log("Realtime:", data);
+    console.log("📡 Realtime:", data);
   });
 
   return socket;
@@ -35,6 +40,7 @@ export function connectSocket(token: string) {
 
 export function disconnectSocket() {
   socket?.disconnect();
+
   socket = null;
 }
 
