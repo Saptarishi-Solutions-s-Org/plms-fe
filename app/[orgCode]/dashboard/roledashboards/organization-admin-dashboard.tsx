@@ -62,15 +62,19 @@ export default function OrganizationAdminDashboard() {
 
     fetchUsers();
   }, []);
-
   const filteredUsers = userdata.filter((user) => {
+
+    const userStatus = user.is_active ? "Active" : "Inactive";
+
     const statusMatch =
       filters.status.length === 0 ||
-      filters.status.includes(user.is_active?.toString());
+      filters.status.includes(userStatus);
 
     const roleMatch =
       filters.role.length === 0 ||
-      filters.role.includes(user.role_name?.toLowerCase());
+      filters.role.some(
+        (role) => role.toLowerCase() === user.role_name?.toLowerCase()
+      );
 
     return statusMatch && roleMatch;
   });

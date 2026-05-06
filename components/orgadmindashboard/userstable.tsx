@@ -11,7 +11,7 @@ import { UserDetails } from "@/types/organizationadmindashboard/dashboardtypes"
 
 
 
-const UserTable = ({ users, loading }: { users: UserDetails[]; loading: boolean }) => {  
+const UserTable = ({ users, loading }: { users: UserDetails[]; loading: boolean }) => {
 
     return (
         <div className="rounded-lg border border-gray-200 bg-white shadow-sm overflow-x-auto">
@@ -44,6 +44,12 @@ const UserTable = ({ users, loading }: { users: UserDetails[]; loading: boolean 
                                 Loading...
                             </TableCell>
                         </TableRow>
+                    ) : users.length === 0 ? (
+                        <TableRow>
+                            <TableCell colSpan={5} className="text-center py-6 text-gray-500">
+                                No records found
+                            </TableCell>
+                        </TableRow>
                     ) : (
                         users.map((item, index) => (
                             <TableRow key={index}>
@@ -51,7 +57,9 @@ const UserTable = ({ users, loading }: { users: UserDetails[]; loading: boolean 
                                 <TableCell>{item.name}</TableCell>
                                 <TableCell>{item.email || "-"}</TableCell>
                                 <TableCell>{item.role_name}</TableCell>
-                                <TableCell>{item.is_active ? "Active" : "Inactive"}</TableCell>
+                                <TableCell>
+                                    {item.is_active ? "Active" : "Inactive"}
+                                </TableCell>
                             </TableRow>
                         ))
                     )}

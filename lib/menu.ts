@@ -27,15 +27,15 @@ export const MENU_CONFIG: MenuGroup[] = [
         label: "Organization",
         modules: ["organization"],
         permissions: ["view"],
-        roles: ["Executive", "Manager","Admin"],
+        roles: ["Admin","Executive","Manager"], // U need to update this based on the actual roles that should have access
       },
       {
         href: "/leads",
         icon: UserCheck,
         label: "Leads",
         modules: ["lead"],
-        permissions: ["view"],// U need to update this based on the actual permissions required
-        roles: ["Manager","Executive"], // U need to update this based on the actual roles that should have access
+        permissions: ["view", "create", "update", "delete"],// U need to update this based on the actual permissions required
+        roles: ["Admin","Executive","Manager"], // U need to update this based on the actual roles that should have access
       },
       {
         href: "/offers",
@@ -43,7 +43,7 @@ export const MENU_CONFIG: MenuGroup[] = [
         label: "Offers",
         modules: ["offers"],
         permissions: ["view","create","update","delete"],// U need to update this based on the actual permissions required
-        roles: ["Admin","Executive"],// U need to update this based on the actual roles that should have access
+        roles: ["Admin"],// U need to update this based on the actual roles that should have access
       },
     ],
   },
