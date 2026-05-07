@@ -40,14 +40,14 @@ export default function ManagerDashboard() {
 
         try {
           overviewData = await getLeadStatusOverview();
-        } catch (e) {
-          console.error("Overview failed", e);
+        } catch (error) {
+          console.error("Failed to fetch lead status overview data", error);
         }
 
         try {
           performanceData = await getExecutivePerformance();
-        } catch (e) {
-          console.error("Performance failed", e);
+        } catch (error) {
+          console.error("Failed to fetch executive performance data", error);
         }
 
         const data = dashboardData as DashboardData;
@@ -68,17 +68,12 @@ export default function ManagerDashboard() {
 
         setOverview(formattedOverview);
         setPerformance(
-          (performanceData || []).map((row: any) => ({
+          (performanceData || []).map((row: ExecutivePerformanceRow) => ({
             executiveName: row.executiveName,
             achievement: row.achievement,
           })),
         );
-
-        console.log("Dashboard:", data);
-        console.log("Overview:", overviewData);
-        console.log("Performance:", performanceData);
-      } catch (err) {
-        console.error("Dashboard error:", err);
+      } catch (error) {
         toast.error("Failed to load manager dashboard");
       } finally {
         setLoading(false);
@@ -91,10 +86,10 @@ export default function ManagerDashboard() {
   if (loading) {
     return <div className="p-5">Loading...</div>;
   }
-const overviewData = overview.map((row) => ({
-  label: row.status,
-  value: row.count,
-}));
+  const overviewData = overview.map((row) => ({
+    label: row.status,
+    value: row.count,
+  }));
   return (
     <div className="w-full h-full p-5 sm:p-5">
       <div className="flex flex-col w-full h-full">
