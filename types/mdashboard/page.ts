@@ -6,7 +6,6 @@ export interface ManagerCardsProps {
     active_offers: number;
   };
 }
-
 export interface LeadStatusRow {
   status: string;
   count: number;
@@ -43,9 +42,3 @@ export interface CommonOverviewProps {
   data: OverviewRow[];
   onViewDetails?: () => void;
 }
-
-// export interface ExecRowData {
-//   name: string;
-//   pct: number;
-//   initial: string;
-// }

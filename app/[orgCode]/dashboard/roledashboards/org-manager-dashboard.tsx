@@ -5,17 +5,16 @@ import { toast } from "sonner";
 
 import ManagerCards from "@/components/commoncomponents/managerdashboard/card";
 import CommonOverview from "@/components/commoncomponents/managerdashboard/leadstatusoverview";
-import ExecutivePerformance from "@/components/commoncomponents/managerdashboard/executiveperformance";
 import {
   getManagerDashboard,
   getLeadStatusOverview,
-  getExecutivePerformance,
+  
 } from "@/services/managerdashboard";
 import {
   DashboardData,
-  ExecutivePerformanceRow,
   LeadStatusRow,
 } from "@/types/mdashboard/page";
+import GlobalLoader from "@/components/commoncomponents/globalloader";
 
 export default function ManagerDashboard() {
   const [loading, setLoading] = useState(true);
@@ -28,28 +27,18 @@ export default function ManagerDashboard() {
   });
 
   const [overview, setOverview] = useState<LeadStatusRow[]>([]);
-  const [performance, setPerformance] = useState<ExecutivePerformanceRow[]>([]);
 
   useEffect(() => {
     const fetchDashboard = async () => {
       try {
         const dashboardData = await getManagerDashboard();
 
-        let overviewData = [];
-        let performanceData = [];
-
-        try {
-          overviewData = await getLeadStatusOverview();
-        } catch (error) {
+        const overviewData = await getLeadStatusOverview().catch((error) => {
           console.error("Failed to fetch lead status overview data", error);
-        }
+          return {};
+        });
 
-        try {
-          performanceData = await getExecutivePerformance();
-        } catch (error) {
-          console.error("Failed to fetch executive performance data", error);
-        }
-
+  
         const data = dashboardData as DashboardData;
 
         setStats({
@@ -67,12 +56,7 @@ export default function ManagerDashboard() {
         }));
 
         setOverview(formattedOverview);
-        setPerformance(
-          (performanceData || []).map((row: ExecutivePerformanceRow) => ({
-            executiveName: row.executiveName,
-            achievement: row.achievement,
-          })),
-        );
+        
       } catch (error) {
         toast.error("Failed to load manager dashboard");
       } finally {
@@ -84,8 +68,8 @@ export default function ManagerDashboard() {
   }, []);
 
   if (loading) {
-    return <div className="p-5">Loading...</div>;
-  }
+  return <GlobalLoader />;
+}
   const overviewData = overview.map((row) => ({
     label: row.status,
     value: row.count,
@@ -93,7 +77,7 @@ export default function ManagerDashboard() {
   return (
     <div className="w-full h-full p-5 sm:p-5">
       <div className="flex flex-col w-full h-full">
-        {/* Header */}
+        
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
           <div>
             <h1 className="text-lg sm:text-2xl font-semibold">
@@ -120,7 +104,6 @@ export default function ManagerDashboard() {
             />
           </div>
           <div className="w-full overflow-x-auto">
-            <ExecutivePerformance performance={performance} />
           </div>
         </div>
       </div>
