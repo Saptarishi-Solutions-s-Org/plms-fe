@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react"
 
 import SystemAdminDashboard from "./roledashboards/system-admin-dashboard"
+import ManagerDashboard from "./roledashboards/org-manager-dashboard"
 
 function DefaultDashboard() {
   return (
@@ -14,6 +15,7 @@ function DefaultDashboard() {
 
 const ROLE_DASHBOARD_MAP: Record<string, any> = {
   "SYSTEM ADMIN": SystemAdminDashboard,
+  "MANAGER": ManagerDashboard,
 }
 
 export default function DashboardPage() {
