@@ -1,8 +1,7 @@
 "use client";
 
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import type { CommonOverviewProps } from "@/types/mdashboard/page";
-
+import type { CommonOverviewProps } from "@/types/org-manager";
 
 const leadStatusColors = [
   "bg-blue-600",
@@ -21,7 +20,6 @@ const CommonOverview = ({
 }: CommonOverviewProps) => {
   const max = data.length ? Math.max(...data.map((row) => row.value)) : 1;
 
-
   return (
     <Card className="rounded-[2rem] border-0 bg-white shadow-[0_18px_60px_rgba(15,23,42,0.08)]">
       <CardHeader className="flex flex-row items-start justify-between gap-4 space-y-0 px-8 pt-8">
@@ -29,9 +27,7 @@ const CommonOverview = ({
           <CardTitle className="text-[2rem] font-bold tracking-tight text-slate-900">
             {title}
           </CardTitle>
-          {subtitle && (
-            <p className="text-lg text-slate-500">{subtitle}</p>
-          )}
+          {subtitle && <p className="text-lg text-slate-500">{subtitle}</p>}
         </div>
         {onViewDetails && (
           <button
@@ -54,7 +50,9 @@ const CommonOverview = ({
                 </p>
                 <p
                   className={`text-2xl font-bold ${
-                    index === data.length - 1 ? "text-emerald-600" : "text-slate-900"
+                    index === data.length - 1
+                      ? "text-emerald-600"
+                      : "text-slate-900"
                   }`}
                 >
                   {row.value}
@@ -63,7 +61,9 @@ const CommonOverview = ({
               <div className="h-3 overflow-hidden rounded-full bg-slate-100">
                 <div
                   className={`h-full ${leadStatusColors[index % leadStatusColors.length]}`}
-                  style={{ width: `${Math.min((row.value / max) * 100, 100)}%` }}
+                  style={{
+                    width: `${Math.min((row.value / max) * 100, 100)}%`,
+                  }}
                 />
               </div>
             </div>

@@ -2,7 +2,7 @@
 
 import { Card, CardTitle, CardContent } from "@/components/ui/card";
 import { BarChart2, CheckCircle, UserPlus, Megaphone } from "lucide-react";
-import { ManagerCardsProps } from "@/types/mdashboard/page";
+import { ManagerCardsProps } from "@/types/org-manager";
 
 const ManagerCards = ({ stats }: ManagerCardsProps) => {
   const cards = [

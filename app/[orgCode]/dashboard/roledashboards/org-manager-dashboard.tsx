@@ -8,12 +8,8 @@ import CommonOverview from "@/components/commoncomponents/managerdashboard/leads
 import {
   getManagerDashboard,
   getLeadStatusOverview,
-  
 } from "@/services/managerdashboard";
-import {
-  DashboardData,
-  LeadStatusRow,
-} from "@/types/mdashboard/page";
+import { DashboardData, LeadStatusRow } from "@/types/org-manager";
 import GlobalLoader from "@/components/commoncomponents/globalloader";
 
 export default function ManagerDashboard() {
@@ -38,7 +34,6 @@ export default function ManagerDashboard() {
           return {};
         });
 
-  
         const data = dashboardData as DashboardData;
 
         setStats({
@@ -56,7 +51,6 @@ export default function ManagerDashboard() {
         }));
 
         setOverview(formattedOverview);
-        
       } catch (error) {
         toast.error("Failed to load manager dashboard");
       } finally {
@@ -67,46 +61,49 @@ export default function ManagerDashboard() {
     fetchDashboard();
   }, []);
 
-  if (loading) {
-  return <GlobalLoader />;
-}
   const overviewData = overview.map((row) => ({
     label: row.status,
     value: row.count,
   }));
   return (
-    <div className="w-full h-full p-5 sm:p-5">
-      <div className="flex flex-col w-full h-full">
-        
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
-          <div>
-            <h1 className="text-lg sm:text-2xl font-semibold">
-              Manager Dashboard
-            </h1>
-            <p className="text-xs sm:text-sm text-gray-600">
-              Monitor real-time performance metrics and pipeline health.
-            </p>
-          </div>
-        </div>
+    <>
+      {loading ? (
+        <GlobalLoader />
+      ) : (
+        <div className="w-full h-full p-5 sm:p-5">
+          <div className="flex flex-col w-full h-full">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
+              <div>
+                <h1 className="text-lg sm:text-2xl font-semibold">
+                  Manager Dashboard
+                </h1>
 
-        {/* Cards */}
-        <div className="mt-4 sm:mt-5">
-          <ManagerCards stats={stats} />
-        </div>
+                <p className="text-xs sm:text-sm text-gray-600">
+                  Monitor real-time performance metrics and pipeline health.
+                </p>
+              </div>
+            </div>
 
-        {/* Charts */}
-        <div className="mt-6 sm:mt-10 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-2 gap-4">
-          <div className="w-full overflow-x-auto">
-            <CommonOverview
-              title="Lead Status Overview"
-              subtitle="Pipeline distribution by stage"
-              data={overviewData}
-            />
-          </div>
-          <div className="w-full overflow-x-auto">
+            {/* Cards */}
+            <div className="mt-4 sm:mt-5">
+              <ManagerCards stats={stats} />
+            </div>
+
+            {/* Charts */}
+            <div className="mt-6 sm:mt-10 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-2 gap-4">
+              <div className="w-full overflow-x-auto">
+                <CommonOverview
+                  title="Lead Status Overview"
+                  subtitle="Pipeline distribution by stage"
+                  data={overviewData}
+                />
+              </div>
+
+              <div className="w-full overflow-x-auto"></div>
+            </div>
           </div>
         </div>
-      </div>
-    </div>
+      )}
+    </>
   );
 }
