@@ -9,8 +9,8 @@ export const leadFormSchema = z.object({
 
   phone: z
     .string()
-    .min(10, "Phone number must be 10 digits")
-    .max(10, "Phone number must be 10 digits")
+    .min(10, "Phone number must be max 10 digits")
+    .max(10, "Phone number must be min 10 digits")
     .regex(/^\d+$/, "Phone number must contain only digits"),
 
   city: z.string().min(1, "City is required"),

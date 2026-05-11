@@ -116,19 +116,6 @@ export default function LeadTableFilters({
         </SelectContent>
       </Select>
 
-      {/* Executive (Assigned To) */}
-      <Select value={pendingAssignedTo} onValueChange={onAssignedToChange}>
-        <SelectTrigger className="h-9 w-full border-gray-300 bg-white text-sm text-gray-700 sm:w-40">
-          <SelectValue placeholder="All Executives" />
-        </SelectTrigger>
-        <SelectContent>
-          <SelectItem value="All">All Executives</SelectItem>
-          {executives.map((u) => (
-            <SelectItem key={u.id} value={u.id}>{u.name}</SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
-
       {/* Clear All */}
       <button
         onClick={onClearAll}
