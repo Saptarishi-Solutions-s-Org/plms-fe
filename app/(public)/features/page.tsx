@@ -48,6 +48,21 @@ const features = [
   },
 ];
 
+const featureGroups = [
+  {
+    title: "Capture",
+    items: ["Manual lead entry", "Imported lead source tracking", "Priority and status fields"],
+  },
+  {
+    title: "Follow Up",
+    items: ["Call, SMS, email, and in-person logs", "Notes and call status", "Next follow-up date"],
+  },
+  {
+    title: "Govern",
+    items: ["Organization roles", "Module permissions", "Organization-level overrides"],
+  },
+];
+
 export default function FeaturesPage() {
   return (
     <div className="overflow-hidden">
@@ -100,6 +115,36 @@ export default function FeaturesPage() {
               </div>
             </Reveal>
           ))}
+        </div>
+      </section>
+
+      <section className="bg-[#eef8f0] px-5 py-20 md:px-8">
+        <div className="mx-auto max-w-7xl">
+          <Reveal className="mb-10">
+            <p className="mb-3 text-xs font-semibold uppercase text-emerald-700">
+              Capability Map
+            </p>
+            <h2 className="max-w-3xl text-[clamp(30px,5vw,54px)] font-bold leading-tight text-[#0b1713]">
+              The small controls that keep lead work reliable.
+            </h2>
+          </Reveal>
+          <div className="grid gap-5 md:grid-cols-3">
+            {featureGroups.map((group, index) => (
+              <Reveal key={group.title} delay={index * 0.06}>
+                <div className="h-full rounded-2xl border border-emerald-950/10 bg-white p-6">
+                  <h3 className="text-xl font-bold text-[#0b1713]">{group.title}</h3>
+                  <ul className="mt-5 space-y-3">
+                    {group.items.map((item) => (
+                      <li key={item} className="flex gap-3 text-sm leading-7 text-slate-600">
+                        <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-emerald-600" />
+                        {item}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              </Reveal>
+            ))}
+          </div>
         </div>
       </section>
 

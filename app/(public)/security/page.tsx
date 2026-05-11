@@ -38,6 +38,13 @@ const securityItems = [
   },
 ];
 
+const trustNotes = [
+  "Public pages remain readable while authenticated dashboard routes stay protected.",
+  "Login redirects active sessions back to the correct organization dashboard.",
+  "Dashboard requests without a refresh cookie return to the public home page.",
+  "Support can diagnose with organization code, user email, and lead code context.",
+];
+
 export default function SecurityPage() {
   return (
     <div className="overflow-hidden">
@@ -77,6 +84,28 @@ export default function SecurityPage() {
               </div>
             </Reveal>
           ))}
+        </div>
+      </section>
+
+      <section className="bg-[#eef8f0] px-5 py-20 md:px-8">
+        <div className="mx-auto grid max-w-7xl gap-10 lg:grid-cols-[0.85fr_1.15fr]">
+          <Reveal>
+            <p className="mb-3 text-xs font-semibold uppercase text-emerald-700">
+              Route Protection
+            </p>
+            <h2 className="text-[clamp(30px,5vw,54px)] font-bold leading-tight text-[#0b1713]">
+              Public browsing and protected work stay separate.
+            </h2>
+          </Reveal>
+          <div className="grid gap-3">
+            {trustNotes.map((note, index) => (
+              <Reveal key={note} delay={index * 0.04}>
+                <div className="rounded-2xl border border-emerald-950/10 bg-white p-5 text-sm font-semibold leading-7 text-[#0b1713]">
+                  {note}
+                </div>
+              </Reveal>
+            ))}
+          </div>
         </div>
       </section>
     </div>

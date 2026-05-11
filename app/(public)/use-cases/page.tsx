@@ -33,6 +33,13 @@ const useCases = [
   },
 ];
 
+const workflowSteps = [
+  "System Admin configures organization roles, modules, and permissions.",
+  "Organization Admin creates users, maps reporting managers, and manages offers.",
+  "Manager reviews lead status and executive movement across the pipeline.",
+  "Executive records activities, notes, outcomes, and next follow-up dates.",
+];
+
 export default function UseCasesPage() {
   return (
     <div className="overflow-hidden">
@@ -79,6 +86,38 @@ export default function UseCasesPage() {
       </section>
 
       <section className="bg-[#eef8f0] px-5 py-20 md:px-8">
+        <div className="mx-auto grid max-w-7xl gap-10 lg:grid-cols-[0.8fr_1.2fr]">
+          <Reveal>
+            <p className="mb-3 text-xs font-semibold uppercase text-emerald-700">
+              Workflow Fit
+            </p>
+            <h2 className="text-[clamp(30px,5vw,54px)] font-bold leading-tight text-[#0b1713]">
+              Each role owns a clear part of the same pipeline.
+            </h2>
+            <p className="mt-5 text-sm leading-8 text-slate-600">
+              PLMS works best when teams want structured ownership without
+              turning every follow-up into a separate manual report.
+            </p>
+          </Reveal>
+
+          <div className="space-y-4">
+            {workflowSteps.map((step, index) => (
+              <Reveal key={step} delay={index * 0.05}>
+                <div className="flex gap-4 rounded-2xl border border-emerald-950/10 bg-white p-5">
+                  <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-emerald-700 text-sm font-bold text-white">
+                    {String(index + 1).padStart(2, "0")}
+                  </span>
+                  <p className="self-center text-sm font-semibold leading-7 text-[#0b1713]">
+                    {step}
+                  </p>
+                </div>
+              </Reveal>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section className="bg-white px-5 py-20 md:px-8">
         <Reveal className="mx-auto max-w-4xl text-center">
           <h2 className="text-[clamp(30px,5vw,54px)] font-bold text-[#0b1713]">
             Compare it with scattered work.

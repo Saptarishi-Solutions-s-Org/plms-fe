@@ -26,6 +26,13 @@ const demoContacts = [
   },
 ];
 
+const demoChecklist = [
+  "Your organization or team structure",
+  "How leads are currently captured",
+  "Who manages executives and follow-ups",
+  "Offer or discount workflows you want to control",
+];
+
 export default function RequestDemoPage() {
   return (
     <div className="overflow-hidden">
@@ -84,6 +91,28 @@ export default function RequestDemoPage() {
               </div>
             </div>
           </Reveal>
+        </div>
+      </section>
+
+      <section className="border-y border-emerald-950/10 bg-white px-5 py-20 md:px-8">
+        <div className="mx-auto grid max-w-7xl gap-10 lg:grid-cols-[0.8fr_1.2fr]">
+          <Reveal>
+            <p className="mb-3 text-xs font-semibold uppercase text-emerald-700">
+              Demo Prep
+            </p>
+            <h2 className="text-[clamp(30px,5vw,54px)] font-bold leading-tight text-[#0b1713]">
+              Bring the current workflow. PLMS maps around it.
+            </h2>
+          </Reveal>
+          <div className="grid gap-3 sm:grid-cols-2">
+            {demoChecklist.map((item, index) => (
+              <Reveal key={item} delay={index * 0.05}>
+                <div className="rounded-2xl border border-emerald-950/10 bg-[#fbfefb] p-5 text-sm font-semibold leading-7 text-[#0b1713]">
+                  {item}
+                </div>
+              </Reveal>
+            ))}
+          </div>
         </div>
       </section>
     </div>

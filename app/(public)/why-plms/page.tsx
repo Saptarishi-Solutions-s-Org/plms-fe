@@ -1,7 +1,15 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { CheckCircle2, FileSpreadsheet, MessagesSquare, Workflow } from "lucide-react";
+import {
+  CheckCircle2,
+  FileSpreadsheet,
+  ListChecks,
+  MessagesSquare,
+  ShieldCheck,
+  TrendingUp,
+  Workflow,
+} from "lucide-react";
 
 import { Reveal } from "@/components/public/Reveal";
 
@@ -21,6 +29,31 @@ const comparisons = [
     title: "Beyond generic CRM overhead",
     desc: "PLMS focuses on project lead workflows, organization roles, managers, executives, and offers without unnecessary noise.",
   },
+];
+
+const outcomes = [
+  {
+    icon: ListChecks,
+    title: "Clear next action",
+    desc: "Every lead can carry a status, owner, activity history, priority, and follow-up date so teams know what happens next.",
+  },
+  {
+    icon: TrendingUp,
+    title: "Manager visibility",
+    desc: "Managers get status and performance context without chasing updates from every executive individually.",
+  },
+  {
+    icon: ShieldCheck,
+    title: "Governed access",
+    desc: "Organizations, modules, roles, permissions, and overrides keep the right people focused on the right work.",
+  },
+];
+
+const painPoints = [
+  "Lead ownership changes are hard to trace.",
+  "Follow-up notes sit in chats, calls, or memory.",
+  "Offer validity and assignment rules become unclear.",
+  "Managers only notice stalled leads after the opportunity cools down.",
 ];
 
 export default function WhyPlmsPage() {
@@ -59,6 +92,48 @@ export default function WhyPlmsPage() {
                 <item.icon className="mb-6 h-7 w-7 text-emerald-700" />
                 <h2 className="text-xl font-bold text-[#0b1713]">{item.title}</h2>
                 <p className="mt-4 text-sm leading-8 text-slate-600">{item.desc}</p>
+              </div>
+            </Reveal>
+          ))}
+        </div>
+      </section>
+
+      <section className="bg-[#eef8f0] px-5 py-20 md:px-8">
+        <div className="mx-auto grid max-w-7xl gap-10 lg:grid-cols-[0.85fr_1.15fr]">
+          <Reveal>
+            <p className="mb-3 text-xs font-semibold uppercase text-emerald-700">
+              What PLMS Solves
+            </p>
+            <h2 className="text-[clamp(30px,5vw,54px)] font-bold leading-tight text-[#0b1713]">
+              It replaces the quiet leakage in lead operations.
+            </h2>
+            <p className="mt-5 text-sm leading-8 text-slate-600">
+              PLMS is not trying to be everything. It focuses on keeping project
+              leads structured enough for executives to act and managers to
+              inspect.
+            </p>
+          </Reveal>
+
+          <div className="grid gap-3">
+            {painPoints.map((point, index) => (
+              <Reveal key={point} delay={index * 0.04}>
+                <div className="rounded-2xl border border-emerald-950/10 bg-white p-5 text-sm font-semibold text-[#0b1713]">
+                  {point}
+                </div>
+              </Reveal>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section className="bg-white px-5 py-20 md:px-8">
+        <div className="mx-auto grid max-w-7xl gap-5 md:grid-cols-3">
+          {outcomes.map((outcome, index) => (
+            <Reveal key={outcome.title} delay={index * 0.06}>
+              <div className="h-full rounded-2xl border border-emerald-950/10 bg-[#fbfefb] p-6">
+                <outcome.icon className="mb-6 h-7 w-7 text-emerald-700" />
+                <h2 className="text-xl font-bold text-[#0b1713]">{outcome.title}</h2>
+                <p className="mt-4 text-sm leading-8 text-slate-600">{outcome.desc}</p>
               </div>
             </Reveal>
           ))}
