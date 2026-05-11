@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useParams } from "next/navigation";
 
+import GlobalLoader from "@/components/commoncomponents/globalloader";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -22,7 +23,7 @@ import {
   SelectItem,
 } from "@/components/ui/select";
 
-import { Building2, Plus, MoreHorizontal } from "lucide-react";
+import { Building2, Plus, MoreHorizontal, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
 
 import { getOrganizationByCode } from "@/services/organization";
@@ -35,63 +36,109 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
 } from "@/components/ui/dropdown-menu";
+import { subscribeRealtime } from "@/lib/socket";
+import {
+  ORGANIZATION_DETAIL_CHANGED,
+  type OrganizationDetailChangedPayload,
+} from "@/types/realtime";
+import type {
+  OrganizationAdminUser,
+  OrganizationDetailResponse,
+  OrganizationPermission,
+  OrganizationRoleMatrix,
+} from "@/types/organization";
 
 export default function OrganizationDetailsPage() {
   const { code } = useParams();
+  const orgCode = Array.isArray(code) ? code[0] : code;
 
-  const [data, setData] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
+  const [data, setData] = useState<OrganizationDetailResponse | null>(null);
+  const [isInitialLoading, setIsInitialLoading] = useState(true);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const [selectedRole, setSelectedRole] = useState("");
 
-  const [users, setUsers] = useState<any[]>([]);
+  const [users, setUsers] = useState<OrganizationAdminUser[]>([]);
   const [openUser, setOpenUser] = useState(false);
-  const [selectedUser, setSelectedUser] = useState<any>(null);
+  const [selectedUser, setSelectedUser] =
+    useState<OrganizationAdminUser | null>(null);
 
-  const fetchUsers = async (orgId: string) => {
+  const fetchUsers = useCallback(async (orgId: string) => {
     try {
       const res = await getAdminUsers(orgId);
       setUsers(res);
     } catch (err) {
       console.error(err);
     }
-  };
+  }, []);
 
-  useEffect(() => {
-    const fetchData = async () => {
+  const loadOrganization = useCallback(
+    async (mode: "initial" | "realtime" = "initial") => {
+      if (!orgCode) return;
+      if (mode === "realtime") {
+        setIsRefreshing(true);
+      }
+
       try {
-        const res = await getOrganizationByCode(code as string);
+        const res = await getOrganizationByCode(orgCode);
         setData(res);
+        if (res.organization?.id) {
+          await fetchUsers(res.organization.id);
+        }
       } catch (err) {
         console.error(err);
         toast.error("Failed to load organization");
       } finally {
-        setLoading(false);
+        if (mode === "initial") {
+          setIsInitialLoading(false);
+        } else {
+          setIsRefreshing(false);
+        }
       }
-    };
-
-    fetchData();
-  }, [code]);
+    },
+    [fetchUsers, orgCode],
+  );
 
   useEffect(() => {
-    if (data?.organization?.id) {
-      fetchUsers(data.organization.id);
-    }
-  }, [data]);
+    loadOrganization("initial");
+  }, [loadOrganization]);
 
-  const organization = data?.organization || {};
+  useEffect(() => {
+    return subscribeRealtime<OrganizationDetailChangedPayload>(
+      ORGANIZATION_DETAIL_CHANGED,
+      (event) => {
+        const payload = event.data;
+        const matchesOrgId =
+          payload?.orgId && payload.orgId === data?.organization?.id;
+        const matchesOrgCode = payload?.orgCode && payload.orgCode === orgCode;
+
+        if (matchesOrgId || matchesOrgCode) {
+          loadOrganization("realtime");
+        }
+      },
+    );
+  }, [data?.organization?.id, loadOrganization, orgCode]);
+
+  const organization = data?.organization;
   const roles = data?.roles || [];
   const modules = data?.modules || [];
-  const permissions = data?.permissions || [];
+  const permissions = useMemo(() => data?.permissions || [], [data?.permissions]);
 
-  const roleMatrix: any = {};
+  const roleMatrix = useMemo<OrganizationRoleMatrix>(() => {
+    return permissions.reduce<OrganizationRoleMatrix>(
+      (matrix, permission: OrganizationPermission) => {
+        if (!matrix[permission.role]) matrix[permission.role] = {};
+        if (!matrix[permission.role][permission.module]) {
+          matrix[permission.role][permission.module] = {};
+        }
+        matrix[permission.role][permission.module][permission.permission] =
+          permission.access;
+        return matrix;
+      },
+      {},
+    );
+  }, [permissions]);
 
-  permissions.forEach((p: any) => {
-    if (!roleMatrix[p.role]) roleMatrix[p.role] = {};
-    if (!roleMatrix[p.role][p.module]) roleMatrix[p.role][p.module] = {};
-    roleMatrix[p.role][p.module][p.permission] = p.access;
-  });
-
-  const rolesList = Object.keys(roleMatrix);
+  const rolesList = useMemo(() => Object.keys(roleMatrix), [roleMatrix]);
 
   useEffect(() => {
     if (rolesList.length && !selectedRole) {
@@ -114,12 +161,12 @@ export default function OrganizationDetailsPage() {
   const format = (text: string) =>
     text ? text.charAt(0).toUpperCase() + text.slice(1) : "";
 
-  const display = (value: any) => {
-    return value ? value : "No Data";
+  const display = (value: unknown) => {
+    return value ? String(value) : "No Data";
   };
 
-  if (loading) return <div className="p-6">Loading...</div>;
-  if (!data) return <div className="p-6">No data</div>;
+  if (isInitialLoading) return <GlobalLoader />;
+  if (!data || !organization) return <div className="p-6">No data</div>;
 
   return (
     <div className="p-6 space-y-6">
@@ -146,6 +193,13 @@ export default function OrganizationDetailsPage() {
             </div>
           </div>
         </div>
+
+        {isRefreshing && (
+          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+            <RefreshCw className="h-4 w-4 animate-spin" />
+            Refreshing
+          </div>
+        )}
 
         <Button
           size="lg"
@@ -194,7 +248,7 @@ export default function OrganizationDetailsPage() {
           </CardHeader>
 
           <CardContent className="space-y-2">
-            {roles.map((r: any) => (
+            {roles.map((r) => (
               <div
                 key={r.id}
                 className="px-3 py-2 rounded-md bg-gray-50 text-sm font-medium"
@@ -211,7 +265,7 @@ export default function OrganizationDetailsPage() {
           </CardHeader>
 
           <CardContent className="space-y-2">
-            {modules.map((m: any) => (
+            {modules.map((m) => (
               <div
                 key={m.name}
                 className="px-3 py-2 rounded-md bg-gray-50 text-sm font-medium"
@@ -373,8 +427,8 @@ export default function OrganizationDetailsPage() {
         open={openUser}
         setOpen={setOpenUser}
         user={selectedUser}
-        onSuccess={() => fetchUsers(organization.id)}
-        organizationId={organization.id}
+        onSuccess={() => loadOrganization("realtime")}
+        organizationId={organization.id || ""}
       />
     </div>
   );

@@ -1,4 +1,5 @@
 import { api } from "@/lib/api";
+import type { OrganizationAdminUser } from "@/types/organization";
 
 export const createUser = (payload: any) =>
   api("/odata/v4/organization/createUser", {
@@ -12,7 +13,9 @@ export const updateUser = (payload: any) =>
     body: JSON.stringify(payload),
   });
 
-export const getAdminUsers = (organizationId: string) =>
+export const getAdminUsers = (
+  organizationId: string,
+): Promise<OrganizationAdminUser[]> =>
   api(
     `/odata/v4/organization/getAdminUsers(organizationId='${organizationId}')`,
   );

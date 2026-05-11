@@ -13,7 +13,6 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Spinner } from "@/components/ui/spinner";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { getDashboardPath, setSession } from "@/lib/auth";
-import { connectSocket } from "@/lib/socket";
 
 const SERVER_DOWN_MESSAGE = "Server is down. Please try again later.";
 
@@ -99,7 +98,6 @@ export default function LoginForm() {
       }
 
       setSession(data.accessToken, data.user);
-      connectSocket(data.accessToken);
 
       toast.success("Welcome to PLMS portal", {
         description: "You have successfully signed in",
