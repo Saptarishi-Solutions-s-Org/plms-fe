@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import { useState, useEffect } from "react";
-import { Eye, EyeOff } from "lucide-react";
+import { Eye, EyeOff, TriangleAlert } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 
@@ -11,8 +11,29 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Spinner } from "@/components/ui/spinner";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { getDashboardPath, setSession } from "@/lib/auth";
 import { connectSocket } from "@/lib/socket";
+
+const SERVER_DOWN_MESSAGE = "Server is down. Please try again later.";
+
+type LoginResponse = {
+  accessToken?: string;
+  user?: Parameters<typeof getDashboardPath>[0];
+  error?: {
+    message?: string;
+  };
+  message?: string;
+};
+
+function getLoginErrorMessage(data: LoginResponse | null, fallback?: string) {
+  return (
+    data?.error?.message ||
+    data?.message ||
+    fallback ||
+    "Unable to sign in. Please try again."
+  );
+}
 
 export default function LoginForm() {
   const router = useRouter();
@@ -24,6 +45,7 @@ export default function LoginForm() {
   const [password, setPassword] = useState("");
   const [remember, setRemember] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [alertMessage, setAlertMessage] = useState("");
 
   useEffect(() => {
     setMounted(true);
@@ -44,6 +66,7 @@ export default function LoginForm() {
 
     try {
       setLoading(true);
+      setAlertMessage("");
 
       const res = await fetch(
         `${process.env.NEXT_PUBLIC_API_URL}/odata/v4/auth/login`,
@@ -55,18 +78,18 @@ export default function LoginForm() {
         },
       );
 
-      let data;
+      let data: LoginResponse | null = null;
+      let fallbackMessage = "";
 
       try {
         const json = await res.json();
         data = json?.value || json;
       } catch {
-        const text = await res.text();
-        throw new Error(text);
+        fallbackMessage = await res.text();
       }
 
-      if (!res.ok || !data?.accessToken) {
-        throw new Error(data?.message || "Invalid credentials");
+      if (!res.ok || !data?.accessToken || !data.user) {
+        throw new Error(getLoginErrorMessage(data, fallbackMessage));
       }
 
       if (remember) {
@@ -78,12 +101,20 @@ export default function LoginForm() {
       setSession(data.accessToken, data.user);
       connectSocket(data.accessToken);
 
-      toast.success("Login successful");
+      toast.success("Welcome to PLMS portal", {
+        description: "You have successfully signed in",
+      });
 
       router.push(getDashboardPath(data.user));
     } catch (err) {
       console.error("LOGIN ERROR FE:", err);
-      toast.error("Invalid credentials");
+      setAlertMessage(
+        err instanceof TypeError
+          ? SERVER_DOWN_MESSAGE
+          : err instanceof Error
+            ? err.message || SERVER_DOWN_MESSAGE
+            : SERVER_DOWN_MESSAGE,
+      );
     } finally {
       setLoading(false);
     }
@@ -116,11 +147,21 @@ export default function LoginForm() {
           </CardHeader>
 
           <CardContent className="space-y-5 px-6 pb-8">
+            {alertMessage && (
+              <Alert variant="destructive">
+                <TriangleAlert className="h-4 w-4" />
+                <AlertDescription>{alertMessage}</AlertDescription>
+              </Alert>
+            )}
+
             <div className="space-y-1.5">
               <label className="text-sm font-medium">Email</label>
               <Input
                 value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                onChange={(e) => {
+                  setEmail(e.target.value);
+                  setAlertMessage("");
+                }}
                 placeholder="Enter email"
               />
             </div>
@@ -134,7 +175,10 @@ export default function LoginForm() {
                   type={showPassword ? "text" : "password"}
                   className="pr-10"
                   value={password}
-                  onChange={(e) => setPassword(e.target.value)}
+                  onChange={(e) => {
+                    setPassword(e.target.value);
+                    setAlertMessage("");
+                  }}
                 />
 
                 <button
