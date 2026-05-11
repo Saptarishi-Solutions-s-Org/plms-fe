@@ -7,7 +7,7 @@ import { useRef } from "react";
 
 import { Reveal } from "@/components/public/Reveal";
 import {
-  heroStats,
+  heroSignals,
   leadPipeline,
   platformModules,
   roleHighlights,
@@ -95,17 +95,18 @@ export default function HomePage() {
               </motion.div>
 
               <div className="mt-10 grid max-w-xl gap-3 sm:grid-cols-3">
-                {heroStats.map((stat, index) => (
+                {heroSignals.map((signal, index) => (
                   <motion.div
-                    key={stat.label}
+                    key={signal.label}
                     initial={{ opacity: 0, y: 18 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.55, delay: 0.48 + index * 0.08 }}
-                    className="rounded-xl border border-emerald-900/10 bg-white/75 p-4 shadow-[0_12px_35px_rgba(6,95,70,0.06)]"
+                    className="rounded-xl border border-emerald-900/10 bg-white/75 p-4 shadow-[0_12px_35px_rgba(6,95,70,0.06)] backdrop-blur"
                   >
-                    <stat.icon className="mb-3 h-4 w-4 text-emerald-700" />
-                    <p className="text-2xl font-bold text-[#0b1713]">{stat.value}</p>
-                    <p className="text-xs text-slate-500">{stat.label}</p>
+                    <signal.icon className="mb-3 h-5 w-5 text-emerald-700" />
+                    <p className="text-sm font-semibold leading-6 text-[#0b1713]">
+                      {signal.label}
+                    </p>
                   </motion.div>
                 ))}
               </div>
@@ -149,13 +150,16 @@ export default function HomePage() {
                 </div>
               </div>
 
-              {platformModules.slice(0, 5).map((module, index) => {
+              {platformModules
+                .filter((module) => module.label !== "Dashboards")
+                .slice(0, 5)
+                .map((module, index) => {
                 const positions = [
                   "left-0 top-0",
-                  "right-0 top-5",
-                  "left-2 bottom-20",
+                  "right-10 top-5",
+                  "left-[-30] bottom-20",
                   "right-2 bottom-5",
-                  "left-24 top-[235px]",
+                  "right-24 top-[235px]",
                 ];
                 return (
                   <motion.div

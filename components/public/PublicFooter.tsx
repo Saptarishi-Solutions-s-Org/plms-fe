@@ -5,7 +5,13 @@ import {
   legalLinks,
   platformModules,
   publicNavLinks,
+  supportEmails,
 } from "@/components/public/public-content";
+
+const footerHelpLinks = [
+  { label: "FAQs", href: "/faqs" },
+  { label: "Contact", href: "/contact" },
+];
 
 export default function PublicFooter() {
   return (
@@ -64,6 +70,16 @@ export default function PublicFooter() {
                   Login
                 </Link>
               </li>
+              {footerHelpLinks.map((link) => (
+                <li key={link.href}>
+                  <Link
+                    href={link.href}
+                    className="text-sm text-white/58 transition hover:text-emerald-200"
+                  >
+                    {link.label}
+                  </Link>
+                </li>
+              ))}
             </ul>
           </div>
 
@@ -99,12 +115,17 @@ export default function PublicFooter() {
                 </span>
               ))}
             </div>
-            <a
-              href="mailto:info@saptarishi.tech"
-              className="mt-6 block text-sm text-emerald-200 transition hover:text-white"
-            >
-              info@saptarishi.tech
-            </a>
+            <div className="mt-6 space-y-2">
+              {supportEmails.map((email) => (
+                <a
+                  key={email}
+                  href={`mailto:${email}`}
+                  className="block text-sm text-emerald-200 transition hover:text-white"
+                >
+                  {email}
+                </a>
+              ))}
+            </div>
           </div>
         </div>
 

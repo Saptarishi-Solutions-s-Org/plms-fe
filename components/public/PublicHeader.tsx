@@ -40,7 +40,7 @@ export default function PublicHeader() {
             className="h-8 w-8"
           />
           <span className="text-sm font-bold tracking-[0.14em] text-[#0b1713]">
-            PLMS
+            SRS-PLMS
           </span>
         </Link>
 

@@ -169,7 +169,7 @@ export default function LoginForm() {
                 className="h-9 w-9"
               />
               <span className="text-sm font-bold uppercase text-[#0b1713]">
-                PLMS
+                SRS-PLMS
               </span>
             </div>
             <h2 className="text-2xl font-bold text-[#0b1713]">Welcome back</h2>
