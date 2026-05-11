@@ -24,19 +24,14 @@ import { toast } from "sonner";
 import { Building2, Users } from "lucide-react";
 
 import { getSystemAdminDashboard } from "@/services/systemAdmin";
+import { getUser, refreshSession } from "@/lib/auth";
 
 export default function SystemAdminDashboard() {
   const [data, setData] = useState<any>(null);
   const [selectedRole, setSelectedRole] = useState<string>("");
   const [user, setUser] = useState<any>(null);
 
-  useEffect(() => {
-    const storedUser = localStorage.getItem("user");
-    if (storedUser) setUser(JSON.parse(storedUser));
-    fetchDashboard();
-  }, []);
-
-  const fetchDashboard = async () => {
+  async function fetchDashboard() {
     try {
       const finalData = await getSystemAdminDashboard();
       setData(finalData);
@@ -45,7 +40,19 @@ export default function SystemAdminDashboard() {
       console.error(err);
       toast.error("Failed to load dashboard");
     }
-  };
+  }
+
+  useEffect(() => {
+    const currentUser = getUser();
+    if (currentUser) {
+      setUser(currentUser);
+    } else {
+      refreshSession().then((session) => {
+        if (session) setUser(session.user);
+      });
+    }
+    fetchDashboard();
+  }, []);
 
   if (!data || !user) return <div className="p-6">Loading...</div>;
 

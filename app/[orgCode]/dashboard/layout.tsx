@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { ReactNode, useState, useEffect } from "react";
 import Image from "next/image";
 import { usePathname, useRouter, useParams } from "next/navigation";
 
@@ -20,7 +20,14 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar";
 
-import { ChevronDown, ChevronRight, LogOut, Home, User } from "lucide-react";
+import {
+  ChevronDown,
+  ChevronRight,
+  LogOut,
+  Home,
+  User,
+  type LucideIcon,
+} from "lucide-react";
 
 import {
   Collapsible,
@@ -41,6 +48,22 @@ import { LogoutConfirmationDialog } from "@/components/commoncomponents/logout-c
 import { MENU_CONFIG } from "@/lib/menu";
 import { canAccess } from "@/lib/permissions";
 import { connectSocket, disconnectSocket } from "@/lib/socket";
+import {
+  AuthUser,
+  getDashboardPath,
+  logoutSession,
+  refreshSession,
+} from "@/lib/auth";
+
+const DASHBOARD_QUOTES = [
+  "Consistency beats motivation",
+  "Small steps every day",
+  "Stay focused, stay sharp",
+];
+
+function getRandomQuote() {
+  return DASHBOARD_QUOTES[Math.floor(Math.random() * DASHBOARD_QUOTES.length)];
+}
 
 function SidebarBrand() {
   const { open } = useSidebar();
@@ -67,7 +90,21 @@ function SidebarBrand() {
   );
 }
 
-const SidebarLink = ({ href, icon: Icon, label, pathname, orgCode }: any) => {
+type SidebarLinkProps = {
+  href: string;
+  icon: LucideIcon;
+  label: string;
+  pathname: string;
+  orgCode: string;
+};
+
+const SidebarLink = ({
+  href,
+  icon: Icon,
+  label,
+  pathname,
+  orgCode,
+}: SidebarLinkProps) => {
   const router = useRouter();
 
   return (
@@ -87,67 +124,62 @@ const SidebarLink = ({ href, icon: Icon, label, pathname, orgCode }: any) => {
   );
 };
 
-export default function Layout({ children }: any) {
-  const [user, setUser] = useState<any>(null);
-  const [state, setState] = useState<any>({});
+export default function Layout({ children }: { children: ReactNode }) {
+  const [user, setUser] = useState<AuthUser | null>(null);
+  const [state, setState] = useState<Record<string, boolean>>({});
   const [loading, setLoading] = useState(true);
-  const [quote, setQuote] = useState("");
+  const [quote, setQuote] = useState(() => getRandomQuote());
 
   const router = useRouter();
   const pathname = usePathname();
-  const { orgCode } = useParams();
+  const params = useParams<{ orgCode: string }>();
+  const orgCode = params.orgCode;
 
   const [logoutOpen, setLogoutOpen] = useState(false);
 
   useEffect(() => {
-    const stored = localStorage.getItem("user");
-    const token = localStorage.getItem("token");
+    let cancelled = false;
 
-    if (!stored || !token) {
-      router.replace("/");
-      return;
-    }
+    refreshSession().then((session) => {
+      if (cancelled) return;
 
-    const parsed = JSON.parse(stored);
+      if (!session) {
+        router.replace("/");
+        return;
+      }
 
-    if (parsed.orgCode !== orgCode) {
-      router.replace(`/${parsed.orgCode}/dashboard`);
-      return;
-    }
+      if (session.user.orgCode !== orgCode) {
+        router.replace(getDashboardPath(session.user));
+        return;
+      }
 
-    setUser(parsed);
-    connectSocket(token);
+      setUser(session.user);
+      connectSocket(session.accessToken);
 
-    const initial: any = {};
-    MENU_CONFIG.forEach((g) => (initial[g.key] = g.open));
-    setState(initial);
+      const initial: Record<string, boolean> = {};
+      MENU_CONFIG.forEach((g) => (initial[g.key] = g.open));
+      setState(initial);
 
-    setLoading(false);
+      setLoading(false);
+    });
 
-    return () => disconnectSocket();
-  }, []);
+    return () => {
+      cancelled = true;
+      disconnectSocket();
+    };
+  }, [orgCode, router]);
 
   useEffect(() => {
-    const quotes = [
-      "Consistency beats motivation",
-      "Small steps every day",
-      "Stay focused, stay sharp",
-    ];
-    const getRandom = () => quotes[Math.floor(Math.random() * quotes.length)];
-    setQuote(getRandom());
-    const i = setInterval(() => setQuote(getRandom()), 5000);
+    const i = setInterval(() => setQuote(getRandomQuote()), 5000);
     return () => clearInterval(i);
   }, []);
 
   const toggle = (key: string) => {
-    setState((prev: any) => ({ ...prev, [key]: !prev[key] }));
+    setState((prev) => ({ ...prev, [key]: !prev[key] }));
   };
 
-  const handleLogout = () => {
-    localStorage.removeItem("token");
-    localStorage.removeItem("user");
-    document.cookie = "token=; Max-Age=0; path=/";
-    disconnectSocket();
+  const handleLogout = async () => {
+    await logoutSession();
     router.replace("/");
   };
 
@@ -165,7 +197,12 @@ export default function Layout({ children }: any) {
             const items = group.items.filter((item) =>
               "public" in item
                 ? true
-                : canAccess(user, item.module, item.permission),
+                : canAccess(
+                  user,
+                  item.modules ?? [],
+                  item.permissions ?? [],
+                  item
+                ),
             );
 
             if (!items.length) return null;

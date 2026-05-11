@@ -1,0 +1,122 @@
+"use client";
+
+import { disconnectSocket } from "@/lib/socket";
+
+export type AuthUser = {
+  id: string;
+  name: string;
+  orgId: string;
+  orgCode: string;
+  orgName: string;
+  roleId: string;
+  role: string;
+  permissions?: Record<string, string[]>;
+};
+
+type AuthSession = {
+  accessToken: string;
+  user: AuthUser;
+};
+
+type AuthResponse = {
+  accessToken?: string;
+  user?: AuthUser;
+  value?: {
+    accessToken?: string;
+    user?: AuthUser;
+  };
+};
+
+let session: AuthSession | null = null;
+let refreshPromise: Promise<AuthSession | null> | null = null;
+
+const API_URL = process.env.NEXT_PUBLIC_API_URL;
+
+function normalizeAuthResponse(data: AuthResponse): AuthSession | null {
+  const payload = data?.value || data;
+
+  if (!payload?.accessToken || !payload?.user) {
+    return null;
+  }
+
+  return {
+    accessToken: payload.accessToken,
+    user: payload.user,
+  };
+}
+
+export function getAccessToken() {
+  return session?.accessToken || null;
+}
+
+export function getUser() {
+  return session?.user || null;
+}
+
+export function getDashboardPath(user = session?.user) {
+  return user?.orgCode ? `/${user.orgCode}/dashboard` : "/";
+}
+
+export function setSession(accessToken: string, user: AuthUser) {
+  session = { accessToken, user };
+  notifyAuthChanged();
+  return session;
+}
+
+export function clearSession() {
+  session = null;
+  disconnectSocket();
+  notifyAuthChanged();
+}
+
+export async function refreshSession(force = false) {
+  if (session && !force) return session;
+  if (refreshPromise) return refreshPromise;
+
+  refreshPromise = fetch(`${API_URL}/odata/v4/auth/refresh`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    credentials: "include",
+  })
+    .then(async (res) => {
+      if (!res.ok) return null;
+
+      const data = normalizeAuthResponse(await res.json());
+      if (!data) return null;
+
+      session = data;
+      notifyAuthChanged();
+      return data;
+    })
+    .catch(() => null)
+    .finally(() => {
+      refreshPromise = null;
+    });
+
+  return refreshPromise;
+}
+
+export async function logoutSession() {
+  try {
+    await fetch(`${API_URL}/odata/v4/auth/logout`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+    });
+  } finally {
+    clearSession();
+  }
+}
+
+export function redirectToLogin() {
+  clearSession();
+
+  if (typeof window !== "undefined" && window.location.pathname !== "/") {
+    window.location.replace("/");
+  }
+}
+
+function notifyAuthChanged() {
+  if (typeof window === "undefined") return;
+  window.dispatchEvent(new Event("plms-auth-changed"));
+}

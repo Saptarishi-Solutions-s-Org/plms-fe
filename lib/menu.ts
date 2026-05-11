@@ -25,23 +25,27 @@ export const MENU_CONFIG: MenuGroup[] = [
         href: "/dashboard/organization",
         icon: Building2,
         label: "Organization",
-        module: "organization",
-        permission: "view",
+        modules: ["organization"],
+        permissions: ["view"],
+        roles: ["Admin","Executive","Manager"], // U need to update this based on the actual roles that should have access
       },
       {
         href: "/leads",
         icon: UserCheck,
         label: "Leads",
-        module: "lead",
-        permission: "view",
+        modules: ["lead"],
+        permissions: ["view", "create", "update", "delete"],// U need to update this based on the actual permissions required
+        roles: ["Admin","Executive","Manager"], // U need to update this based on the actual roles that should have access
       },
       {
         href: "/offers",
         icon: Gift,
         label: "Offers",
-        module: "offers",
-        permission: "view",
+        modules: ["offers"],
+        permissions: ["view","create","update","delete"],// U need to update this based on the actual permissions required
+        roles: ["Admin"],// U need to update this based on the actual roles that should have access
       },
     ],
   },
 ];
+
