@@ -5,6 +5,9 @@ const publicNavLinks = [
   { label: "Home", href: "/" },
   { label: "About", href: "/about" },
   { label: "Services", href: "/services" },
+  { label: "Features", href: "/features" },
+  { label: "Use Cases", href: "/use-cases" },
+  { label: "Why PLMS", href: "/why-plms" },
 ];
 
 const legalLinks = [
@@ -21,7 +24,15 @@ const platformModules = [
   { label: "Locations" },
 ];
 
-const supportEmails = ["system.admin@saptarishi.tech", "info@saptarishi.tech"];
+const supportEmails = [
+  "system.admin@saptarishi.tech",
+  "info@saptarishi.tech",
+];
+
+const marketingLinks = [
+  { label: "Security", href: "/security" },
+  { label: "Request Demo", href: "/request-demo" },
+];
 
 const footerHelpLinks = [
   { label: "FAQs", href: "/faqs" },
@@ -32,7 +43,7 @@ export default function PublicFooter() {
   return (
     <footer className="bg-[#0b1713] text-white">
       <div className="mx-auto max-w-7xl px-5 py-14 md:px-8">
-        <div className="grid gap-10 border-b border-white/10 pb-10 md:grid-cols-[1.4fr_0.8fr_0.8fr_1fr]">
+        <div className="grid gap-10 border-b border-white/10 pb-10 md:grid-cols-[1.25fr_0.75fr_0.75fr_0.75fr_1fr]">
           <div>
             <div className="mb-5 flex items-center gap-3">
               <Image
@@ -77,15 +88,15 @@ export default function PublicFooter() {
                   </Link>
                 </li>
               ))}
-              <li>
-                <Link
-                  href="/login"
-                  className="text-sm text-white/58 transition hover:text-emerald-200"
-                >
-                  Login
-                </Link>
-              </li>
-              {footerHelpLinks.map((link) => (
+            </ul>
+          </div>
+
+          <div>
+            <p className="mb-4 text-[11px] font-semibold uppercase tracking-[0.18em] text-white/35">
+              Marketing
+            </p>
+            <ul className="space-y-3">
+              {marketingLinks.map((link) => (
                 <li key={link.href}>
                   <Link
                     href={link.href}
@@ -104,6 +115,22 @@ export default function PublicFooter() {
             </p>
             <ul className="space-y-3">
               {legalLinks.map((link) => (
+                <li key={link.href}>
+                  <Link
+                    href={link.href}
+                    className="text-sm text-white/58 transition hover:text-emerald-200"
+                  >
+                    {link.label}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+
+            <p className="mb-4 mt-8 text-[11px] font-semibold uppercase tracking-[0.18em] text-white/35">
+              Help
+            </p>
+            <ul className="space-y-3">
+              {footerHelpLinks.map((link) => (
                 <li key={link.href}>
                   <Link
                     href={link.href}
@@ -140,6 +167,19 @@ export default function PublicFooter() {
                   {email}
                 </a>
               ))}
+            </div>
+
+            <div className="mt-8 rounded-2xl border border-white/10 bg-white/5 p-4">
+              <p className="mb-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-white/35">
+                Portal
+              </p>
+              <Link
+                href="/login"
+                className="block text-sm font-semibold text-emerald-200 transition hover:text-white"
+              >
+                Login
+              </Link>
+              <p className="mt-2 text-xs text-white/35">Authorized users only</p>
             </div>
           </div>
         </div>

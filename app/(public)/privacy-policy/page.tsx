@@ -1,10 +1,10 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { ArrowUpRight, ShieldCheck } from "lucide-react";
-import Link from "next/link";
+import { ShieldCheck } from "lucide-react";
 
 import { Reveal } from "@/components/public/Reveal";
+import StickyTOC from "@/components/public/StickyTOC";
 
 const lastUpdated = "May 11, 2026";
 
@@ -117,42 +117,14 @@ export default function PrivacyPolicyPage() {
 
       <section className="border-y border-emerald-950/10 bg-white px-5 py-20 md:px-8">
         <div className="mx-auto grid max-w-7xl gap-10 lg:grid-cols-[300px_1fr]">
-          <aside className="hidden self-start lg:sticky lg:top-28 lg:block">
-            <div className="rounded-[1.5rem] border border-emerald-950/10 bg-[#fbfefb] p-5">
-              <p className="mb-4 text-xs font-semibold uppercase text-emerald-700">
-                On This Page
-              </p>
-              <nav className="space-y-1">
-                {privacySections.map((section) => (
-                  <a
-                    key={section.title}
-                    href={`#${sectionId(section.title)}`}
-                    className="block rounded-xl px-3 py-2 text-sm font-medium text-slate-600 transition hover:bg-emerald-50 hover:text-emerald-800"
-                  >
-                    {section.title}
-                  </a>
-                ))}
-              </nav>
-
-              <div className="mt-7 border-t border-emerald-950/10 pt-5">
-                <p className="mb-3 text-xs font-semibold uppercase text-slate-400">
-                  Related
-                </p>
-                <div className="space-y-2">
-                  {relatedLinks.map((link) => (
-                    <Link
-                      key={link.href}
-                      href={link.href}
-                      className="flex items-center justify-between rounded-xl bg-white px-3 py-2 text-sm font-semibold text-emerald-800 transition hover:text-emerald-950"
-                    >
-                      {link.label}
-                      <ArrowUpRight className="h-4 w-4" />
-                    </Link>
-                  ))}
-                </div>
-              </div>
-            </div>
-          </aside>
+          <StickyTOC
+            label="Contents"
+            sections={privacySections.map((section) => ({
+              id: sectionId(section.title),
+              heading: section.title,
+            }))}
+            related={relatedLinks}
+          />
 
           <div className="space-y-5">
             {privacySections.map((section, index) => (

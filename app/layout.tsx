@@ -4,6 +4,7 @@ import Script from "next/script";
 import "./globals.css";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Toaster } from "sonner";
+import { SystemAssistancePopover } from "@/components/commoncomponents/system-assistance";
 
 const poppins = Poppins({
   subsets: ["latin"],
@@ -72,6 +73,7 @@ export default function RootLayout({
           }}
         />
         <TooltipProvider>{children}</TooltipProvider>
+        <SystemAssistancePopover />
         <Toaster richColors position="top-right" />
       </body>
     </html>

@@ -1,9 +1,10 @@
 "use client";
 
 import { AnimatePresence, motion } from "framer-motion";
-import { ArrowUpRight, Minus, Plus, Search } from "lucide-react";
-import Link from "next/link";
+import { Minus, Plus, Search } from "lucide-react";
 import { useMemo, useState } from "react";
+
+import StickyTOC from "@/components/public/StickyTOC";
 
 const faqs = [
   {
@@ -216,36 +217,14 @@ export default function FaqsPage() {
 
       <section className="border-y border-emerald-950/10 bg-white px-5 py-20 md:px-8">
         <div className="mx-auto grid max-w-7xl gap-10 lg:grid-cols-[280px_1fr]">
-          <aside className="hidden self-start lg:sticky lg:top-28 lg:block">
-            <div className="rounded-[1.5rem] border border-emerald-950/10 bg-[#fbfefb] p-5">
-              <p className="mb-4 text-xs font-semibold uppercase text-emerald-700">
-                Categories
-              </p>
-              <div className="space-y-1">
-                {categories.map((item) => (
-                  <button
-                    key={item}
-                    type="button"
-                    onClick={() => setCategory(item)}
-                    className={`block w-full rounded-xl px-3 py-2 text-left text-sm font-medium transition ${
-                      category === item
-                        ? "bg-emerald-700 text-white"
-                        : "text-slate-600 hover:bg-emerald-50 hover:text-emerald-800"
-                    }`}
-                  >
-                    {item}
-                  </button>
-                ))}
-              </div>
-              <Link
-                href="/contact"
-                className="mt-6 inline-flex items-center gap-2 text-sm font-semibold text-emerald-800 hover:text-emerald-950"
-              >
-                Still need help
-                <ArrowUpRight className="h-4 w-4" />
-              </Link>
-            </div>
-          </aside>
+          <StickyTOC
+            label="Categories"
+            sections={categories.map((item) => ({ id: item, heading: item }))}
+            activeId={category}
+            observeSections={false}
+            onSelect={setCategory}
+            related={[{ label: "Still need help", href: "/contact" }]}
+          />
 
           <div className="space-y-4">
             {filteredFaqs.length ? (
