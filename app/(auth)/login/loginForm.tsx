@@ -3,7 +3,13 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useState, useEffect } from "react";
-import { ArrowRight, Eye, EyeOff, ShieldCheck, TriangleAlert } from "lucide-react";
+import {
+  ArrowRight,
+  Eye,
+  EyeOff,
+  ShieldCheck,
+  TriangleAlert,
+} from "lucide-react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 
@@ -16,7 +22,6 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { getDashboardPath, refreshSession, setSession } from "@/lib/auth";
 
 const SERVER_DOWN_MESSAGE = "Server is down. Please try again later.";
-const API_URL = "/api/plms";
 
 type LoginResponse = {
   accessToken?: string;
@@ -82,7 +87,7 @@ export default function LoginForm() {
       setAlertMessage("");
 
       const res = await fetch(
-        `${API_URL}/odata/v4/auth/login`,
+        `${process.env.NEXT_PUBLIC_API_URL}/odata/v4/auth/login`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -93,12 +98,15 @@ export default function LoginForm() {
 
       let data: LoginResponse | null = null;
       let fallbackMessage = "";
+      const responseText = await res.text();
 
-      try {
-        const json = await res.json();
-        data = json?.value || json;
-      } catch {
-        fallbackMessage = await res.text();
+      if (responseText) {
+        try {
+          const json = JSON.parse(responseText);
+          data = json?.value || json;
+        } catch {
+          fallbackMessage = res.status === 404 ? "" : responseText;
+        }
       }
 
       if (!res.ok || !data?.accessToken || !data.user) {
@@ -200,7 +208,9 @@ export default function LoginForm() {
             )}
 
             <div className="space-y-1.5">
-              <label className="text-sm font-semibold text-[#0b1713]">Email</label>
+              <label className="text-sm font-semibold text-[#0b1713]">
+                Email
+              </label>
               <Input
                 value={email}
                 onChange={(e) => {
@@ -213,7 +223,9 @@ export default function LoginForm() {
             </div>
 
             <div className="space-y-1.5">
-              <label className="text-sm font-semibold text-[#0b1713]">Password</label>
+              <label className="text-sm font-semibold text-[#0b1713]">
+                Password
+              </label>
 
               <div className="relative">
                 <Input
