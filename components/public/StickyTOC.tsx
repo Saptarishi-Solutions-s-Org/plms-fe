@@ -1,8 +1,9 @@
 "use client";
 
+import type { CSSProperties } from "react";
 import Link from "next/link";
 import { ArrowUpRight } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 type TocSection = {
   id: string;
@@ -23,6 +24,18 @@ type StickyTOCProps = {
   observeSections?: boolean;
 };
 
+type RailMode = "normal" | "fixed" | "bottom";
+
+type RailState = {
+  mode: RailMode;
+  left: number;
+  top: number;
+  width: number;
+  height: number;
+};
+
+const STICKY_OFFSET = 112;
+
 export default function StickyTOC({
   label = "Contents",
   sections,
@@ -31,7 +44,16 @@ export default function StickyTOC({
   onSelect,
   observeSections = true,
 }: StickyTOCProps) {
+  const wrapperRef = useRef<HTMLDivElement>(null);
+  const railRef = useRef<HTMLDivElement>(null);
   const [observedActiveId, setObservedActiveId] = useState(sections[0]?.id ?? "");
+  const [railState, setRailState] = useState<RailState>({
+    mode: "normal",
+    left: 0,
+    top: 0,
+    width: 0,
+    height: 0,
+  });
   const currentActiveId = activeId ?? observedActiveId;
 
   useEffect(() => {
@@ -56,6 +78,82 @@ export default function StickyTOC({
     return () => observer.disconnect();
   }, [observeSections, sections]);
 
+  useEffect(() => {
+    let frame = 0;
+
+    const syncRail = () => {
+      const wrapper = wrapperRef.current;
+      const rail = railRef.current;
+      const container = wrapper?.parentElement;
+      if (!wrapper || !rail || !container) return;
+
+      const scrollY = window.scrollY;
+      const wrapperRect = wrapper.getBoundingClientRect();
+      const containerRect = container.getBoundingClientRect();
+      const railHeight = rail.offsetHeight;
+      const wrapperTop = wrapperRect.top + scrollY;
+      const containerTop = containerRect.top + scrollY;
+      const containerBottom = containerRect.bottom + scrollY;
+      const width = wrapperRect.width;
+
+      let nextState: RailState;
+      if (scrollY + STICKY_OFFSET < containerTop) {
+        nextState = {
+          mode: "normal",
+          left: 0,
+          top: 0,
+          width,
+          height: railHeight,
+        };
+      } else if (scrollY + STICKY_OFFSET + railHeight >= containerBottom) {
+        nextState = {
+          mode: "bottom",
+          left: 0,
+          top: Math.max(containerBottom - wrapperTop - railHeight, 0),
+          width,
+          height: railHeight,
+        };
+      } else {
+        nextState = {
+          mode: "fixed",
+          left: wrapperRect.left,
+          top: STICKY_OFFSET,
+          width,
+          height: railHeight,
+        };
+      }
+
+      setRailState((current) => {
+        if (
+          current.mode === nextState.mode &&
+          Math.abs(current.left - nextState.left) < 0.5 &&
+          Math.abs(current.top - nextState.top) < 0.5 &&
+          Math.abs(current.width - nextState.width) < 0.5 &&
+          Math.abs(current.height - nextState.height) < 0.5
+        ) {
+          return current;
+        }
+
+        return nextState;
+      });
+    };
+
+    const requestSync = () => {
+      window.cancelAnimationFrame(frame);
+      frame = window.requestAnimationFrame(syncRail);
+    };
+
+    requestSync();
+    window.addEventListener("scroll", requestSync, { passive: true });
+    window.addEventListener("resize", requestSync);
+
+    return () => {
+      window.cancelAnimationFrame(frame);
+      window.removeEventListener("scroll", requestSync);
+      window.removeEventListener("resize", requestSync);
+    };
+  }, [sections.length, related?.length]);
+
   const handleSelect = (id: string) => {
     if (onSelect) {
       onSelect(id);
@@ -67,9 +165,33 @@ export default function StickyTOC({
       ?.scrollIntoView({ behavior: "smooth", block: "start" });
   };
 
+  const railStyle: CSSProperties =
+    railState.mode === "fixed"
+      ? {
+          position: "fixed",
+          left: railState.left,
+          top: railState.top,
+          width: railState.width,
+        }
+      : railState.mode === "bottom"
+        ? {
+            position: "absolute",
+            left: 0,
+            top: railState.top,
+            width: railState.width,
+          }
+        : {
+            position: "relative",
+            width: "100%",
+          };
+
   return (
-    <div className="hidden self-start lg:block">
-      <div className="lg:fixed lg:top-28 lg:w-[260px]">
+    <div
+      ref={wrapperRef}
+      className="relative hidden self-start lg:block"
+      style={{ minHeight: railState.height || undefined }}
+    >
+      <div ref={railRef} style={railStyle}>
         <p className="mb-5 text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400">
           {label}
         </p>
