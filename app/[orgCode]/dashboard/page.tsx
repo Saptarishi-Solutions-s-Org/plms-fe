@@ -7,6 +7,7 @@ import { AuthUser, getUser, refreshSession } from "@/lib/auth"
 import SystemAdminDashboard from "./roledashboards/system-admin-dashboard"
 import OrganizationAdminDashboard from "./roledashboards/organization-admin-dashboard"
 import ManagerDashboard from "./roledashboards/org-manager-dashboard"
+import LeadsPage from "./leads/page"
 
 function DefaultDashboard() {
   return (
@@ -19,7 +20,7 @@ function DefaultDashboard() {
 const ROLE_DASHBOARD_MAP: Record<string, ComponentType> = {
   "SYSTEM ADMIN": SystemAdminDashboard,
   "ADMIN" : OrganizationAdminDashboard,
-  "MANAGER": ManagerDashboard,
+  "MANAGER": ManagerDashboard,LeadsPage,
 }
 
 export default function DashboardPage() {

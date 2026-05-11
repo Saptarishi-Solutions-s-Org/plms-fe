@@ -30,7 +30,7 @@ export const MENU_CONFIG: MenuGroup[] = [
         roles: ["Admin","Executive","Manager"], // U need to update this based on the actual roles that should have access
       },
       {
-        href: "/leads",
+        href: "/dashboard/leads",
         icon: UserCheck,
         label: "Leads",
         modules: ["lead"],
@@ -45,6 +45,7 @@ export const MENU_CONFIG: MenuGroup[] = [
         permissions: ["view","create","update","delete"],// U need to update this based on the actual permissions required
         roles: ["Admin"],// U need to update this based on the actual roles that should have access
       },
+      
     ],
   },
 ];
