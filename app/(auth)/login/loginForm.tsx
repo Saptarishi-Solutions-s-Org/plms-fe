@@ -11,6 +11,8 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Spinner } from "@/components/ui/spinner";
+import { getDashboardPath, setSession } from "@/lib/auth";
+import { connectSocket } from "@/lib/socket";
 
 export default function LoginForm() {
   const router = useRouter();
@@ -33,16 +35,6 @@ export default function LoginForm() {
     }
   }, []);
 
-  useEffect(() => {
-    const token = localStorage.getItem("token");
-    const user = localStorage.getItem("user");
-
-    if (token && user) {
-      const parsed = JSON.parse(user);
-      router.push(`/${parsed.orgCode}/dashboard`);
-    }
-  }, []);
-
   if (!mounted) return null;
 
   const isDisabled = !email || !password || loading;
@@ -58,6 +50,7 @@ export default function LoginForm() {
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
+          credentials: "include",
           body: JSON.stringify({ email, password }),
         },
       );
@@ -72,9 +65,7 @@ export default function LoginForm() {
         throw new Error(text);
       }
 
-      console.log("LOGIN RESPONSE:", data);
-
-      if (!res.ok || !data?.token) {
+      if (!res.ok || !data?.accessToken) {
         throw new Error(data?.message || "Invalid credentials");
       }
 
@@ -84,14 +75,12 @@ export default function LoginForm() {
         localStorage.removeItem("savedLogin");
       }
 
-      localStorage.setItem("token", data.token);
-      localStorage.setItem("user", JSON.stringify(data.user));
-
-      document.cookie = `token=${data.token}; path=/`;
+      setSession(data.accessToken, data.user);
+      connectSocket(data.accessToken);
 
       toast.success("Login successful");
 
-      router.push(`/${data.user.orgCode}/dashboard`);
+      router.push(getDashboardPath(data.user));
     } catch (err) {
       console.error("LOGIN ERROR FE:", err);
       toast.error("Invalid credentials");

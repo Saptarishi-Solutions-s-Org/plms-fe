@@ -1,33 +1,41 @@
 "use client";
 
-import { createContext, useContext, useEffect, useState } from "react";
+import { ReactNode, createContext, useContext, useEffect, useState } from "react";
+import {
+  AuthUser,
+  clearSession,
+  getUser,
+  logoutSession,
+  setSession,
+} from "@/lib/auth";
 import { connectSocket } from "@/lib/socket";
 
-const AuthContext = createContext<any>(null);
+type AuthContextValue = {
+  user: AuthUser | null;
+  login: (data: { accessToken: string; user: AuthUser }) => void;
+  logout: () => Promise<void>;
+};
 
-export function AuthProvider({ children }: any) {
-  const [user, setUser] = useState<any>(null);
+const AuthContext = createContext<AuthContextValue | null>(null);
+
+export function AuthProvider({ children }: { children: ReactNode }) {
+  const [user, setUser] = useState<AuthUser | null>(getUser());
 
   useEffect(() => {
-    const stored = localStorage.getItem("user");
-    const token = localStorage.getItem("token");
-
-    if (stored && token) {
-      const parsed = JSON.parse(stored);
-      setUser(parsed);
-      connectSocket(token);
-    }
+    const syncUser = () => setUser(getUser());
+    window.addEventListener("plms-auth-changed", syncUser);
+    return () => window.removeEventListener("plms-auth-changed", syncUser);
   }, []);
 
-  const login = (data: any) => {
-    localStorage.setItem("token", data.token);
-    localStorage.setItem("user", JSON.stringify(data.user));
+  const login = (data: { accessToken: string; user: AuthUser }) => {
+    setSession(data.accessToken, data.user);
     setUser(data.user);
-    connectSocket(data.token);
+    connectSocket(data.accessToken);
   };
 
-  const logout = () => {
-    localStorage.clear();
+  const logout = async () => {
+    await logoutSession();
+    clearSession();
     setUser(null);
   };
 
