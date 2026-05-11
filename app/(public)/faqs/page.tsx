@@ -4,8 +4,6 @@ import { AnimatePresence, motion } from "framer-motion";
 import { Minus, Plus, Search } from "lucide-react";
 import { useMemo, useState } from "react";
 
-import StickyTOC from "@/components/public/StickyTOC";
-
 const faqs = [
   {
     category: "Getting Started",
@@ -216,16 +214,7 @@ export default function FaqsPage() {
       </section>
 
       <section className="border-y border-emerald-950/10 bg-white px-5 py-20 md:px-8">
-        <div className="mx-auto grid max-w-7xl gap-10 lg:grid-cols-[280px_1fr]">
-          <StickyTOC
-            label="Categories"
-            sections={categories.map((item) => ({ id: item, heading: item }))}
-            activeId={category}
-            observeSections={false}
-            onSelect={setCategory}
-            related={[{ label: "Still need help", href: "/contact" }]}
-          />
-
+        <div className="mx-auto max-w-4xl">
           <div className="space-y-4">
             {filteredFaqs.length ? (
               filteredFaqs.map((faq, index) => {
