@@ -37,16 +37,21 @@ export default function SystemAdminDashboard() {
   const [isInitialLoading, setIsInitialLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
 
-  const applyDashboardData = useCallback((nextData: SystemAdminDashboardData) => {
-    setData(nextData);
-    setSelectedRole((currentRole) => {
-      const roleStillExists = nextData.roles?.some(
-        (role) => role.orgRoleId === currentRole,
-      );
+  const applyDashboardData = useCallback(
+    (nextData: SystemAdminDashboardData) => {
+      setData(nextData);
+      setSelectedRole((currentRole) => {
+        const roleStillExists = nextData.roles?.some(
+          (role) => role.orgRoleId === currentRole,
+        );
 
-      return roleStillExists ? currentRole : nextData.roles?.[0]?.orgRoleId || "";
-    });
-  }, []);
+        return roleStillExists
+          ? currentRole
+          : nextData.roles?.[0]?.orgRoleId || "";
+      });
+    },
+    [],
+  );
 
   const loadDashboard = useCallback(
     async (mode: "initial" | "realtime" = "initial") => {

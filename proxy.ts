@@ -42,13 +42,13 @@ export function proxy(req: NextRequest) {
     );
   }
 
-  const dashboardMatch = pathname.match(/^\/([^/]+)\/dashboard(?:\/.*)?$/);
-  if (dashboardMatch) {
+  const protectedOrgMatch = pathname.match(/^\/([^/]+)\/dashboard(?:\/.*)?$/);
+  if (protectedOrgMatch) {
     if (!refreshToken) {
       return NextResponse.redirect(new URL("/", req.url));
     }
 
-    const requestedOrgCode = dashboardMatch[1];
+    const requestedOrgCode = protectedOrgMatch[1];
     if (userHint?.orgCode && userHint.orgCode !== requestedOrgCode) {
       return NextResponse.redirect(
         new URL(`/${userHint.orgCode}/dashboard`, req.url),

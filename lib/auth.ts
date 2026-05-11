@@ -68,6 +68,20 @@ export function setSession(accessToken: string, user: AuthUser) {
   return applySession({ accessToken, user });
 }
 
+export function updateSessionUser(updates: Partial<AuthUser>) {
+  if (!session) return null;
+
+  session = {
+    ...session,
+    user: {
+      ...session.user,
+      ...updates,
+    },
+  };
+  notifyAuthChanged();
+  return session;
+}
+
 export function clearSession() {
   session = null;
   disconnectSocket();

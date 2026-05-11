@@ -51,6 +51,7 @@ import { connectSocket, disconnectSocket } from "@/lib/socket";
 import {
   AuthUser,
   getDashboardPath,
+  getUser,
   logoutSession,
   refreshSession,
 } from "@/lib/auth";
@@ -174,6 +175,17 @@ export default function Layout({ children }: { children: ReactNode }) {
     return () => clearInterval(i);
   }, []);
 
+  useEffect(() => {
+    const handleAuthChanged = () => {
+      const latestUser = getUser();
+      if (latestUser) setUser(latestUser);
+    };
+
+    window.addEventListener("plms-auth-changed", handleAuthChanged);
+    return () =>
+      window.removeEventListener("plms-auth-changed", handleAuthChanged);
+  }, []);
+
   const toggle = (key: string) => {
     setState((prev) => ({ ...prev, [key]: !prev[key] }));
   };
@@ -287,7 +299,7 @@ export default function Layout({ children }: { children: ReactNode }) {
 
                 <DropdownMenuContent align="end" className="w-40 p-1">
                   <DropdownMenuItem
-                    onClick={() => router.push(`/${orgCode}/profile`)}
+                    onClick={() => router.push(`/${orgCode}/dashboard/profile`)}
                   >
                     <User className="h-4 w-4 mr-2" />
                     Profile

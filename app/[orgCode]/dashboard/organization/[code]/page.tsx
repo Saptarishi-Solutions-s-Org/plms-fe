@@ -47,6 +47,7 @@ import type {
   OrganizationPermission,
   OrganizationRoleMatrix,
 } from "@/types/organization";
+import { toISTDate } from "@/lib/time";
 
 export default function OrganizationDetailsPage() {
   const { code } = useParams();
@@ -121,7 +122,10 @@ export default function OrganizationDetailsPage() {
   const organization = data?.organization;
   const roles = data?.roles || [];
   const modules = data?.modules || [];
-  const permissions = useMemo(() => data?.permissions || [], [data?.permissions]);
+  const permissions = useMemo(
+    () => data?.permissions || [],
+    [data?.permissions],
+  );
 
   const roleMatrix = useMemo<OrganizationRoleMatrix>(() => {
     return permissions.reduce<OrganizationRoleMatrix>(
@@ -170,8 +174,6 @@ export default function OrganizationDetailsPage() {
 
   return (
     <div className="p-6 space-y-6">
-      {/* 🔥 YOUR UI FULLY UNTOUCHED */}
-
       <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
         <div className="flex items-center gap-3">
           <div className="p-3 rounded-xl bg-blue-100">
@@ -376,9 +378,7 @@ export default function OrganizationDetailsPage() {
 
                       <TableCell>{u.gender || "-"}</TableCell>
 
-                      <TableCell>
-                        {u.dob ? new Date(u.dob).toLocaleDateString() : "-"}
-                      </TableCell>
+                      <TableCell>{toISTDate(u.dob) || "-"}</TableCell>
 
                       <TableCell>
                         {u.state || "-"}, {u.country || "-"}
