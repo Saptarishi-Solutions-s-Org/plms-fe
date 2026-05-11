@@ -1,11 +1,105 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { ArrowRight } from "lucide-react";
+import {
+  ArrowRight,
+  Building2,
+  CalendarClock,
+  CircleDollarSign,
+  KeyRound,
+  PieChart,
+  Target,
+} from "lucide-react";
 import Link from "next/link";
 
 import { Reveal } from "@/components/public/Reveal";
-import { services } from "@/components/public/public-content";
+
+const services = [
+  {
+    icon: Target,
+    num: "01",
+    title: "Lead Management",
+    tagline: "A clean pipeline from first touch to final status.",
+    color: "#047857",
+    bg: "#ecfdf5",
+    features: [
+      "Manual and imported leads",
+      "Status, priority, source, and owner",
+      "Lead codes and contact details",
+      "Manager-ready pipeline visibility",
+    ],
+  },
+  {
+    icon: CalendarClock,
+    num: "02",
+    title: "Activity Tracking",
+    tagline: "Every conversation stays attached to the lead.",
+    color: "#0f766e",
+    bg: "#f0fdfa",
+    features: [
+      "Call, SMS, email, and in-person logs",
+      "Notes and call outcomes",
+      "Next follow-up dates",
+      "Executive activity history",
+    ],
+  },
+  {
+    icon: CircleDollarSign,
+    num: "03",
+    title: "Offer Management",
+    tagline: "Campaign-ready offers without scattered spreadsheets.",
+    color: "#a16207",
+    bg: "#fefce8",
+    features: [
+      "Fixed, percentage, combo, and conditional discounts",
+      "Valid-from and valid-to controls",
+      "Active, inactive, draft, and expired states",
+      "User-level offer assignments",
+    ],
+  },
+  {
+    icon: Building2,
+    num: "04",
+    title: "Organization Administration",
+    tagline: "Keep each tenant structured and governed.",
+    color: "#155e75",
+    bg: "#ecfeff",
+    features: [
+      "Organizations with trial windows",
+      "Users, managers, and executives",
+      "State and country coverage",
+      "Active/inactive controls",
+    ],
+  },
+  {
+    icon: KeyRound,
+    num: "05",
+    title: "Roles And Permissions",
+    tagline: "Access that matches real operating responsibility.",
+    color: "#334155",
+    bg: "#f1f5f9",
+    features: [
+      "Modules and permissions",
+      "Organization role mapping",
+      "Role module permission matrix",
+      "Organization-level overrides",
+    ],
+  },
+  {
+    icon: PieChart,
+    num: "06",
+    title: "Dashboards And Reporting",
+    tagline: "Leaders see the work before it becomes a bottleneck.",
+    color: "#7f1d1d",
+    bg: "#fef2f2",
+    features: [
+      "Manager cards and status overview",
+      "Executive performance context",
+      "Lead and offer signals",
+      "Operational snapshots",
+    ],
+  },
+];
 
 export default function ServicesPage() {
   return (

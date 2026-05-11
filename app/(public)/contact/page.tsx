@@ -1,11 +1,66 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { Copy, ExternalLink } from "lucide-react";
+import {
+  Building2,
+  Copy,
+  ExternalLink,
+  Gift,
+  Mail,
+  MapPin,
+  Phone,
+  ShieldCheck,
+  Users,
+} from "lucide-react";
 import { useState } from "react";
 
 import { Reveal } from "@/components/public/Reveal";
-import { contactCards, officeDetails } from "@/components/public/public-content";
+
+const contactCards = [
+  {
+    icon: Users,
+    label: "Sales Ops",
+    title: "Lead Operations",
+    email: "system.admin@saptarishi.tech",
+    desc: "For lead assignment, follow-up queues, activity history, and pipeline questions.",
+    color: "#047857",
+    bg: "#ecfdf5",
+  },
+  {
+    icon: ShieldCheck,
+    label: "Access",
+    title: "Account Support",
+    email: "system.admin@saptarishi.tech",
+    desc: "For login, reset links, roles, permissions, organization modules, and locked accounts.",
+    color: "#334155",
+    bg: "#f1f5f9",
+  },
+  {
+    icon: Gift,
+    label: "Offers",
+    title: "Campaign Support",
+    email: "info@saptarishi.tech",
+    desc: "For discount setup, offer validity, user assignment, and active campaign checks.",
+    color: "#a16207",
+    bg: "#fefce8",
+  },
+  {
+    icon: Mail,
+    label: "General",
+    title: "General Queries",
+    email: "info@saptarishi.tech",
+    desc: "For anything else related to PLMS operations and internal support.",
+    color: "#0f766e",
+    bg: "#f0fdfa",
+  },
+];
+
+const officeDetails = [
+  { icon: Building2, label: "Company", value: "Saptarishi Solutions Pvt. Ltd." },
+  { icon: MapPin, label: "Location", value: "Hyderabad, Telangana, India" },
+  { icon: Mail, label: "Email", value: "info@saptarishi.tech" },
+  { icon: Phone, label: "Support", value: "system.admin@saptarishi.tech" },
+];
 
 const quickHelp = [
   "I cannot access my organization dashboard.",

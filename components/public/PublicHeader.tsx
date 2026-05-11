@@ -7,7 +7,12 @@ import { useEffect, useState } from "react";
 import { LogIn, Menu, X } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
-import { publicNavLinks } from "@/components/public/public-content";
+
+const publicNavLinks = [
+  { label: "Home", href: "/" },
+  { label: "About", href: "/about" },
+  { label: "Services", href: "/services" },
+];
 
 export default function PublicHeader() {
   const pathname = usePathname();

@@ -1,12 +1,27 @@
 import Image from "next/image";
 import Link from "next/link";
 
-import {
-  legalLinks,
-  platformModules,
-  publicNavLinks,
-  supportEmails,
-} from "@/components/public/public-content";
+const publicNavLinks = [
+  { label: "Home", href: "/" },
+  { label: "About", href: "/about" },
+  { label: "Services", href: "/services" },
+];
+
+const legalLinks = [
+  { label: "Privacy Policy", href: "/privacy-policy" },
+  { label: "Terms & Conditions", href: "/terms-and-conditions" },
+];
+
+const platformModules = [
+  { label: "Lead Capture" },
+  { label: "Follow-ups" },
+  { label: "Offers" },
+  { label: "Role Access" },
+  { label: "Dashboards" },
+  { label: "Locations" },
+];
+
+const supportEmails = ["system.admin@saptarishi.tech", "info@saptarishi.tech"];
 
 const footerHelpLinks = [
   { label: "FAQs", href: "/faqs" },

@@ -1,17 +1,53 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { ArrowRight, CheckCircle2 } from "lucide-react";
+import {
+  ArrowRight,
+  CheckCircle2,
+  ClipboardList,
+  ContactRound,
+  Layers3,
+  LineChart,
+} from "lucide-react";
 import Link from "next/link";
 
 import { Reveal } from "@/components/public/Reveal";
-import { leadPipeline, roleHighlights } from "@/components/public/public-content";
 
 const principles = [
   "Lead ownership should always be visible.",
   "Follow-ups should be recorded where the lead lives.",
   "Offers should be controlled, valid, and assigned clearly.",
   "Permissions should follow organization responsibility.",
+];
+
+const leadPipeline = [
+  { label: "New", desc: "Lead enters the system", value: "01" },
+  { label: "Contacted", desc: "Executive reaches out", value: "02" },
+  { label: "Qualified", desc: "Need and fit confirmed", value: "03" },
+  { label: "Converted or Lost", desc: "Outcome is recorded", value: "04" },
+];
+
+const roleHighlights = [
+  {
+    icon: Layers3,
+    title: "System Admin",
+    desc: "Controls organizations, modules, and the global operating setup.",
+  },
+  {
+    icon: ClipboardList,
+    title: "Admin",
+    desc: "Handles organization users, offers, and operational governance.",
+  },
+  {
+    icon: LineChart,
+    title: "Manager",
+    desc: "Tracks lead status, executive performance, and follow-up discipline.",
+  },
+  {
+    icon: ContactRound,
+    title: "Executive",
+    desc: "Works assigned leads, records activities, and keeps follow-ups moving.",
+  },
 ];
 
 export default function AboutPage() {
