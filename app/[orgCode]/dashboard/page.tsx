@@ -1,6 +1,8 @@
 "use client"
 
 import { useEffect, useState } from "react"
+import type { ComponentType } from "react"
+import { AuthUser, getUser, refreshSession } from "@/lib/auth"
 
 import SystemAdminDashboard from "./roledashboards/system-admin-dashboard"
 import OrganizationAdminDashboard from "./roledashboards/organization-admin-dashboard"
@@ -14,19 +16,22 @@ function DefaultDashboard() {
   )
 }
 
-const ROLE_DASHBOARD_MAP: Record<string, any> = {
+const ROLE_DASHBOARD_MAP: Record<string, ComponentType> = {
   "SYSTEM ADMIN": SystemAdminDashboard,
   "ADMIN" : OrganizationAdminDashboard,
   "MANAGER": ManagerDashboard,
 }
 
 export default function DashboardPage() {
-  const [user, setUser] = useState<any>(null)
+  const [user, setUser] = useState<AuthUser | null>(() => getUser())
 
   useEffect(() => {
-    const stored = localStorage.getItem("user")
-    if (stored) setUser(JSON.parse(stored))
-  }, [])
+    if (user) return
+
+    refreshSession().then((session) => {
+      if (session) setUser(session.user)
+    })
+  }, [user])
 
   if (!user) return null
 
