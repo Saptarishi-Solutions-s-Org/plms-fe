@@ -13,9 +13,10 @@ import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Spinner } from "@/components/ui/spinner";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { getDashboardPath, setSession } from "@/lib/auth";
+import { getDashboardPath, refreshSession, setSession } from "@/lib/auth";
 
 const SERVER_DOWN_MESSAGE = "Server is down. Please try again later.";
+const API_URL = "/api/plms";
 
 type LoginResponse = {
   accessToken?: string;
@@ -48,6 +49,8 @@ export default function LoginForm() {
   const [alertMessage, setAlertMessage] = useState("");
 
   useEffect(() => {
+    let cancelled = false;
+
     setMounted(true);
 
     const saved = localStorage.getItem("savedLogin");
@@ -55,7 +58,17 @@ export default function LoginForm() {
       setEmail(saved);
       setRemember(true);
     }
-  }, []);
+
+    refreshSession(true).then((session) => {
+      if (!cancelled && session) {
+        router.replace(getDashboardPath(session.user));
+      }
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [router]);
 
   if (!mounted) return null;
 
@@ -69,7 +82,7 @@ export default function LoginForm() {
       setAlertMessage("");
 
       const res = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/odata/v4/auth/login`,
+        `${API_URL}/odata/v4/auth/login`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -104,7 +117,7 @@ export default function LoginForm() {
         description: "You have successfully signed in",
       });
 
-      router.push(getDashboardPath(data.user));
+      window.location.assign(getDashboardPath(data.user));
     } catch (err) {
       console.error("LOGIN ERROR FE:", err);
       setAlertMessage(
