@@ -5,6 +5,13 @@ const USER_HINT_COOKIE = "plms_user_hint";
 
 const PUBLIC_PATHS = new Set([
   "/",
+  "/about",
+  "/services",
+  "/faqs",
+  "/contact",
+  "/privacy-policy",
+  "/terms-and-conditions",
+  "/login",
   "/forgot-password",
   "/reset-password",
   "/set-password",
@@ -36,7 +43,7 @@ export function proxy(req: NextRequest) {
   const refreshToken = req.cookies.get(REFRESH_COOKIE)?.value;
   const userHint = parseUserHint(req.cookies.get(USER_HINT_COOKIE)?.value);
 
-  if (pathname === "/" && refreshToken && userHint?.orgCode) {
+  if (pathname === "/login" && refreshToken && userHint?.orgCode) {
     return NextResponse.redirect(
       new URL(`/${userHint.orgCode}/dashboard`, req.url),
     );
