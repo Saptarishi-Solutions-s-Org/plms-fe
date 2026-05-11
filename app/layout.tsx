@@ -35,6 +35,9 @@ export default function RootLayout({
           dangerouslySetInnerHTML={{
             __html: `
               (() => {
+                if (window.__plmsStripExtensionAttrs) return;
+                window.__plmsStripExtensionAttrs = true;
+
                 const shouldRemove = (name) =>
                   name === "bis_skin_checked" ||
                   name === "bis_register" ||
@@ -50,7 +53,7 @@ export default function RootLayout({
                   }
                 };
 
-                clean(document.documentElement);
+                const cleanDocument = () => clean(document.documentElement);
 
                 const observer = new MutationObserver((mutations) => {
                   for (const mutation of mutations) {
@@ -67,7 +70,18 @@ export default function RootLayout({
                   subtree: true,
                 });
 
-                window.addEventListener("load", () => observer.disconnect(), { once: true });
+                cleanDocument();
+                queueMicrotask(cleanDocument);
+                requestAnimationFrame(cleanDocument);
+                window.addEventListener("DOMContentLoaded", cleanDocument, { once: true });
+                window.addEventListener("load", cleanDocument, { once: true });
+
+                let runs = 0;
+                const interval = window.setInterval(() => {
+                  cleanDocument();
+                  runs += 1;
+                  if (runs >= 40) window.clearInterval(interval);
+                }, 250);
               })();
             `,
           }}
