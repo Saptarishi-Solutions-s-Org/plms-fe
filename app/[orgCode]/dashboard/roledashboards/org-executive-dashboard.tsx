@@ -4,10 +4,9 @@ import { useEffect, useState } from "react";
 
 import ExecutiveCards from "@/components/commoncomponents/executivedashboard/stats";
 import RecentLeadsCard from "@/components/commoncomponents/executivedashboard/executiverecentleads";
-
-import { getExecutiveStats } from "@/services/executivestats";
-import { getRecentLeads } from "@/services/executivestats";
-
+import CommonOverview from "@/components/commoncomponents/managerdashboard/leadstatusoverview";
+import { getExecutiveStats, getRecentLeads } from "@/services/executivestats";
+import { getLeadStats } from "@/services/executivestats";
 import type { RecentLead } from "@/types/executivestats";
 
 export default function ExecutiveDashboard() {
@@ -19,6 +18,9 @@ export default function ExecutiveDashboard() {
   });
 
   const [recentLeads, setRecentLeads] = useState<RecentLead[]>([]);
+  const [overview, setOverview] = useState<{ label: string; value: number }[]>(
+    [],
+  );
 
   useEffect(() => {
     const fetchDashboardData = async () => {
@@ -44,8 +46,19 @@ export default function ExecutiveDashboard() {
             leadName: lead.leadName,
             status: lead.status,
             createdAt: lead.createdAt,
-          }))
+          })),
         );
+
+        const overviewRes = await getLeadStats();
+
+        const order = ["New", "Contacted", "Qualified", "Lost"];
+
+        const formattedOverview = order.map((status) => ({
+          label: status,
+          value: Number(overviewRes?.[status] || 0),
+        }));
+
+        setOverview(formattedOverview);
       } catch (err) {
         console.error("Failed to load executive dashboard", err);
       }
@@ -55,28 +68,37 @@ export default function ExecutiveDashboard() {
   }, []);
 
   return (
-    <div className="space-y-8 p-6">
+    <div className="space-y-6 p-4 sm:p-6">
       {/* Page Header */}
       <div>
-        <h1 className="mb-2 text-2xl font-bold text-slate-900">
+        <h1 className="text-xl font-bold text-slate-900 sm:text-2xl">
           Executive Dashboard
         </h1>
 
-        <p className="text-slate-500">
+        <p className="mt-1 text-sm text-slate-500 sm:text-base">
           Personal performance metrics overview.
         </p>
       </div>
 
-      
       <ExecutiveCards stats={stats} />
-
-      <RecentLeadsCard
-        title="Recent Leads"
-        leads={recentLeads}
-        onViewAll={() => {
-          console.log("View all leads");
-        }}
-      />
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-[0.9fr_1.3fr] items-stretch">
+        <div className="min-w-0 h-full">
+          <RecentLeadsCard
+            title="Recent Leads"
+            leads={recentLeads}
+            onViewAll={() => {
+              console.log("View all leads");
+            }}
+          />
+        </div>
+        <div className="min-w-0 h-full">
+          <CommonOverview
+            title="My Stats"
+            subtitle="Lead status distribution"
+            data={overview}
+          />
+        </div>
+      </div>
     </div>
   );
 }

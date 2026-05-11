@@ -5,7 +5,7 @@ import { BarChart2, CheckCircle, UserPlus } from "lucide-react";
 const ExecutiveCards = ({ stats }: ExecutiveCardsProps) => {
   const cards = [
     { title: "My Leads", value: stats.myLeads, icon: BarChart2, color: "bg-indigo-500" },
-    { title: "Converted", value: stats.convertedLeads, icon: CheckCircle, color: "bg-green-500" },
+    { title: "Qualified", value: stats.convertedLeads, icon: CheckCircle, color: "bg-green-500" },
     { title: "New This Week", value: stats.thisWeekLeads, icon: UserPlus, color: "bg-orange-400" },
     {title: "Active Offers", value: stats.activeOffers, icon: CheckCircle, color: "bg-blue-500"},
   ];

@@ -6,10 +6,18 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 
 import type { RecentLeadsProps } from "@/types/executivestats";
 
-const statusStyles: Record<string, string> = {
+const STATUS_BADGE: Record<string, string> = {
   Qualified: "bg-blue-50 text-blue-600",
   Contacted: "bg-amber-50 text-amber-600",
   New: "bg-slate-100 text-slate-500",
@@ -22,7 +30,7 @@ const RecentLeadsCard = ({
   onViewAll,
 }: RecentLeadsProps) => {
   return (
-    <Card className="rounded-2xl border-0 bg-white shadow-md">
+    <Card className="rounded-2xl border-0 bg-white shadow-md h-full">
       {/* Header */}
       <CardHeader className="flex flex-row items-center justify-between px-5 py-4">
         <CardTitle className="text-lg font-semibold text-slate-900">
@@ -41,51 +49,52 @@ const RecentLeadsCard = ({
       </CardHeader>
 
       <CardContent className="px-0 pb-0">
+        <div className="max-h-[260px] overflow-y-auto">
+          <Table>
+            <TableHeader>
+              <TableRow className="bg-[#7677F41A]">
+                <TableHead>S.No</TableHead>
+                <TableHead>Lead Name</TableHead>
+                <TableHead>Date</TableHead>
+                <TableHead>Status</TableHead>
+              </TableRow>
+            </TableHeader>
 
-        <div className="grid grid-cols-2 border-y bg-slate-50 px-5 py-2 text-[10px] font-semibold uppercase tracking-[0.15em] text-slate-400">
-          <p>Lead</p>
-          <p>Status</p>
-        </div>
-
-        <div className="max-h-[220px] overflow-y-auto">
-          {leads.length > 0 ? (
-            leads.map((lead) => (
-              <div
-                key={lead.leadId}
-                className="grid grid-cols-2 items-center border-b px-5 py-4 last:border-none"
-              >
-                
-                <div className="space-y-1">
-                  <p className="text-sm font-semibold text-slate-900">
-                    {lead.leadName}
-                  </p>
-                  <p className="text-xs text-slate-500">
-                    {new Date(lead.createdAt).toLocaleDateString()}
-                  </p>
-                </div>
-
-                
-                <div>
-                  <span
-                    className={`inline-flex items-center gap-2 rounded-md px-3 py-1 text-sm font-medium ${
-                      statusStyles[lead.status] ||
-                      "bg-slate-100 text-slate-600"
-                    }`}
+            <TableBody>
+              {leads.length === 0 ? (
+                <TableRow>
+                  <TableCell
+                    colSpan={4}
+                    className="py-10 text-center text-sm font-semibold text-gray-400"
                   >
-                    <span className="h-2 w-2 rounded-full bg-current" />
-                    {lead.status}
-                  </span>
-                </div>
+                    No recent leads
+                  </TableCell>
+                </TableRow>
+              ) : (
+                leads.map((lead, idx) => (
+                  <TableRow key={lead.leadId}>
+                    <TableCell className="text-gray-600">{idx + 1}</TableCell>
 
-                
-                
-              </div>
-            ))
-          ) : (
-            <div className="px-8 py-10 text-center text-slate-500">
-              No recent leads
-            </div>
-          )}
+                    <TableCell className="font-medium text-gray-800">
+                      {lead.leadName}
+                    </TableCell>
+
+                    <TableCell className="text-gray-600">
+                      {new Date(lead.createdAt).toLocaleDateString()}
+                    </TableCell>
+
+                    <TableCell>
+                      <span
+                        className={`font-medium ${STATUS_BADGE[lead.status] ?? "text-gray-500"}`}
+                      >
+                        {lead.status || "—"}
+                      </span>
+                    </TableCell>
+                  </TableRow>
+                ))
+              )}
+            </TableBody>
+          </Table>
         </div>
       </CardContent>
     </Card>
