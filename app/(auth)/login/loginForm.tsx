@@ -1,8 +1,15 @@
 "use client";
 
 import Image from "next/image";
+import Link from "next/link";
 import { useState, useEffect } from "react";
-import { Eye, EyeOff } from "lucide-react";
+import {
+  ArrowRight,
+  Eye,
+  EyeOff,
+  ShieldCheck,
+  TriangleAlert,
+} from "lucide-react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 
@@ -11,8 +18,28 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Spinner } from "@/components/ui/spinner";
-import { getDashboardPath, setSession } from "@/lib/auth";
-import { connectSocket } from "@/lib/socket";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { getDashboardPath, refreshSession, setSession } from "@/lib/auth";
+
+const SERVER_DOWN_MESSAGE = "Server is down. Please try again later.";
+
+type LoginResponse = {
+  accessToken?: string;
+  user?: Parameters<typeof getDashboardPath>[0];
+  error?: {
+    message?: string;
+  };
+  message?: string;
+};
+
+function getLoginErrorMessage(data: LoginResponse | null, fallback?: string) {
+  return (
+    data?.error?.message ||
+    data?.message ||
+    fallback ||
+    "Unable to sign in. Please try again."
+  );
+}
 
 export default function LoginForm() {
   const router = useRouter();
@@ -24,8 +51,11 @@ export default function LoginForm() {
   const [password, setPassword] = useState("");
   const [remember, setRemember] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [alertMessage, setAlertMessage] = useState("");
 
   useEffect(() => {
+    let cancelled = false;
+
     setMounted(true);
 
     const saved = localStorage.getItem("savedLogin");
@@ -33,7 +63,17 @@ export default function LoginForm() {
       setEmail(saved);
       setRemember(true);
     }
-  }, []);
+
+    refreshSession(true).then((session) => {
+      if (!cancelled && session) {
+        router.replace(getDashboardPath(session.user));
+      }
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [router]);
 
   if (!mounted) return null;
 
@@ -44,6 +84,7 @@ export default function LoginForm() {
 
     try {
       setLoading(true);
+      setAlertMessage("");
 
       const res = await fetch(
         `${process.env.NEXT_PUBLIC_API_URL}/odata/v4/auth/login`,
@@ -55,18 +96,21 @@ export default function LoginForm() {
         },
       );
 
-      let data;
+      let data: LoginResponse | null = null;
+      let fallbackMessage = "";
+      const responseText = await res.text();
 
-      try {
-        const json = await res.json();
-        data = json?.value || json;
-      } catch {
-        const text = await res.text();
-        throw new Error(text);
+      if (responseText) {
+        try {
+          const json = JSON.parse(responseText);
+          data = json?.value || json;
+        } catch {
+          fallbackMessage = res.status === 404 ? "" : responseText;
+        }
       }
 
-      if (!res.ok || !data?.accessToken) {
-        throw new Error(data?.message || "Invalid credentials");
+      if (!res.ok || !data?.accessToken || !data.user) {
+        throw new Error(getLoginErrorMessage(data, fallbackMessage));
       }
 
       if (remember) {
@@ -76,71 +120,130 @@ export default function LoginForm() {
       }
 
       setSession(data.accessToken, data.user);
-      connectSocket(data.accessToken);
 
-      toast.success("Login successful");
+      toast.success("Welcome to PLMS portal", {
+        description: "You have successfully signed in",
+      });
 
-      router.push(getDashboardPath(data.user));
+      window.location.assign(getDashboardPath(data.user));
     } catch (err) {
       console.error("LOGIN ERROR FE:", err);
-      toast.error("Invalid credentials");
+      setAlertMessage(
+        err instanceof TypeError
+          ? SERVER_DOWN_MESSAGE
+          : err instanceof Error
+            ? err.message || SERVER_DOWN_MESSAGE
+            : SERVER_DOWN_MESSAGE,
+      );
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-muted px-4">
-      <div className="grid w-full max-w-4xl grid-cols-1 md:grid-cols-2 gap-8 items-center">
-        <div className="hidden md:flex justify-center">
-          <Image
-            src="/login.svg"
-            alt="Login Illustration"
-            width={360}
-            height={360}
-            priority
-            style={{ width: "auto", height: "auto" }}
-          />
+    <section className="relative min-h-[calc(100vh-58px)] overflow-hidden px-5 pb-16 pt-28 md:px-8">
+      <div className="pointer-events-none absolute left-[-190px] top-[100px] h-[520px] w-[520px] rounded-full border border-emerald-900/10" />
+      <div className="pointer-events-none absolute right-[-170px] top-[-120px] h-[560px] w-[560px] rounded-full border border-emerald-900/10" />
+
+      <div className="mx-auto grid min-h-[620px] w-full max-w-7xl items-center gap-10 lg:grid-cols-[1fr_460px]">
+        <div className="hidden lg:block">
+          <div className="mb-6 flex items-center gap-3">
+            <span className="h-[1.5px] w-8 bg-emerald-600" />
+            <span className="text-xs font-semibold uppercase text-emerald-700">
+              Secure PLMS Access
+            </span>
+          </div>
+          <h1 className="max-w-3xl text-[clamp(42px,6vw,76px)] font-bold leading-[1.06] text-[#0b1713]">
+            Sign in and move the pipeline forward.
+          </h1>
+          <p className="mt-6 max-w-xl text-base leading-8 text-slate-600">
+            Access your organization dashboard to manage leads, record
+            follow-ups, review offers, and keep every role aligned.
+          </p>
+          <div className="mt-9 grid max-w-xl gap-4 sm:grid-cols-2">
+            {[
+              "Organization-scoped access",
+              "Role and module permissions",
+              "Lead activity visibility",
+              "Offer assignment context",
+            ].map((item) => (
+              <div
+                key={item}
+                className="flex items-center gap-3 rounded-2xl border border-emerald-950/10 bg-white/70 p-4 text-sm font-medium text-[#0b1713]"
+              >
+                <ShieldCheck className="h-4 w-4 text-emerald-700" />
+                {item}
+              </div>
+            ))}
+          </div>
         </div>
 
-        <Card className="w-full max-w-md mx-auto shadow-lg rounded-2xl border-0">
-          <CardHeader className="flex justify-center items-center pt-6 pb-4">
-            <Image
-              src="/saptarishi.png"
-              alt="Logo"
-              width={100}
-              height={40}
-              priority
-              style={{ width: "auto", height: "auto" }}
-            />
+        <Card className="mx-auto w-full max-w-md rounded-[1.75rem] border border-emerald-950/10 bg-white/90 shadow-[0_28px_90px_rgba(6,78,59,0.16)] backdrop-blur">
+          <CardHeader className="items-center px-6 pb-4 pt-7 text-center">
+            <div className="mb-4 flex items-center gap-3">
+              <Image
+                src="/sap.png"
+                alt="Saptarishi"
+                width={36}
+                height={36}
+                priority
+                className="h-9 w-9"
+              />
+              <span className="text-sm font-bold uppercase text-[#0b1713]">
+                SRS-PLMS
+              </span>
+            </div>
+            <h2 className="text-2xl font-bold text-[#0b1713]">Welcome back</h2>
+            <p className="mt-2 text-sm leading-6 text-slate-500">
+              Continue to your project lead workspace.
+            </p>
           </CardHeader>
 
           <CardContent className="space-y-5 px-6 pb-8">
+            {alertMessage && (
+              <Alert variant="destructive">
+                <TriangleAlert className="h-4 w-4" />
+                <AlertDescription>{alertMessage}</AlertDescription>
+              </Alert>
+            )}
+
             <div className="space-y-1.5">
-              <label className="text-sm font-medium">Email</label>
+              <label className="text-sm font-semibold text-[#0b1713]">
+                Email
+              </label>
               <Input
                 value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                onChange={(e) => {
+                  setEmail(e.target.value);
+                  setAlertMessage("");
+                }}
                 placeholder="Enter email"
+                className="h-11 rounded-xl border-emerald-950/15 bg-[#fbfefb]"
               />
             </div>
 
             <div className="space-y-1.5">
-              <label className="text-sm font-medium">Password</label>
+              <label className="text-sm font-semibold text-[#0b1713]">
+                Password
+              </label>
 
               <div className="relative">
                 <Input
                   placeholder="*******"
                   type={showPassword ? "text" : "password"}
-                  className="pr-10"
+                  className="h-11 rounded-xl border-emerald-950/15 bg-[#fbfefb] pr-10"
                   value={password}
-                  onChange={(e) => setPassword(e.target.value)}
+                  onChange={(e) => {
+                    setPassword(e.target.value);
+                    setAlertMessage("");
+                  }}
                 />
 
                 <button
                   type="button"
                   onClick={() => setShowPassword((p) => !p)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 transition hover:text-emerald-800"
+                  aria-label={showPassword ? "Hide password" : "Show password"}
                 >
                   {showPassword ? (
                     <EyeOff className="h-4 w-4" />
@@ -151,22 +254,25 @@ export default function LoginForm() {
               </div>
             </div>
 
-            <div className="flex items-center justify-between text-sm">
+            <div className="flex items-center justify-between gap-3 text-sm">
               <div className="flex items-center gap-2">
                 <Checkbox
                   checked={remember}
                   onCheckedChange={(v) => setRemember(Boolean(v))}
                 />
-                Remember me
+                <span className="text-slate-600">Remember me</span>
               </div>
 
-              <span className="text-primary cursor-pointer hover:underline">
+              <Link
+                href="/forgot-password"
+                className="text-emerald-700 hover:text-emerald-900 hover:underline"
+              >
                 Forgot Password?
-              </span>
+              </Link>
             </div>
 
             <Button
-              className="w-full bg-blue-600 hover:bg-blue-700 text-white"
+              className="h-11 w-full rounded-full bg-[#0b1713] text-white hover:bg-emerald-900"
               onClick={handleSubmit}
               disabled={isDisabled}
             >
@@ -176,12 +282,20 @@ export default function LoginForm() {
                   Signing in...
                 </span>
               ) : (
-                "Sign In"
+                <span className="flex items-center gap-2">
+                  Sign In
+                  <ArrowRight className="h-4 w-4" />
+                </span>
               )}
             </Button>
+
+            <p className="text-center text-xs leading-5 text-slate-500">
+              Public pages remain available while signed in. Visiting this login
+              page with an active session takes you to your dashboard.
+            </p>
           </CardContent>
         </Card>
       </div>
-    </div>
+    </section>
   );
 }

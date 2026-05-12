@@ -1,6 +1,6 @@
 "use client";
 
-import { disconnectSocket } from "@/lib/socket";
+import { connectSocket, disconnectSocket } from "@/lib/socket";
 
 export type AuthUser = {
   id: string;
@@ -45,6 +45,13 @@ function normalizeAuthResponse(data: AuthResponse): AuthSession | null {
   };
 }
 
+function applySession(nextSession: AuthSession) {
+  session = nextSession;
+  connectSocket(nextSession.accessToken);
+  notifyAuthChanged();
+  return nextSession;
+}
+
 export function getAccessToken() {
   return session?.accessToken || null;
 }
@@ -58,7 +65,19 @@ export function getDashboardPath(user = session?.user) {
 }
 
 export function setSession(accessToken: string, user: AuthUser) {
-  session = { accessToken, user };
+  return applySession({ accessToken, user });
+}
+
+export function updateSessionUser(updates: Partial<AuthUser>) {
+  if (!session) return null;
+
+  session = {
+    ...session,
+    user: {
+      ...session.user,
+      ...updates,
+    },
+  };
   notifyAuthChanged();
   return session;
 }
@@ -84,9 +103,7 @@ export async function refreshSession(force = false) {
       const data = normalizeAuthResponse(await res.json());
       if (!data) return null;
 
-      session = data;
-      notifyAuthChanged();
-      return data;
+      return applySession(data);
     })
     .catch(() => null)
     .finally(() => {
