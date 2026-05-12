@@ -5,11 +5,17 @@ import { toast } from "sonner";
 
 import ManagerCards from "@/components/commoncomponents/managerdashboard/card";
 import CommonOverview from "@/components/commoncomponents/managerdashboard/leadstatusoverview";
+import ExecutivePerformance from "@/components/commoncomponents/managerdashboard/executiveperformance";
 import {
   getManagerDashboard,
   getLeadStatusOverview,
+  getExecutivePerformance,
 } from "@/services/managerdashboard";
-import { DashboardData, LeadStatusRow } from "@/types/org-manager";
+import {
+  DashboardData,
+  LeadStatusRow,
+  ExecutivePerformanceApiRow,
+} from "@/types/org-manager";
 import GlobalLoader from "@/components/commoncomponents/globalloader";
 
 export default function ManagerDashboard() {
@@ -23,12 +29,21 @@ export default function ManagerDashboard() {
   });
 
   const [overview, setOverview] = useState<LeadStatusRow[]>([]);
+  const [executivePerformance, setExecutivePerformance] =
+  useState<ExecutivePerformanceApiRow[]>([]);
 
   useEffect(() => {
     const fetchDashboard = async () => {
       try {
         const dashboardData = await getManagerDashboard();
+        const executivePerformanceData = await getExecutivePerformance().catch(
+          (error) => {
+            console.error("Failed to fetch executive performance", error);
+            return [];
+          },
+        );
 
+        setExecutivePerformance(executivePerformanceData || []);
         const overviewData = await getLeadStatusOverview().catch((error) => {
           console.error("Failed to fetch lead status overview data", error);
           return {};
@@ -65,6 +80,14 @@ export default function ManagerDashboard() {
     label: row.status,
     value: row.count,
   }));
+
+  const formattedExecutivePerformance = executivePerformance.map(
+  (row: any) => ({
+    executiveName: row.executiveName,
+    achievement:
+      row.total > 0 ? Math.round((row.qualified / row.total) * 100) : 0,
+  }),
+);
   return (
     <>
       {loading ? (
@@ -99,7 +122,9 @@ export default function ManagerDashboard() {
                 />
               </div>
 
-              <div className="w-full overflow-x-auto"></div>
+              <div className="w-full overflow-x-auto">
+                <ExecutivePerformance data={formattedExecutivePerformance} />
+              </div>
             </div>
           </div>
         </div>
