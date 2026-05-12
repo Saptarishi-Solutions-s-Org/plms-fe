@@ -18,28 +18,6 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Spinner } from "@/components/ui/spinner";
-import { Alert, AlertDescription } from "@/components/ui/alert";
-import { getDashboardPath, refreshSession, setSession } from "@/lib/auth";
-
-const SERVER_DOWN_MESSAGE = "Server is down. Please try again later.";
-
-type LoginResponse = {
-  accessToken?: string;
-  user?: Parameters<typeof getDashboardPath>[0];
-  error?: {
-    message?: string;
-  };
-  message?: string;
-};
-
-function getLoginErrorMessage(data: LoginResponse | null, fallback?: string) {
-  return (
-    data?.error?.message ||
-    data?.message ||
-    fallback ||
-    "Unable to sign in. Please try again."
-  );
-}
 
 export default function LoginForm() {
   const router = useRouter();
@@ -63,17 +41,17 @@ export default function LoginForm() {
       setEmail(saved);
       setRemember(true);
     }
+  }, []);
 
-    refreshSession(true).then((session) => {
-      if (!cancelled && session) {
-        router.replace(getDashboardPath(session.user));
-      }
-    });
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    const user = localStorage.getItem("user");
 
-    return () => {
-      cancelled = true;
-    };
-  }, [router]);
+    if (token && user) {
+      const parsed = JSON.parse(user);
+      router.push(`/${parsed.orgCode}/dashboard`);
+    }
+  }, []);
 
   if (!mounted) return null;
 
@@ -109,8 +87,10 @@ export default function LoginForm() {
         }
       }
 
-      if (!res.ok || !data?.accessToken || !data.user) {
-        throw new Error(getLoginErrorMessage(data, fallbackMessage));
+      console.log("LOGIN RESPONSE:", data);
+
+      if (!res.ok || !data?.token) {
+        throw new Error(data?.message || "Invalid credentials");
       }
 
       if (remember) {
@@ -119,13 +99,14 @@ export default function LoginForm() {
         localStorage.removeItem("savedLogin");
       }
 
-      setSession(data.accessToken, data.user);
+      localStorage.setItem("token", data.token);
+      localStorage.setItem("user", JSON.stringify(data.user));
 
-      toast.success("Welcome to PLMS portal", {
-        description: "You have successfully signed in",
-      });
+      document.cookie = `token=${data.token}; path=/`;
 
-      window.location.assign(getDashboardPath(data.user));
+      toast.success("Login successful");
+
+      router.push(`/${data.user.orgCode}/dashboard`);
     } catch (err) {
       console.error("LOGIN ERROR FE:", err);
       setAlertMessage(

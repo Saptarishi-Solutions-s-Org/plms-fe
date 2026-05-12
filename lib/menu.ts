@@ -27,7 +27,7 @@ export const MENU_CONFIG: MenuGroup[] = [
         label: "Organization",
         modules: ["organization"],
         permissions: ["view"],
-        roles: ["System Admin"],
+        roles: ["Admin","Executive","Manager"], // U need to update this based on the actual roles that should have access
       },
       {
         href: "/leads",

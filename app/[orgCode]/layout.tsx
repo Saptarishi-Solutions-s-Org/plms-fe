@@ -51,7 +51,6 @@ import { connectSocket, disconnectSocket } from "@/lib/socket";
 import {
   AuthUser,
   getDashboardPath,
-  getUser,
   logoutSession,
   refreshSession,
 } from "@/lib/auth";

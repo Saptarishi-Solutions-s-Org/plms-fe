@@ -27,7 +27,6 @@ import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { api } from "@/lib/api";
 
-// All imports from utils (Manager and DISCOUNT_OPTIONS are included)
 import {
   type OfferFormData,
   type OfferFormErrors,
@@ -70,7 +69,7 @@ function Field({ label, required, error, htmlFor, children }: {
   );
 }
 
-// ─── Multi-select Manager Dropdown (clean blue theme, no gray) ─────────────
+// ─── Multi-select Manager Dropdown (Clean Version) ────────────────────────
 
 function MultiManagerSelect({ managers, loading, value, error, disabled, onChange }: {
   managers: Manager[]; loading: boolean; value: string[]; error?: string;
@@ -96,43 +95,45 @@ function MultiManagerSelect({ managers, loading, value, error, disabled, onChang
     <div className="relative" ref={ref}>
       <button
         type="button"
-        disabled={disabled || loading}
+        disabled={disabled}
         onClick={() => setOpen((p) => !p)}
         className={`w-full flex items-center justify-between h-10 rounded-md border bg-background px-3 text-sm
           ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2
           disabled:cursor-not-allowed disabled:opacity-50 transition-colors
           ${error ? "border-red-500" : "border-input hover:border-blue-400"}`}
       >
-        {loading
-          ? <span className="flex items-center gap-2 text-muted-foreground"><Spinner className="size-3.5" /> Loading…</span>
-          : <span className={value.length ? "text-foreground font-medium" : "text-muted-foreground"}>
-              {value.length ? `${value.length} manager${value.length > 1 ? "s" : ""} selected` : "Select managers"}
-            </span>}
+        <span className={value.length ? "text-foreground font-medium" : "text-muted-foreground"}>
+          {value.length ? `${value.length} manager${value.length > 1 ? "s" : ""} selected` : "Select managers"}
+        </span>
         <ChevronDownIcon className={`size-4 text-muted-foreground ml-2 transition-transform duration-200 ${open ? "rotate-180" : ""}`} />
       </button>
 
-      {open && !loading && (
+      {open && (
         <div className="absolute z-50 mt-1 w-full rounded-md border bg-popover shadow-lg overflow-hidden">
           <ScrollArea className="max-h-44">
-            {managers.length === 0
-              ? <div className="px-4 py-3 text-sm text-muted-foreground">No managers found</div>
-              : managers.map((m) => {
-                  const sel = value.includes(m.id);
-                  return (
-                    <button
-                      key={m.id}
-                      type="button"
-                      onClick={() => toggle(m.id)}
-                      className={`w-full flex items-center justify-between px-3 py-2.5 text-sm text-left transition-colors
-                        ${sel
-                          ? "bg-blue-100 text-blue-700 font-medium hover:bg-blue-200"
-                          : "text-foreground hover:bg-blue-50"}`}
-                    >
-                      {m.name}
-                      {sel && <CheckIcon className="size-4 text-blue-600 shrink-0" />}
-                    </button>
-                  );
-                })}
+            {loading ? (
+              <div className="px-4 py-3 text-sm text-muted-foreground">Loading managers...</div>
+            ) : managers.length === 0 ? (
+              <div className="px-4 py-3 text-sm text-muted-foreground">No managers found</div>
+            ) : (
+              managers.map((m) => {
+                const sel = value.includes(m.id);
+                return (
+                  <button
+                    key={m.id}
+                    type="button"
+                    onClick={() => toggle(m.id)}
+                    className={`w-full flex items-center justify-between px-3 py-2.5 text-sm text-left transition-colors
+                      ${sel
+                        ? "bg-blue-100 text-blue-700 font-medium hover:bg-blue-200"
+                        : "text-foreground hover:bg-blue-50"}`}
+                  >
+                    {m.name}
+                    {sel && <CheckIcon className="size-4 text-blue-600 shrink-0" />}
+                  </button>
+                );
+              })
+            )}
           </ScrollArea>
         </div>
       )}
@@ -161,6 +162,7 @@ function DiscountFields({ data, errors, disabled, update, clearError }: {
   clearError: (...f: (keyof OfferFormData | "dateRange")[]) => void;
 }) {
   const errCls = (hasError: boolean) => hasError ? "border-red-500 focus-visible:ring-red-500" : "";
+
   const numInput = (field: keyof OfferFormData, placeholder: string, extra?: React.InputHTMLAttributes<HTMLInputElement>) => (
     <Input
       id={field} placeholder={placeholder} type="number" min="0" step="0.01"
@@ -305,7 +307,6 @@ export function CreateOfferDialog({
   };
 
   const handleDiscountTypeChange = (value: string) => {
-    // Reset discount-specific fields
     const resetFields: Partial<OfferFormData> = {
       discountAmount: "",
       discountPercentage: "",

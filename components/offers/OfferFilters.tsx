@@ -1,9 +1,8 @@
-// components/offers/OfferFilters.tsx
 "use client";
 
 import * as React from "react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { Search } from "lucide-react";
+
 import {
   Select,
   SelectContent,
@@ -11,6 +10,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+
 import type { OfferFilters } from "@/types/offer";
 
 interface OfferFiltersProps {
@@ -29,57 +29,64 @@ export function OfferFilters({
   onApply,
   onClear,
 }: OfferFiltersProps) {
-  const hasActiveFilters = filters.search || filters.status !== "all";
-
   return (
-    <div className="flex gap-3 flex-wrap items-center">
-      {/* Search */}
-      <Input
-        type="text"
-        placeholder="Search organization / title / code…"
-        value={filters.search}
-        onChange={(e) => onFilterChange("search", e.target.value)}
-        onKeyDown={(e) => e.key === "Enter" && onApply()}
-        className="flex-1 min-w-[200px]"
-      />
+    <div className="flex flex-col gap-2 border-b border-gray-100 bg-white px-5 py-3 sm:flex-row sm:items-center sm:justify-end rounded-t-xl">
 
-      {/* Status */}
+      {/* Search */}
+      <div className="relative w-full sm:w-72">
+        <Search className="absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-gray-400" />
+
+        <input
+          type="text"
+          placeholder="Search organization / title / code..."
+          value={filters.search}
+          onChange={(e) =>
+            onFilterChange("search", e.target.value)
+          }
+          onKeyDown={(e) =>
+            e.key === "Enter" && onApply()
+          }
+          className="h-9 w-full rounded-lg border border-gray-300 bg-white pl-8 pr-3 text-sm text-gray-700 placeholder:text-gray-400 focus:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-100"
+        />
+      </div>
+
+      {/* Status Filter */}
       <Select
         value={filters.status}
         onValueChange={(value) =>
-          onFilterChange("status", value as OfferFilters["status"])
+          onFilterChange(
+            "status",
+            value as OfferFilters["status"],
+          )
         }
       >
-        <SelectTrigger className="w-[140px]">
-          <SelectValue placeholder="All status" />
+        <SelectTrigger className="h-9 w-full border-gray-300 bg-white text-sm text-gray-700 sm:w-40">
+          <SelectValue placeholder="All Status" />
         </SelectTrigger>
+
         <SelectContent>
-          <SelectItem value="all">All status</SelectItem>
+          <SelectItem value="all">All Status</SelectItem>
           <SelectItem value="active">Active</SelectItem>
           <SelectItem value="inactive">Inactive</SelectItem>
+          <SelectItem value="expired">Expired</SelectItem>
         </SelectContent>
       </Select>
 
+      {/* Clear Filters */}
+      <button
+        onClick={onClear}
+        className="h-9 w-full rounded-lg border border-gray-300 bg-white px-5 text-sm font-semibold text-gray-700 hover:bg-gray-50 sm:w-auto"
+      >
+        Clear All
+      </button>
+
       {/* Apply */}
-      <Button
-        type="button"
+      <button
         onClick={onApply}
-        className="bg-blue-600 hover:bg-blue-700 text-white"
+        className="h-9 w-full rounded-lg bg-blue-600 px-5 text-sm font-semibold text-white hover:bg-blue-700 sm:w-auto"
       >
         Apply
-      </Button>
-
-      {/* Clear — only shown when filters are active */}
-      {hasActiveFilters && (
-        <Button
-          type="button"
-          variant="ghost"
-          size="sm"
-          onClick={onClear}
-        >
-          Clear filters
-        </Button>
-      )}
+      </button>
     </div>
   );
 }

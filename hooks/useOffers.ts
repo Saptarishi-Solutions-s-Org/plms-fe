@@ -1,117 +1,80 @@
-"use client";
+// types/offer.ts
 
-import { useCallback, useMemo, useState } from "react";
+export type OfferStatus = "active" | "inactive" | "expired"
 
-import type { Offer, OfferFormData } from "@/lib/offer-utils";
-import { OFFER_FORM_DEFAULTS } from "@/lib/offer-utils";
+export type DiscountType =
+  | "fixed"
+  | "Fixed_Amount"
+  | "percentage"
+  | "Percentage"
+  | "combo"
+  | "Combo_Offer"
+  | "bogo"
+  | "Buy_One_Get_One_Free"
+  | "conditional"
+  | "Conditional_Discount"
+  | "flag"
+  | "Flag_Discount"
+  | ""
 
-export type OfferFilters = {
-  search: string;
-  status: "all" | "active" | "inactive" | "expired";
-};
+// ─── Manager (from /odata/v4/offer/getManagers()) ────────────────────────────
 
-function generateOfferId(): string {
-  if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
-    return crypto.randomUUID();
-  }
-  return `offer_${Date.now()}_${Math.random().toString(16).slice(2)}`;
+export interface OfferManager {
+  id: string
+  name: string
 }
 
-export function useOffers() {
-  const [offers, setOffers] = useState<Offer[]>([]);
-  const [filters, setFilters] = useState<OfferFilters>({ search: "", status: "all" });
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
+// ─── Core Offer type ──────────────────────────────────────────────────────────
 
-  const filteredOffers = useMemo(() => {
-    const search = filters.search.trim().toLowerCase();
+export interface Offer {
+  id: string
+  title: string
+  code: string
+  description: string
+  validFrom: string
+  validTo: string
+  isGlobal: boolean
+  status: OfferStatus
+  discountType: DiscountType
+  createdAt: string
+  createdBy: string
+  organization: null
 
-    return offers.filter((offer) => {
-      const matchSearch =
-        !search ||
-        offer.title.toLowerCase().includes(search);
+  // snake_case fallbacks (API response)
+  valid_from?: string
+  valid_to?: string
+  is_global?: boolean
+  discount_type?: string
 
-      const matchStatus = filters.status === "all" || offer.status === filters.status;
-      return matchSearch && matchStatus;
-    });
-  }, [filters.search, filters.status, offers]);
+  // Discount fields (camelCase)
+  discountAmount?: number
+  discountPercentage?: number
+  maxDiscountAmount?: number
+  comboDescription?: string
+  buyQuantity?: number
+  getQuantity?: number
+  minPurchaseAmount?: number
+  conditionalDiscountValue?: number
+  flagDiscountAmount?: number
 
-  const updateFilter = useCallback(
-    <K extends keyof OfferFilters>(key: K, value: OfferFilters[K]) => {
-      setFilters((prev) => ({ ...prev, [key]: value }));
-    },
-    [],
-  );
+  // Discount fields (snake_case fallbacks)
+  discount_amount?: string | number
+  discount_percentage?: string | number
+  max_discount_amount?: string | number
+  combo_description?: string
+  buy_quantity?: number
+  get_quantity?: number
+  min_purchase_amount?: string | number
+  discount_value?: string | number
+  flag_discount_amount?: string | number
 
-  const toggleOfferStatus = useCallback((id: string) => {
-    setOffers((prev) =>
-      prev.map((o) =>
-        o.id === id ? { ...o, status: o.status === "active" ? "inactive" : "active" } : o,
-      ),
-    );
-  }, []);
-
-  const createOffer = useCallback(async (formData: OfferFormData) => {
-    setIsSubmitting(true);
-    try {
-      const newOffer: Offer = {
-        id:           generateOfferId(),
-        title:        formData.offerName.trim(),
-        description:  formData.description.trim(),
-        isGlobal:     true,
-        status:       "active",
-        discountType: formData.discountType as Offer["discountType"],
-        validFrom:    formData.validFrom,
-        validTo:      formData.validTo,
-        ...(formData.discountAmount           && { discountAmount:           Number(formData.discountAmount) }),
-        ...(formData.discountPercentage       && { discountPercentage:       Number(formData.discountPercentage) }),
-        ...(formData.maxDiscountAmount        && { maxDiscountAmount:        Number(formData.maxDiscountAmount) }),
-        ...(formData.comboDescription         && { comboDescription:         formData.comboDescription }),
-        ...(formData.buyQuantity              && { buyQuantity:              Number(formData.buyQuantity) }),
-        ...(formData.getQuantity              && { getQuantity:              Number(formData.getQuantity) }),
-        ...(formData.minPurchaseAmount        && { minPurchaseAmount:        Number(formData.minPurchaseAmount) }),
-        ...(formData.conditionalDiscountValue && { conditionalDiscountValue: Number(formData.conditionalDiscountValue) }),
-        ...(formData.flagDiscountAmount       && { flagDiscountAmount:       Number(formData.flagDiscountAmount) }),
-      };
-
-      setOffers((prev) => [newOffer, ...prev]);
-      return { success: true } as const;
-    } catch {
-      return { success: false, error: "Something went wrong. Please try again." } as const;
-    } finally {
-      setIsSubmitting(false);
-    }
-  }, []);
-
-  return {
-    offers,
-    filteredOffers,
-    filters,
-    updateFilter,
-    toggleOfferStatus,
-    createOffer,
-    isSubmitting,
-    isLoading,
-    totalCount:    offers.length,
-    activeCount:   offers.filter((o) => o.status === "active").length,
-    inactiveCount: offers.filter((o) => o.status === "inactive").length,
-    expiredCount:  offers.filter((o) => o.status === "expired").length,
-  };
+  // ── Managers assigned to this offer ────────────────────────────────────────
+  managers?: OfferManager[]
 }
 
-export function useOfferForm() {
-  const [formData, setFormData] = useState<OfferFormData>(OFFER_FORM_DEFAULTS);
+// ─── Filters ──────────────────────────────────────────────────────────────────
 
-  const updateField = useCallback(
-    <K extends keyof OfferFormData>(field: K, value: OfferFormData[K]) => {
-      setFormData((prev) => ({ ...prev, [field]: value }));
-    },
-    [],
-  );
-
-  const resetForm = useCallback(() => {
-    setFormData(OFFER_FORM_DEFAULTS);
-  }, []);
-
-  return { formData, updateField, resetForm };
+export interface OfferFilters {
+  search: string
+  status: "all" | OfferStatus
 }

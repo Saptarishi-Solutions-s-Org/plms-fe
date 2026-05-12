@@ -33,6 +33,7 @@ export interface Offer {
   description?:              string;
   isGlobal:                  boolean;
   status:                    OfferStatus;
+  assignedUsers?: string
   discountType:              DiscountType | "";
 
   // fixed

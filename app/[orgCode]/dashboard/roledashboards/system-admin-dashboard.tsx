@@ -25,10 +25,7 @@ import {
 import { getUser, type AuthUser } from "@/lib/auth";
 import { subscribeRealtime } from "@/lib/socket";
 import { getSystemAdminDashboard } from "@/services/systemAdmin";
-import { SYSTEM_ADMIN_DASHBOARD_CHANGED } from "@/types/realtime";
-import type { SystemAdminDashboardData } from "@/types/system-admin";
-
-const PERMISSIONS = ["create", "view", "update", "delete", "import", "export"];
+import { getUser, refreshSession } from "@/lib/auth";
 
 export default function SystemAdminDashboard() {
   const [data, setData] = useState<SystemAdminDashboardData | null>(null);
@@ -37,20 +34,33 @@ export default function SystemAdminDashboard() {
   const [isInitialLoading, setIsInitialLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
 
-  const applyDashboardData = useCallback(
-    (nextData: SystemAdminDashboardData) => {
-      setData(nextData);
-      setSelectedRole((currentRole) => {
-        const roleStillExists = nextData.roles?.some(
-          (role) => role.orgRoleId === currentRole,
-        );
+  async function fetchDashboard() {
+    try {
+      const finalData = await getSystemAdminDashboard();
+      setData(finalData);
+      setSelectedRole(finalData.roles?.[0]?.orgRoleId);
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to load dashboard");
+    }
+  }
 
-        return roleStillExists
-          ? currentRole
-          : nextData.roles?.[0]?.orgRoleId || "";
+  useEffect(() => {
+    const currentUser = getUser();
+    if (currentUser) {
+      setUser(currentUser);
+    } else {
+      refreshSession().then((session) => {
+        if (session) setUser(session.user);
       });
-    },
-    [],
+    }
+    fetchDashboard();
+  }, []);
+
+  if (!data || !user) return <div className="p-6">Loading...</div>;
+
+  const currentRole = data.roleMatrix.find(
+    (r: any) => r.orgRoleId === selectedRole,
   );
 
   const loadDashboard = useCallback(

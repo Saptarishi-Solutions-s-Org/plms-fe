@@ -1,6 +1,4 @@
 "use client";
-
-import type { ReactNode } from "react";
 import {
   CircleCheckIcon,
   CircleXIcon,
@@ -8,7 +6,11 @@ import {
   LayersIcon,
 } from "lucide-react";
 
-import { Card } from "@/components/ui/card";
+import {
+  Card,
+  CardTitle,
+  CardContent,
+} from "@/components/ui/card";
 
 type OfferCardsProps = {
   totalCount: number;
@@ -23,61 +25,61 @@ export function OfferCards({
   inactiveCount,
   globalCount,
 }: OfferCardsProps) {
+  const cards = [
+    {
+      title: "Total Offers",
+      value: totalCount,
+      icon: LayersIcon,
+      color: "bg-indigo-500",
+    },
+    {
+      title: "Active",
+      value: activeCount,
+      icon: CircleCheckIcon,
+      color: "bg-green-500",
+    },
+    {
+      title: "Inactive",
+      value: inactiveCount,
+      icon: CircleXIcon,
+      color: "bg-rose-500",
+    },
+    {
+      title: "Global",
+      value: globalCount,
+      icon: GlobeIcon,
+      color: "bg-amber-500",
+    },
+  ];
+
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-      <SummaryCard
-        label="Total Offers"
-        value={totalCount}
-        icon={<LayersIcon className="h-5 w-5" />}
-        iconBg="bg-indigo-50 text-indigo-600"
-      />
+    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      {cards.map((item, index) => {
+        const Icon = item.icon;
 
-      <SummaryCard
-        label="Active"
-        value={activeCount}
-        icon={<CircleCheckIcon className="h-5 w-5" />}
-        iconBg="bg-emerald-50 text-emerald-600"
-      />
+        return (
+          <Card key={index} className="p-4">
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-sm text-gray-500">
+                {item.title}
+              </CardTitle>
 
-      <SummaryCard
-        label="Inactive"
-        value={inactiveCount}
-        icon={<CircleXIcon className="h-5 w-5" />}
-        iconBg="bg-rose-50 text-rose-600"
-      />
+              <div
+                className={`flex h-8 w-8 items-center justify-center rounded-full text-white ${item.color}`}
+              >
+                <Icon className="h-4 w-4" />
+              </div>
+            </div>
 
-      <SummaryCard
-        label="Global"
-        value={globalCount}
-        icon={<GlobeIcon className="h-5 w-5" />}
-        iconBg="bg-amber-50 text-amber-600"
-      />
+            {/* Value */}
+            <CardContent className="p-0 mt-2">
+              <p className="text-5xl font-semibold">
+                {item.value.toLocaleString()}
+              </p>
+            </CardContent>
+          </Card>
+        );
+      })}
     </div>
-  );
-}
-
-type SummaryCardProps = {
-  label: string;
-  value: number;
-  icon: ReactNode;
-  iconBg: string;
-};
-
-function SummaryCard({ label, value, icon, iconBg }: SummaryCardProps) {
-  return (
-    <Card className="rounded-xl border border-gray-200 shadow-sm p-4">
-      <div className="flex items-center justify-between">
-        <div>
-          <p className="text-sm text-gray-500">{label}</p>
-          <p className="text-3xl font-bold text-gray-900">{value}</p>
-        </div>
-
-        <div
-          className={`flex h-10 w-10 items-center justify-center rounded-full ${iconBg}`}
-        >
-          {icon}
-        </div>
-      </div>
-    </Card>
   );
 }
