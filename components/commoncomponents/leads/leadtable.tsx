@@ -49,7 +49,7 @@ export default function LeadTable({
     const matchPriority =
       priorityFilter === "All" || lead.priority === priorityFilter;
     const matchAssignedTo =
-      assignedToFilter === "All" || lead.assignedTo === assignedToFilter;
+      assignedToFilter === "All" || lead.assignedToId === assignedToFilter;
 
     return (
       matchSearch &&
@@ -122,7 +122,7 @@ export default function LeadTable({
                 </TableCell>
                 {showAssignedTo && (
                   <TableCell className="text-gray-600">
-                    {lead.assignedTo || "—"}
+                    {lead.assignedToName || "—"}
                   </TableCell>
                 )}
                 {showActionsColumn && (

@@ -4,8 +4,6 @@ import { Users, TrendingUp, Sparkles, PhoneCall } from "lucide-react";
 import { Card, CardContent, CardTitle } from "@/components/ui/card";
 import { LeadStats } from "@/hooks/use-leads";
 
-// ─── Config ─────────────────────────────────────────────────────────────────
-
 const SUMMARY_CARDS: {
   key:   keyof LeadStats;
   label: string;

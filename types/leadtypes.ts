@@ -19,6 +19,8 @@ export interface Lead extends LeadFormData {
   leadCode: string;    
   state: string;     
   country: string;   
+  assignedToId?: string;
+  assignedToName?: string;
 }
 
 export const STATUS_BADGE: Record<string, string> = {
@@ -62,3 +64,13 @@ export const GENDER_OPTIONS = [
   { value: "Female", label: "Female" },
   { value: "Other", label: "Other" },
 ] as const;
+
+export interface ExecutiveOption {
+  id: string;
+  name: string;
+}
+
+export interface Option {
+  id: string;
+  name: string;
+}

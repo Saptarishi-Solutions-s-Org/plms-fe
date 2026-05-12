@@ -39,12 +39,9 @@ function FieldDisplay({
   );
 }
 
-// ─── Main Component ───────────────────────────────────────────────────────────
-
 export default function LeadDetails({ lead }: { lead: Lead }) {
   return (
     <div className="flex flex-col gap-5 py-2">
-      {/* ── Personal Information ── */}
       <div>
         <SectionLabel>Personal Information</SectionLabel>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
@@ -60,7 +57,6 @@ export default function LeadDetails({ lead }: { lead: Lead }) {
         </div>
       </div>
 
-      {/* ── Lead Classification ── */}
       <div>
         <SectionLabel>Lead Classification</SectionLabel>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
@@ -70,7 +66,6 @@ export default function LeadDetails({ lead }: { lead: Lead }) {
         </div>
       </div>
 
-      {/* ── Additional Information ── */}
       <div>
         <SectionLabel>Additional Information</SectionLabel>
         <FieldDisplay label="Notes" value={lead.notes} multiline />

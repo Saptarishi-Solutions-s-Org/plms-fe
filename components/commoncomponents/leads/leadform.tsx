@@ -26,16 +26,7 @@ import {
 
 import { leadFormSchema } from "@/lib/validators/lead-form-schema";
 import { getExecutiveUsers, getCountries, getStatesByCountry } from "@/services/leads";
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Types
-// ─────────────────────────────────────────────────────────────────────────────
-
-type Option = { id: string; name: string };
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Constants
-// ─────────────────────────────────────────────────────────────────────────────
+import { Option } from "@/types/leadtypes";
 
 const PRIORITY_ACTIVE_CLASS: Record<string, string> = {
   Low:    "bg-red-100 border-gray-300 text-gray-700",

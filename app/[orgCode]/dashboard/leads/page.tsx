@@ -8,30 +8,17 @@ import LeadTable        from "@/components/commoncomponents/leads/leadtable";
 import LeadActions      from "@/components/commoncomponents/leads/leadactions";
 import LeadDialogs      from "@/components/commoncomponents/leads/lead-dialogs";
 import LeadSummaryCards from "@/components/commoncomponents/leads/lead-cards";
-import GlobalLoader     from "@/components/commoncomponents/globalloader";
 
 import { useLeads }       from "@/hooks/use-leads";
 import { useLeadActions } from "@/hooks/use-lead-actions";
 import { useLeadFilters } from "@/hooks/use-lead-filters";
 import { useLeadExport }  from "@/hooks/export";
+import { ExecutiveOption } from "@/types/leadtypes";
 
 import { getExecutiveUsers } from "@/services/leads";
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Types
-// ─────────────────────────────────────────────────────────────────────────────
-
-interface ExecutiveOption {
-  id: string;
-  name: string;
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Page
-// ─────────────────────────────────────────────────────────────────────────────
-
 export default function LeadsPage() {
-  const { leads, stats, isLoading, refetch } = useLeads();
+  const { leads, stats, refetch } = useLeads();
   const filters = useLeadFilters();
   const {
     isFormOpen, editingLead, selectedLead,
@@ -41,8 +28,6 @@ export default function LeadsPage() {
 
   const { handleExport } = useLeadExport();
 
-  // ── Executives list for the Assigned To filter ──────────────────────────
-
   const [executives, setExecutives] = useState<ExecutiveOption[]>([]);
 
   useEffect(() => {
@@ -51,14 +36,9 @@ export default function LeadsPage() {
       .catch(console.error);
   }, []);
 
-  // ────────────────────────────────────────────────────────────────────────
-
-  if (isLoading) return <GlobalLoader />;
-
   return (
     <div className="w-full h-full p-4 sm:p-5 space-y-5">
 
-      {/* ── Page heading ──────────────────────────────────────────────── */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
           <h1 className="text-lg sm:text-2xl font-semibold text-gray-900">

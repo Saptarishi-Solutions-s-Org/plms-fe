@@ -14,15 +14,7 @@ import {
   LEAD_STATUS_OPTIONS,
   LEAD_PRIORITY_OPTIONS,
 } from "@/types/leadtypes";
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Types
-// ─────────────────────────────────────────────────────────────────────────────
-
-export interface ExecutiveOption {
-  id: string;
-  name: string;
-}
+import { ExecutiveOption } from "@/types/leadtypes";
 
 export interface LeadTableFiltersProps {
   pendingSearch: string;
@@ -112,6 +104,26 @@ export default function LeadTableFilters({
           <SelectItem value="All">All Priorities</SelectItem>
           {LEAD_PRIORITY_OPTIONS.map((o) => (
             <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+
+      {/* Assigned To */}
+      <Select
+        value={pendingAssignedTo}
+        onValueChange={onAssignedToChange}
+      >
+        <SelectTrigger className="h-9 w-full border-gray-300 bg-white text-sm text-gray-700 sm:w-44">
+          <SelectValue placeholder="All Executives" />
+        </SelectTrigger>
+
+        <SelectContent>
+          <SelectItem value="All">All Executives</SelectItem>
+
+          {executives.map((e) => (
+            <SelectItem key={e.id} value={e.id}>
+              {e.name}
+            </SelectItem>
           ))}
         </SelectContent>
       </Select>
