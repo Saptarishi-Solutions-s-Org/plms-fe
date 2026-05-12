@@ -2,6 +2,7 @@
 
 import { FileText, MoreHorizontal, Pencil } from "lucide-react";
 import { Lead } from "@/types/leadtypes";
+import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -23,12 +24,14 @@ export default function LeadActions({
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <button
+        <Button
           type="button"
-          className="flex h-8 w-8 items-center justify-center rounded-md  border-gray-200 bg-white text-gray-500 transition-colors hover:bg-gray-50 hover:text-gray-700"
+          variant="ghost"
+          size="icon"
+          className="h-8 w-8 text-gray-500 hover:bg-gray-50 hover:text-gray-700"
         >
           <MoreHorizontal className="h-4 w-4" />
-        </button>
+        </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-40">
         <DropdownMenuItem onClick={() => onEdit(lead)}>

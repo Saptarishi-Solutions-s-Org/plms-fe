@@ -1,19 +1,14 @@
 "use client";
 
-import { Lead } from "@/types/leadtypes";
 import { Label } from "@/components/ui/label";
+import { LeadUI } from "@/types/leadtypes";
 
-// ─── Sub-components ───────────────────────────────────────────────────────────
-
-// Same blue section label as the form
 function SectionLabel({ children }: { children: React.ReactNode }) {
   return (
     <h3 className="mb-3 text-sm font-semibold text-blue-600">{children}</h3>
   );
 }
 
-// Read-only field styled to match the form inputs exactly:
-// same border, same rounded-md, same height, same padding
 function FieldDisplay({
   label,
   value,
@@ -33,13 +28,13 @@ function FieldDisplay({
             : "flex h-10 items-center"
         }`}
       >
-        {value || "—"}
+        {value || "-"}
       </div>
     </div>
   );
 }
 
-export default function LeadDetails({ lead }: { lead: Lead }) {
+export default function LeadDetails({ lead }: { lead: LeadUI }) {
   return (
     <div className="flex flex-col gap-5 py-2">
       <div>
@@ -61,7 +56,10 @@ export default function LeadDetails({ lead }: { lead: Lead }) {
         <SectionLabel>Lead Classification</SectionLabel>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <FieldDisplay label="Status" value={lead.status} />
-          <FieldDisplay label="Assigned To" value={lead.assignedTo} />
+          <FieldDisplay
+            label="Assigned To"
+            value={lead.assignedTo?.name ?? "Unassigned"}
+          />
           <FieldDisplay label="Priority" value={lead.priority} />
         </div>
       </div>

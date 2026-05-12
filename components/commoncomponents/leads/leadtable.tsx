@@ -9,14 +9,14 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import {
+  ExecutiveOption,
   Lead,
-  STATUS_BADGE,
-  PRIORITY_BADGE,
   LEAD_SOURCE_OPTIONS,
 } from "@/types/leadtypes";
 
 export interface LeadTableProps {
   leads: Lead[];
+  executives?: ExecutiveOption[];
   renderActions?: (lead: Lead) => React.ReactNode;
   showAssignedTo?: boolean;
   emptyMessage?: string;
@@ -29,6 +29,7 @@ export interface LeadTableProps {
 
 export default function LeadTable({
   leads,
+  executives = [],
   renderActions,
   showAssignedTo = true,
   emptyMessage,
@@ -65,19 +66,41 @@ export default function LeadTable({
     leads.length === 0 ? "No leads found" : "No leads match your search.";
 
   return (
-    <div className="rounded-lg border border-gray-200 bg-white shadow-sm">
+    <div className="overflow-x-auto rounded-lg border border-gray-200 bg-white shadow-sm">
       <Table>
-        <TableHeader>
-          <TableRow className="bg-[#7677F41A]">
-            <TableHead>S.No</TableHead>
-            <TableHead>Lead Name</TableHead>
-            <TableHead>Email</TableHead>
-            <TableHead>Phone</TableHead>
-            <TableHead>Status</TableHead>
-            <TableHead>Priority</TableHead>
-            <TableHead>Source</TableHead>
-            {showAssignedTo && <TableHead>Assigned To</TableHead>}
-            {showActionsColumn && <TableHead>Actions</TableHead>}
+        <TableHeader className="border-b border-gray-200 bg-[#7677F41A]">
+          <TableRow>
+            <TableHead className="whitespace-nowrap text-xs sm:text-sm">
+              S.No
+            </TableHead>
+            <TableHead className="whitespace-nowrap text-xs sm:text-sm">
+              Lead Name
+            </TableHead>
+            <TableHead className="whitespace-nowrap text-xs sm:text-sm">
+              Email
+            </TableHead>
+            <TableHead className="whitespace-nowrap text-xs sm:text-sm">
+              Phone
+            </TableHead>
+            <TableHead className="whitespace-nowrap text-xs sm:text-sm">
+              Status
+            </TableHead>
+            <TableHead className="whitespace-nowrap text-xs sm:text-sm">
+              Priority
+            </TableHead>
+            <TableHead className="whitespace-nowrap text-xs sm:text-sm">
+              Source
+            </TableHead>
+            {showAssignedTo && (
+              <TableHead className="whitespace-nowrap text-xs sm:text-sm">
+                Assigned To
+              </TableHead>
+            )}
+            {showActionsColumn && (
+              <TableHead className="whitespace-nowrap text-xs sm:text-sm">
+                Actions
+              </TableHead>
+            )}
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -101,28 +124,20 @@ export default function LeadTable({
                 </TableCell>
                 <TableCell className="text-gray-600">{lead.email}</TableCell>
                 <TableCell className="text-gray-600">{lead.phone}</TableCell>
-                <TableCell>
-                  <span
-                    className={`font-medium ${STATUS_BADGE[lead.status] ?? "text-gray-500"}`}
-                  >
-                    {lead.status || "—"}
-                  </span>
-                </TableCell>
-                <TableCell>
-                  <span
-                    className={`font-semibold ${PRIORITY_BADGE[lead.priority] ?? "text-gray-600"}`}
-                  >
-                    {lead.priority || "—"}
-                  </span>
-                </TableCell>
+                <TableCell>{lead.status || "-"}</TableCell>
+                <TableCell>{lead.priority || "-"}</TableCell>
                 <TableCell className="text-gray-600">
                   {LEAD_SOURCE_OPTIONS.find(
                     (option) => option.value === lead.leadSource,
-                  )?.label || "—"}
+                  )?.label || "-"}
                 </TableCell>
                 {showAssignedTo && (
                   <TableCell className="text-gray-600">
-                    {lead.assignedToName || "—"}
+                    {executives.find(
+                      (executive) => executive.id === lead.assignedToId,
+                    )?.name ||
+                      lead.assignedToName ||
+                      "-"}
                   </TableCell>
                 )}
                 {showActionsColumn && (

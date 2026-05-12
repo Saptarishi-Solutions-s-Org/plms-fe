@@ -1,8 +1,38 @@
 import { api } from "@/lib/api";
-import { LeadFormData } from "@/types/leadtypes";
+import { Lead, LeadFormData } from "@/types/leadtypes";
+
+type LeadApiRow = Omit<Lead, "assignedToId"> & {
+  assignedToId?: string;
+  assignedTo?: string;
+};
+
+type LeadActionPayload = Omit<LeadFormData, "assignedToId"> & {
+  assignedTo: string;
+};
+
+function toLeadActionPayload(formData: LeadFormData): LeadActionPayload {
+  const { assignedToId, ...rest } = formData;
+
+  return {
+    ...rest,
+    assignedTo: assignedToId,
+  };
+}
 
 export const getLeadsWithStats = async () => {
-  return await api("/odata/v4/lead/getLeadsWithStats()");
+  const res = await api("/odata/v4/lead/getLeadsWithStats()");
+
+  return {
+    ...res,
+    leads: (res.leads ?? []).map((lead: LeadApiRow): Lead => {
+      const { assignedTo, ...rest } = lead;
+
+      return {
+        ...rest,
+        assignedToId: lead.assignedToId ?? assignedTo ?? "",
+      };
+    }),
+  };
 };
 
 export const getExecutiveUsers = async (): Promise<{ id: string; name: string }[]> => {
@@ -12,18 +42,18 @@ export const getExecutiveUsers = async (): Promise<{ id: string; name: string }[
 export const createLead = async (formData: LeadFormData) => {
   return await api("/odata/v4/lead/createLead", {
     method: "POST",
-    body: JSON.stringify(formData),
+    body: JSON.stringify(toLeadActionPayload(formData)),
   });
 };
 
 export const updateLead = async (leadId: string, formData: LeadFormData) => {
   return await api("/odata/v4/lead/updateLead", {
     method: "POST",
-    body: JSON.stringify({ id: leadId, ...formData }),
+    body: JSON.stringify({ id: leadId, ...toLeadActionPayload(formData) }),
   });
 };
 
-export const importLeads = async (data: any) => {
+export const importLeads = async (data: unknown) => {
   return await api("/odata/v4/lead/importLeads", {
     method: "POST",
     body: JSON.stringify(data),

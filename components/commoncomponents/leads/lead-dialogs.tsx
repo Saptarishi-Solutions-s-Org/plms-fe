@@ -8,15 +8,17 @@ import {
 } from "@/components/ui/dialog";
 import LeadForm from "@/components/commoncomponents/leads/leadform";
 import LeadDetails from "@/components/commoncomponents/leads/leaddetails";
-import { Lead, LeadFormData } from "@/types/leadtypes";
+import { Lead, LeadFormData, LeadUI } from "@/types/leadtypes";
 
 interface LeadDialogsProps {
   isFormOpen: boolean;
   editingLead: Lead | null;
   onFormSubmit: (data: LeadFormData) => Promise<void>;
   onFormClose: () => void;
-  selectedLead: Lead | null;
+  selectedLead: LeadUI | null;
   onDetailsClose: () => void;
+  fixedAssignedToId?: string;
+  hideAssignedTo?: boolean;
 }
 
 export default function LeadDialogs({
@@ -26,6 +28,8 @@ export default function LeadDialogs({
   onFormClose,
   selectedLead,
   onDetailsClose,
+  fixedAssignedToId,
+  hideAssignedTo = false,
 }: LeadDialogsProps) {
   return (
     <>
@@ -45,6 +49,8 @@ export default function LeadDialogs({
             onSubmit={onFormSubmit}
             onCancel={onFormClose}
             initialData={editingLead ?? undefined}
+            fixedAssignedToId={fixedAssignedToId}
+            hideAssignedTo={hideAssignedTo}
           />
         </DialogContent>
       </Dialog>

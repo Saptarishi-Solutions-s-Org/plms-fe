@@ -25,41 +25,68 @@ import {
 } from "@/types/leadtypes";
 
 import { leadFormSchema } from "@/lib/validators/lead-form-schema";
-import { getExecutiveUsers, getCountries, getStatesByCountry } from "@/services/leads";
+import {
+  getExecutiveUsers,
+  getCountries,
+  getStatesByCountry,
+} from "@/services/leads";
 import { Option } from "@/types/leadtypes";
 
 const PRIORITY_ACTIVE_CLASS: Record<string, string> = {
-  Low:    "bg-red-100 border-gray-300 text-gray-700",
-  Medium: "bg-red-200 border-amber-400 text-white",
-  High:   "bg-red-300 border-orange-400 text-white",
+  Low: "bg-red-100 border-gray-300 text-gray-700",
+  Medium: "bg-red-200 border-amber-400 text-gray-800",
+  High: "bg-red-300 border-orange-400 text-gray-900",
   Urgent: "bg-red-500 border-red-500 text-white",
 };
 
 const emptyForm: LeadFormData = {
-  name: "", gender: "", email: "", phone: "",
-  city: "", stateId: "", countryId: "", postalCode: "",
-  status: "", leadSource: "", assignedTo: "", priority: "", notes: "",
+  name: "",
+  gender: "",
+  email: "",
+  phone: "",
+  city: "",
+  stateId: "",
+  countryId: "",
+  postalCode: "",
+  status: "",
+  leadSource: "",
+  assignedToId: "",
+  priority: "",
+  notes: "",
 };
 
-// ─────────────────────────────────────────────────────────────────────────────
 // UI Helpers
-// ─────────────────────────────────────────────────────────────────────────────
 
 function SectionLabel({ children }: { children: React.ReactNode }) {
-  return <h3 className="mb-3 text-sm font-semibold text-blue-600">{children}</h3>;
+  return (
+    <h3 className="mb-3 text-sm font-semibold text-blue-600">{children}</h3>
+  );
 }
 
 function FieldWrapper({
-  label, required, error, children,
+  label,
+  required,
+  error,
+  children,
 }: {
-  label: string; required?: boolean; error?: string; children: React.ReactNode;
+  label: string;
+  required?: boolean;
+  error?: string;
+  children: React.ReactNode;
 }) {
   return (
     <div className="flex flex-col gap-1.5">
       <Label required={required} className="text-sm font-normal text-gray-700">
         {label}
       </Label>
-      <div className={error ? "[&_input]:border-red-500 [&_[role=combobox]]:border-red-500" : ""}>
+      <div
+        className={
+          error
+            ? "[&_input]:border-red-500 [&_textarea]:border-red-500 [&_[role=combobox]]:border-red-500"
+            : ""
+        }
+      >
+        {" "}
         {children}
       </div>
       {error && <p className="text-xs text-red-500">{error}</p>}
@@ -67,29 +94,27 @@ function FieldWrapper({
   );
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
 // Component
-// ─────────────────────────────────────────────────────────────────────────────
 
 export default function LeadForm({
   onSubmit,
   onCancel,
   initialData,
+  fixedAssignedToId,
+  hideAssignedTo = false,
 }: {
   onSubmit: (data: LeadFormData) => Promise<void>;
   onCancel?: () => void;
   initialData?: LeadFormData;
+  fixedAssignedToId?: string;
+  hideAssignedTo?: boolean;
 }) {
   const isEditing = Boolean(initialData);
 
-  // ── State ───────────────────────────────────────────────────────────────
-
   const [executives, setExecutives] = useState<Option[]>([]);
-  const [countries,  setCountries]  = useState<Option[]>([]);
-  const [states,     setStates]     = useState<Option[]>([]);
+  const [countries, setCountries] = useState<Option[]>([]);
+  const [states, setStates] = useState<Option[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
-
-  // ── Form ────────────────────────────────────────────────────────────────
 
   const {
     register,
@@ -100,15 +125,16 @@ export default function LeadForm({
     setValue,
     formState: { errors },
   } = useForm<LeadFormData>({
-    resolver: zodResolver(leadFormSchema) as any,
-    defaultValues: initialData ?? emptyForm,
+    resolver: zodResolver(leadFormSchema),
+    defaultValues: {
+      ...(initialData ?? emptyForm),
+      assignedToId: initialData?.assignedToId || fixedAssignedToId || "",
+    },
   });
 
   const watchedCountryId = watch("countryId");
 
-  // ────────────────────────────────────────────────────────────────────────
   // 1. Fetch countries + executives ONCE on mount
-  // ────────────────────────────────────────────────────────────────────────
 
   useEffect(() => {
     let cancelled = false;
@@ -117,7 +143,7 @@ export default function LeadForm({
       try {
         const [countryList, executiveList] = await Promise.all([
           getCountries(),
-          getExecutiveUsers(),
+          hideAssignedTo ? Promise.resolve([]) : getExecutiveUsers(),
         ]);
         if (cancelled) return;
         setCountries(countryList);
@@ -127,88 +153,90 @@ export default function LeadForm({
       }
     })();
 
-    return () => { cancelled = true; };
-  }, []);
-
-  // ────────────────────────────────────────────────────────────────────────
-  // 2. Whenever initialData changes (create → edit or edit → edit),
-  //    reset the whole form AND explicitly re-set assignedTo so the
-  //    Select can match it against the already-loaded executives list.
-  //
-  //    This is the KEY fix: reset() alone updates RHF internal state,
-  //    but the <Select> controlled value only re-renders when setValue
-  //    is called AFTER the options (<SelectItem>) are in the DOM.
-  // ────────────────────────────────────────────────────────────────────────
+    return () => {
+      cancelled = true;
+    };
+  }, [hideAssignedTo]);
 
   useEffect(() => {
-    // Full form reset with latest data
-    reset(initialData ?? emptyForm);
+    const assignedToId = initialData?.assignedToId || fixedAssignedToId || "";
 
-    // Re-drive assignedTo explicitly so the Select widget reflects it.
-    // Works whether executives loaded before or after this effect runs,
-    // because setValue always updates the Controller's rendered value.
-    if (initialData?.assignedTo) {
-      setValue("assignedTo", initialData.assignedTo, { shouldDirty: false, shouldValidate: false });
+    reset({
+      ...(initialData ?? emptyForm),
+      assignedToId,
+    });
+    setValue("assignedToId", assignedToId, {
+      shouldDirty: false,
+      shouldValidate: false,
+    });
+  }, [fixedAssignedToId, initialData, reset, setValue]);
+
+  useEffect(() => {
+    if (!watchedCountryId) {
+      setStates([]);
+      return;
     }
-  }, [initialData, reset, setValue]);
-
-  // ────────────────────────────────────────────────────────────────────────
-  // 3. Fetch states when country changes
-  // ────────────────────────────────────────────────────────────────────────
-
-  useEffect(() => {
-    if (!watchedCountryId) { setStates([]); return; }
     getStatesByCountry(watchedCountryId).then(setStates).catch(console.error);
   }, [watchedCountryId]);
 
-  // ────────────────────────────────────────────────────────────────────────
   // 4. Submit
-  // ────────────────────────────────────────────────────────────────────────
 
   const onValid = async (data: LeadFormData) => {
     setIsSubmitting(true);
     try {
-      await onSubmit(data);
+      await onSubmit({
+        ...data,
+        assignedToId: fixedAssignedToId || data.assignedToId,
+      });
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  // ────────────────────────────────────────────────────────────────────────
-  // Render
-  // ────────────────────────────────────────────────────────────────────────
-
   return (
     <form onSubmit={handleSubmit(onValid)} className="flex flex-col gap-5 py-2">
-
-      {/* ── Personal Information ─────────────────────────────────────── */}
       <div>
         <SectionLabel>Personal Information</SectionLabel>
 
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-
           <FieldWrapper label="Name" required error={errors.name?.message}>
             <Input placeholder="e.g. John Doe" {...register("name")} />
           </FieldWrapper>
 
           <FieldWrapper label="Gender" required error={errors.gender?.message}>
-            <Controller name="gender" control={control} render={({ field }) => (
-              <Select value={field.value} onValueChange={field.onChange}>
-                <SelectTrigger className="w-full"><SelectValue placeholder="Select gender" /></SelectTrigger>
-                <SelectContent>
-                  {GENDER_OPTIONS.map((o) => (
-                    <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            )} />
+            <Controller
+              name="gender"
+              control={control}
+              render={({ field }) => (
+                <Select value={field.value} onValueChange={field.onChange}>
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Select gender" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {GENDER_OPTIONS.map((o) => (
+                      <SelectItem key={o.value} value={o.value}>
+                        {o.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
+            />
           </FieldWrapper>
 
           <FieldWrapper label="Email" required error={errors.email?.message}>
-            <Input type="email" placeholder="john.doe@example.com" {...register("email")} />
+            <Input
+              type="email"
+              placeholder="john.doe@example.com"
+              {...register("email")}
+            />
           </FieldWrapper>
 
-          <FieldWrapper label="Phone Number" required error={errors.phone?.message}>
+          <FieldWrapper
+            label="Phone Number"
+            required
+            error={errors.phone?.message}
+          >
             <Input placeholder="+91 99999 99999" {...register("phone")} />
           </FieldWrapper>
 
@@ -216,125 +244,202 @@ export default function LeadForm({
             <Input placeholder="Hyderabad" {...register("city")} />
           </FieldWrapper>
 
-          <FieldWrapper label="Country" required error={errors.countryId?.message}>
-            <Controller name="countryId" control={control} render={({ field }) => (
-              <Select value={field.value} onValueChange={(val) => { field.onChange(val); setValue("stateId", ""); setStates([]); }}>
-                <SelectTrigger className="w-full"><SelectValue placeholder="Select country" /></SelectTrigger>
-                <SelectContent>
-                  {countries.map((c) => (
-                    <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            )} />
+          <FieldWrapper
+            label="Country"
+            required
+            error={errors.countryId?.message}
+          >
+            <Controller
+              name="countryId"
+              control={control}
+              render={({ field }) => (
+                <Select
+                  value={field.value}
+                  onValueChange={(val) => {
+                    field.onChange(val);
+                    setValue("stateId", "");
+                    setStates([]);
+                  }}
+                >
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Select country" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {countries.map((c) => (
+                      <SelectItem key={c.id} value={c.id}>
+                        {c.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
+            />
           </FieldWrapper>
 
           <FieldWrapper label="State" required error={errors.stateId?.message}>
-            <Controller name="stateId" control={control} render={({ field }) => (
-              <Select value={field.value} onValueChange={field.onChange} disabled={!watchedCountryId}>
-                <SelectTrigger className="w-full">
-                  <SelectValue placeholder={watchedCountryId ? "Select state" : "Select country first"} />
-                </SelectTrigger>
-                <SelectContent>
-                  {states.map((s) => (
-                    <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            )} />
+            <Controller
+              name="stateId"
+              control={control}
+              render={({ field }) => (
+                <Select
+                  value={field.value}
+                  onValueChange={field.onChange}
+                  disabled={!watchedCountryId}
+                >
+                  <SelectTrigger className="w-full">
+                    <SelectValue
+                      placeholder={
+                        watchedCountryId
+                          ? "Select state"
+                          : "Select country first"
+                      }
+                    />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {states.map((s) => (
+                      <SelectItem key={s.id} value={s.id}>
+                        {s.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
+            />
           </FieldWrapper>
 
-          <FieldWrapper label="Postal Code" required error={errors.postalCode?.message}>
+          <FieldWrapper
+            label="Postal Code"
+            required
+            error={errors.postalCode?.message}
+          >
             <Input placeholder="500001" {...register("postalCode")} />
           </FieldWrapper>
-
         </div>
       </div>
 
-      {/* ── Lead Classification ──────────────────────────────────────── */}
       <div>
         <SectionLabel>Lead Classification</SectionLabel>
 
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-
-          <FieldWrapper label="Lead Source" required error={errors.leadSource?.message}>
-            <Controller name="leadSource" control={control} render={({ field }) => (
-              <Select value={field.value} onValueChange={field.onChange}>
-                <SelectTrigger className="w-full"><SelectValue placeholder="Select source" /></SelectTrigger>
-                <SelectContent>
-                  {LEAD_SOURCE_OPTIONS.map((o) => (
-                    <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            )} />
+          <FieldWrapper
+            label="Lead Source"
+            required
+            error={errors.leadSource?.message}
+          >
+            <Controller
+              name="leadSource"
+              control={control}
+              render={({ field }) => (
+                <Select value={field.value} onValueChange={field.onChange}>
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Select source" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {LEAD_SOURCE_OPTIONS.map((o) => (
+                      <SelectItem key={o.value} value={o.value}>
+                        {o.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
+            />
           </FieldWrapper>
 
           <FieldWrapper label="Status" required error={errors.status?.message}>
-            <Controller name="status" control={control} render={({ field }) => (
-              <Select value={field.value} onValueChange={field.onChange}>
-                <SelectTrigger className="w-full"><SelectValue placeholder="Select status" /></SelectTrigger>
-                <SelectContent>
-                  {LEAD_STATUS_OPTIONS.map((o) => (
-                    <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            )} />
+            <Controller
+              name="status"
+              control={control}
+              render={({ field }) => (
+                <Select value={field.value} onValueChange={field.onChange}>
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Select status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {LEAD_STATUS_OPTIONS.map((o) => (
+                      <SelectItem key={o.value} value={o.value}>
+                        {o.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
+            />
           </FieldWrapper>
 
-          {/* ── Assigned To ─────────────────────────────────────────────
-              Uses Controller so setValue() always triggers a re-render
-              of the Select and shows the matched executive name.
-          ─────────────────────────────────────────────────────────── */}
-          <FieldWrapper label="Assigned To" required error={errors.assignedTo?.message}>
-            <Controller name="assignedTo" control={control} render={({ field }) => (
-              <Select value={field.value || ""} onValueChange={field.onChange}>
-                <SelectTrigger className="w-full"><SelectValue placeholder="Select executive" /></SelectTrigger>
-                <SelectContent className="z-[9999] bg-white shadow-lg">
-                  {executives.length === 0 ? (
-                    <div className="px-3 py-2 text-sm text-gray-400">No executives found</div>
-                  ) : (
-                    executives.map((u) => (
-                      <SelectItem key={u.id} value={u.id}>{u.name}</SelectItem>
-                    ))
-                  )}
-                </SelectContent>
-              </Select>
-            )} />
-          </FieldWrapper>
+          {!hideAssignedTo && (
+            <FieldWrapper
+              label="Assigned To"
+              required
+              error={errors.assignedToId?.message}
+            >
+              <Controller
+                name="assignedToId"
+                control={control}
+                render={({ field }) => (
+                  <Select
+                    value={field.value || ""}
+                    onValueChange={field.onChange}
+                  >
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="Select executive" />
+                    </SelectTrigger>
+                    <SelectContent className="z-[9999] bg-white shadow-lg">
+                      {executives.length === 0 ? (
+                        <div className="px-3 py-2 text-sm text-gray-400">
+                          No executives found
+                        </div>
+                      ) : (
+                        executives.map((u) => (
+                          <SelectItem key={u.id} value={u.id}>
+                            {u.name}
+                          </SelectItem>
+                        ))
+                      )}
+                    </SelectContent>
+                  </Select>
+                )}
+              />
+            </FieldWrapper>
+          )}
 
           {/* Priority */}
           <div className="flex flex-col gap-1.5 sm:col-span-2">
-            <Label required className="text-sm font-normal text-gray-700">Priority</Label>
-            <Controller name="priority" control={control} render={({ field }) => (
-              <div className="flex flex-wrap gap-2">
-                {LEAD_PRIORITY_OPTIONS.map(({ value }) => (
-                  <button
-                    key={value}
-                    type="button"
-                    onClick={() => field.onChange(value)}
-                    className={`rounded-md border px-4 py-1.5 text-xs font-semibold transition-all ${
-                      field.value === value
-                        ? PRIORITY_ACTIVE_CLASS[value]
-                        : "border-gray-200 bg-white text-gray-500 hover:border-gray-400"
-                    }`}
-                  >
-                    {value}
-                  </button>
-                ))}
-              </div>
-            )} />
-            {errors.priority && <p className="text-xs text-red-500">{errors.priority.message}</p>}
+            <Label required className="text-sm font-normal text-gray-700">
+              Priority
+            </Label>
+            <Controller
+              name="priority"
+              control={control}
+              render={({ field }) => (
+                <div className="flex flex-wrap gap-2">
+                  {LEAD_PRIORITY_OPTIONS.map(({ value }) => (
+                    <button
+                      key={value}
+                      type="button"
+                      onClick={() => field.onChange(value)}
+                      className={`rounded-md border px-4 py-1.5 text-xs font-semibold transition-all ${
+                        field.value === value
+                          ? PRIORITY_ACTIVE_CLASS[value]
+                          : "border-gray-200 bg-white text-gray-500 hover:border-gray-400"
+                      }`}
+                    >
+                      {value}
+                    </button>
+                  ))}
+                </div>
+              )}
+            />
+            {errors.priority && (
+              <p className="text-xs text-red-500">{errors.priority.message}</p>
+            )}
           </div>
-
         </div>
       </div>
 
-      {/* ── Additional Information ───────────────────────────────────── */}
       <div>
         <SectionLabel>Additional Information</SectionLabel>
-        <FieldWrapper label="Notes" error={errors.notes?.message}>
+        <FieldWrapper required label="Notes" error={errors.notes?.message}>
           <Textarea
             placeholder="Add detailed notes or requirements for this lead..."
             className="min-h-[100px] resize-none"
@@ -343,10 +448,14 @@ export default function LeadForm({
         </FieldWrapper>
       </div>
 
-      {/* ── Footer ──────────────────────────────────────────────────── */}
       <div className="flex justify-end gap-3 pt-2">
         {onCancel && (
-          <Button type="button" variant="outline" onClick={onCancel} className="min-w-[100px]">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={onCancel}
+            className="min-w-[100px]"
+          >
             Cancel
           </Button>
         )}
@@ -358,7 +467,6 @@ export default function LeadForm({
           {isSubmitting ? "Saving..." : isEditing ? "Update Lead" : "Save Lead"}
         </Button>
       </div>
-
     </form>
   );
 }
