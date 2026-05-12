@@ -1,56 +1,47 @@
-export async function api(path: string, options: RequestInit = {}) {
-  const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
-  const method = (options.method || "GET").toUpperCase();
+import { getAccessToken, redirectToLogin, refreshSession } from "@/lib/auth";
 
-  const controller = options.signal ? null : new AbortController();
-  const timeoutMs = 15000;
-  const timeoutId =
-    controller && typeof window !== "undefined"
-      ? window.setTimeout(() => controller.abort(), timeoutMs)
-      : null;
-
-  const configuredBaseUrl = (process.env.NEXT_PUBLIC_API_URL ?? "").replace(/\/+$/, "");
-
-  // ✅ always use full URL — never proxy through Next.js
-  const url = `${configuredBaseUrl}${path}`;
-
+async function parseResponse(res: Response) {
   try {
-    const res = await fetch(url, {
-      ...options,
-      signal: controller?.signal ?? options.signal,
-      headers: {
-        "Content-Type": "application/json",
-        ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        ...(options.headers || {}),
-      },
-    });
-
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    let data: any = null;
-
-    try {
-      data = await res.json();
-    } catch {
-      data = null;
-    }
-
-    if (!res.ok) {
-      const message =
-        data?.error?.message || data?.message || res.statusText || "Something went wrong";
-      throw new Error(`[${res.status}] ${message}`);
-    }
-    return data?.value ?? data;
-  } catch (error) {
-    if (
-      typeof DOMException !== "undefined" &&
-      error instanceof DOMException &&
-      error.name === "AbortError" &&
-      controller
-    ) {
-      throw new Error(`Request timed out (${method} ${path})`);
-    }
-    throw error;
-  } finally {
-    if (timeoutId !== null) window.clearTimeout(timeoutId);
+    return await res.json();
+  } catch {
+    return null;
   }
+}
+
+async function request(path: string, options: RequestInit = {}) {
+  const token = getAccessToken();
+
+  return fetch(`${process.env.NEXT_PUBLIC_API_URL}${path}`, {
+    ...options,
+    credentials: "include",
+    headers: {
+      "Content-Type": "application/json",
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      ...(options.headers || {}),
+    },
+  });
+}
+
+export async function api(path: string, options: RequestInit = {}) {
+  let res = await request(path, options);
+
+  if (res.status === 401) {
+    const refreshed = await refreshSession(true);
+
+    if (refreshed) {
+      res = await request(path, options);
+    } else {
+      redirectToLogin();
+    }
+  }
+
+  const data = await parseResponse(res);
+
+  if (!res.ok) {
+    throw new Error(
+      data?.error?.message || data?.message || "Something went wrong",
+    );
+  }
+
+  return data?.value ?? data;
 }

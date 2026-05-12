@@ -1,8 +1,19 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
+import { Building2, RefreshCw, Users } from "lucide-react";
+import { toast } from "sonner";
+
+import GlobalLoader from "@/components/commoncomponents/globalloader";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
   Table,
   TableBody,
@@ -11,81 +22,111 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-
-import { toast } from "sonner";
-
-import { Building2, Users } from "lucide-react";
-
+import { getUser, type AuthUser } from "@/lib/auth";
+import { subscribeRealtime } from "@/lib/socket";
 import { getSystemAdminDashboard } from "@/services/systemAdmin";
+import { SYSTEM_ADMIN_DASHBOARD_CHANGED } from "@/types/realtime";
+import type { SystemAdminDashboardData } from "@/types/system-admin";
+
+const PERMISSIONS = ["create", "view", "update", "delete", "import", "export"];
 
 export default function SystemAdminDashboard() {
-  const [data, setData] = useState<any>(null);
-  const [selectedRole, setSelectedRole] = useState<string>("");
-  const [user, setUser] = useState<any>(null);
+  const [data, setData] = useState<SystemAdminDashboardData | null>(null);
+  const [selectedRole, setSelectedRole] = useState("");
+  const [user] = useState<AuthUser | null>(() => getUser());
+  const [isInitialLoading, setIsInitialLoading] = useState(true);
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
-  useEffect(() => {
-    const storedUser = localStorage.getItem("user");
-    if (storedUser) setUser(JSON.parse(storedUser));
-    fetchDashboard();
-  }, []);
+  const applyDashboardData = useCallback(
+    (nextData: SystemAdminDashboardData) => {
+      setData(nextData);
+      setSelectedRole((currentRole) => {
+        const roleStillExists = nextData.roles?.some(
+          (role) => role.orgRoleId === currentRole,
+        );
 
-  const fetchDashboard = async () => {
-    try {
-      const finalData = await getSystemAdminDashboard();
-      setData(finalData);
-      setSelectedRole(finalData.roles?.[0]?.orgRoleId);
-    } catch (err) {
-      console.error(err);
-      toast.error("Failed to load dashboard");
-    }
-  };
-
-  if (!data || !user) return <div className="p-6">Loading...</div>;
-
-  const currentRole = data.roleMatrix.find(
-    (r: any) => r.orgRoleId === selectedRole,
+        return roleStillExists
+          ? currentRole
+          : nextData.roles?.[0]?.orgRoleId || "";
+      });
+    },
+    [],
   );
 
+  const loadDashboard = useCallback(
+    async (mode: "initial" | "realtime" = "initial") => {
+      if (mode === "realtime") {
+        setIsRefreshing(true);
+      }
+
+      try {
+        const finalData = await getSystemAdminDashboard();
+        applyDashboardData(finalData as SystemAdminDashboardData);
+      } catch (err) {
+        console.error(err);
+        toast.error("Failed to load dashboard");
+      } finally {
+        if (mode === "initial") {
+          setIsInitialLoading(false);
+        } else {
+          setIsRefreshing(false);
+        }
+      }
+    },
+    [applyDashboardData],
+  );
+
+  useEffect(() => {
+    loadDashboard("initial");
+  }, [loadDashboard]);
+
+  useEffect(() => {
+    return subscribeRealtime(SYSTEM_ADMIN_DASHBOARD_CHANGED, () => {
+      loadDashboard("realtime");
+    });
+  }, [loadDashboard]);
+
+  if (isInitialLoading || !data || !user) return <GlobalLoader />;
+
+  const currentRole = data.roleMatrix.find(
+    (role) => role.orgRoleId === selectedRole,
+  );
   const modules = Object.keys(currentRole?.modules || {});
-  const permissions = [
-    "create",
-    "view",
-    "update",
-    "delete",
-    "import",
-    "export",
-  ];
 
   return (
     <div className="space-y-6 p-6">
       <section className="w-full rounded-xl bg-gradient-to-r from-blue-700 via-indigo-700 to-purple-700 px-4 sm:px-6 py-6 sm:py-8 shadow-lg">
-        <h1 className="text-xl sm:text-2xl font-semibold text-white tracking-wide">
-          Welcome back, {user.name}
-        </h1>
-        <p className="text-xs sm:text-sm text-blue-100 mt-1 tracking-wide">
-          Here's what's happening in your Application today
-        </p>
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <h1 className="text-xl sm:text-2xl font-semibold text-white tracking-wide">
+              Welcome back, {user.name}
+            </h1>
+            <p className="text-xs sm:text-sm text-blue-100 mt-1 tracking-wide">
+              Here&apos;s what&apos;s happening in your Application today
+            </p>
+          </div>
+
+          {isRefreshing && (
+            <div className="flex items-center gap-2 rounded-md bg-white/10 px-3 py-1.5 text-xs font-medium text-white">
+              <RefreshCw className="h-3.5 w-3.5 animate-spin" />
+              Refreshing
+            </div>
+          )}
+        </div>
+
         <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 mt-3 text-xs sm:text-sm font-medium text-white">
-          {/* Org Code */}
           <div className="flex items-center gap-2">
             <span className="relative flex h-2.5 w-2.5 sm:h-3 sm:w-3">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-300 opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-2.5 w-2.5 sm:h-3 sm:w-3 bg-green-400"></span>
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-300 opacity-75" />
+              <span className="relative inline-flex rounded-full h-2.5 w-2.5 sm:h-3 sm:w-3 bg-green-400" />
             </span>
             <span>Org Code : {user.orgCode}</span>
           </div>
-          <span className="hidden sm:block opacity-70">•</span>
+          <span className="hidden sm:block opacity-70">/</span>
           <div className="flex items-center gap-2">
             <span className="relative flex h-2.5 w-2.5 sm:h-3 sm:w-3">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-300 opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-2.5 w-2.5 sm:h-3 sm:w-3 bg-blue-400"></span>
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-300 opacity-75" />
+              <span className="relative inline-flex rounded-full h-2.5 w-2.5 sm:h-3 sm:w-3 bg-blue-400" />
             </span>
             <span className="capitalize">Org Name : {user.orgName}</span>
           </div>
@@ -120,7 +161,6 @@ export default function SystemAdminDashboard() {
         </Card>
       </div>
 
-      {/* USERS PER ORG */}
       <Card>
         <CardHeader>
           <CardTitle>Users per Organization</CardTitle>
@@ -128,7 +168,7 @@ export default function SystemAdminDashboard() {
         <CardContent>
           {data.usersPerOrg?.length ? (
             <div className="space-y-3">
-              {data.usersPerOrg.map((org: any) => (
+              {data.usersPerOrg.map((org) => (
                 <div
                   key={org.orgId}
                   className="flex justify-between border-b pb-2 text-sm"
@@ -156,9 +196,9 @@ export default function SystemAdminDashboard() {
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              {data.roles.map((r: any) => (
-                <SelectItem key={r.orgRoleId} value={r.orgRoleId}>
-                  {r.name}
+              {data.roles.map((role) => (
+                <SelectItem key={role.orgRoleId} value={role.orgRoleId}>
+                  {role.name}
                 </SelectItem>
               ))}
             </SelectContent>
@@ -178,12 +218,12 @@ export default function SystemAdminDashboard() {
                   <TableHead className="text-xs sm:text-sm whitespace-nowrap">
                     Feature
                   </TableHead>
-                  {permissions.map((p) => (
+                  {PERMISSIONS.map((permission) => (
                     <TableHead
-                      key={p}
+                      key={permission}
                       className="text-xs sm:text-sm whitespace-nowrap text-center capitalize"
                     >
-                      {p}
+                      {permission}
                     </TableHead>
                   ))}
                 </TableRow>
@@ -191,17 +231,18 @@ export default function SystemAdminDashboard() {
 
               <TableBody>
                 {modules.length ? (
-                  modules.map((module: string) => (
+                  modules.map((module) => (
                     <TableRow key={module}>
                       <TableCell className="text-xs sm:text-sm whitespace-nowrap capitalize font-medium">
                         {module}
                       </TableCell>
 
-                      {permissions.map((perm) => (
-                        <TableCell key={perm} className="text-center">
+                      {PERMISSIONS.map((permission) => (
+                        <TableCell key={permission} className="text-center">
                           <Checkbox
                             checked={
-                              currentRole?.modules[module]?.[perm] || false
+                              currentRole?.modules[module]?.[permission] ||
+                              false
                             }
                           />
                         </TableCell>
@@ -211,7 +252,7 @@ export default function SystemAdminDashboard() {
                 ) : (
                   <TableRow>
                     <TableCell
-                      colSpan={permissions.length + 1}
+                      colSpan={PERMISSIONS.length + 1}
                       className="text-center py-6"
                     >
                       No permissions configured

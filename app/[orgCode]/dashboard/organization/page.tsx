@@ -1,40 +1,65 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Plus } from "lucide-react";
+import { Plus, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
 
+import GlobalLoader from "@/components/commoncomponents/globalloader";
 import OrganizationCard from "@/components/commoncomponents/organization/OrganizationCard";
 import CreateOrganizationModal from "@/components/commoncomponents/organization/CreateOrganizationModal";
 import {
   getOrganizations,
   getOrganizationByCode,
 } from "@/services/organization";
-import { Organization } from "@/types/organization";
+import { subscribeRealtime } from "@/lib/socket";
+import { ORGANIZATION_LIST_CHANGED } from "@/types/realtime";
+import type {
+  Organization,
+  OrganizationDetail,
+} from "@/types/organization";
 
 export default function OrganizationPage() {
   const [data, setData] = useState<Organization[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [isInitialLoading, setIsInitialLoading] = useState(true);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const [open, setOpen] = useState(false);
-  const [selectedOrg, setSelectedOrg] = useState<any>(null);
+  const [selectedOrg, setSelectedOrg] = useState<OrganizationDetail | null>(
+    null,
+  );
 
-  const fetchOrganizations = async () => {
-    try {
-      setLoading(true);
-      const res = await getOrganizations();
-      setData(res);
-    } catch (err) {
-      console.error(err);
-      toast.error("Failed to load organizations");
-    } finally {
-      setLoading(false);
-    }
-  };
+  const fetchOrganizations = useCallback(
+    async (mode: "initial" | "realtime" = "initial") => {
+      if (mode === "realtime") {
+        setIsRefreshing(true);
+      }
+
+      try {
+        const res = await getOrganizations();
+        setData(res);
+      } catch (err) {
+        console.error(err);
+        toast.error("Failed to load organizations");
+      } finally {
+        if (mode === "initial") {
+          setIsInitialLoading(false);
+        } else {
+          setIsRefreshing(false);
+        }
+      }
+    },
+    [],
+  );
 
   useEffect(() => {
-    fetchOrganizations();
-  }, []);
+    fetchOrganizations("initial");
+  }, [fetchOrganizations]);
+
+  useEffect(() => {
+    return subscribeRealtime(ORGANIZATION_LIST_CHANGED, () => {
+      fetchOrganizations("realtime");
+    });
+  }, [fetchOrganizations]);
 
   const handleEdit = async (org: Organization) => {
     try {
@@ -47,6 +72,8 @@ export default function OrganizationPage() {
     }
   };
 
+  if (isInitialLoading) return <GlobalLoader />;
+
   return (
     <div className="p-6 space-y-6">
       <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
@@ -58,6 +85,13 @@ export default function OrganizationPage() {
             Create and manage organizations in your system
           </p>
         </div>
+
+        {isRefreshing && (
+          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+            <RefreshCw className="h-4 w-4 animate-spin" />
+            Refreshing
+          </div>
+        )}
 
         <Button
           size="lg"
@@ -73,11 +107,7 @@ export default function OrganizationPage() {
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-        {loading ? (
-          <div className="col-span-full flex justify-center py-10">
-            <p className="text-sm text-muted-foreground">Loading...</p>
-          </div>
-        ) : data.length === 0 ? (
+        {data.length === 0 ? (
           <div className="col-span-full flex justify-center py-10">
             <p className="text-sm text-muted-foreground">
               No organizations found
@@ -99,7 +129,7 @@ export default function OrganizationPage() {
         org={selectedOrg}
         isEdit={!!selectedOrg}
         onSuccess={() => {
-          fetchOrganizations();
+          fetchOrganizations("realtime");
           toast.success(
             selectedOrg
               ? "Organization updated successfully"
