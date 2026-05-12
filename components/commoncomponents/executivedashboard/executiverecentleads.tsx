@@ -55,9 +55,6 @@ const RecentLeadsCard = ({ title, leads, onViewAll }: RecentLeadsProps) => {
                 Lead Name
               </TableHead>
               <TableHead className="text-sm font-semibold text-slate-900">
-                Date
-              </TableHead>
-              <TableHead className="text-sm font-semibold text-slate-900">
                 Status
               </TableHead>
             </TableRow>
@@ -83,10 +80,6 @@ const RecentLeadsCard = ({ title, leads, onViewAll }: RecentLeadsProps) => {
 
                   <TableCell className="font-medium text-gray-800">
                     {lead.leadName}
-                  </TableCell>
-
-                  <TableCell className="text-gray-600">
-                    {new Date(lead.createdAt).toLocaleDateString()}
                   </TableCell>
 
                   <TableCell>
