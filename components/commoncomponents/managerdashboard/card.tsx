@@ -13,7 +13,7 @@ const ManagerCards = ({ stats }: ManagerCardsProps) => {
       color: "bg-indigo-500",
     },
     {
-      title: "Converted",
+      title: "Qualified",
       value: stats.converted_leads,
       icon: CheckCircle,
       color: "bg-green-500",
