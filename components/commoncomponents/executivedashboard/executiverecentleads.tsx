@@ -81,6 +81,7 @@ const RecentLeadsCard = ({ title, leads, onViewAll }: RecentLeadsProps) => {
                   <TableCell className="font-medium text-gray-800">
                     {lead.leadName}
                   </TableCell>
+                  
 
                   <TableCell>
                     <span
