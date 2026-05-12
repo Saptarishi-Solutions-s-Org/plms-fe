@@ -8,6 +8,7 @@ import SystemAdminDashboard from "./roledashboards/system-admin-dashboard"
 import OffersPage from "../offers/page"
 import OrganizationAdminDashboard from "./roledashboards/organization-admin-dashboard"
 import ManagerDashboard from "./roledashboards/org-manager-dashboard"
+import ExecutiveDashboard from "./roledashboards/org-executive-dashboard"
 
 function DefaultDashboard() {
   return (
@@ -23,6 +24,7 @@ const ROLE_DASHBOARD_MAP: Record<string, ComponentType> = {
   
   "ADMIN" : OrganizationAdminDashboard,
   "MANAGER": ManagerDashboard,
+  "EXECUTIVE": ExecutiveDashboard,
 }
 
 export default function DashboardPage() {
