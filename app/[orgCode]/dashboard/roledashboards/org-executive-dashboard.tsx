@@ -100,7 +100,10 @@ export default function ExecutiveDashboard() {
             title="Recent Leads"
             leads={recentLeads}
             onViewAll={() => {
-              router.push("/leads");
+              const user = JSON.parse(localStorage.getItem("user") || "{}");
+              const orgCode = user?.orgCode || "";
+
+              router.push(`/${orgCode}/leads`);
             }}
           />
         </div>
