@@ -1,9 +1,7 @@
 "use client";
 
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import { MoreVertical } from "lucide-react";
 import { ExecutivePerformanceProps } from "@/types/org-manager";
-import { Button } from "@/components/ui/button";
 
 const progressColors = [
   "bg-indigo-500",
@@ -28,15 +26,6 @@ const ExecutivePerformance = ({
 
           <p className="text-sm text-slate-500">{subtitle}</p>
         </div>
-
-        <Button
-          type="button"
-          size="icon"
-          variant="ghost"
-          className="rounded-full text-slate-400 hover:bg-slate-100 hover:text-slate-600"
-        >
-          <MoreVertical className="h-4 w-4" />
-        </Button>
       </CardHeader>
 
       <CardContent className="space-y-6 px-6 pb-6 pt-2">
