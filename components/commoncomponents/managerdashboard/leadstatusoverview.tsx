@@ -1,7 +1,9 @@
 "use client";
 
+import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import type { CommonOverviewProps } from "@/types/org-manager";
+import { ArrowRight } from "lucide-react";
 
 const leadStatusColors = [
   "bg-blue-600",
@@ -18,38 +20,41 @@ const CommonOverview = ({
   data,
   onViewDetails,
 }: CommonOverviewProps) => {
-  const max = data.length ? Math.max(...data.map((row) => row.value)) : 1;
+  const max = data.length ? Math.max(...data.map((row) => row.value), 1) : 1;
 
   return (
-    <Card className="rounded-[2rem] border-0 bg-white shadow-[0_18px_60px_rgba(15,23,42,0.08)]">
-      <CardHeader className="flex flex-row items-start justify-between gap-4 space-y-0 px-8 pt-8">
-        <div className="space-y-2">
-          <CardTitle className="text-[2rem] font-bold tracking-tight text-slate-900">
+    <Card className="rounded-[2rem] border-0 bg-white h-full">
+      <CardHeader className="flex flex-row items-start justify-between gap-4 space-y-0 px-6 pt-6">
+        <div className="space-y-1">
+          <CardTitle className="text-[1.7rem] font-bold tracking-tight text-slate-900">
             {title}
           </CardTitle>
-          {subtitle && <p className="text-lg text-slate-500">{subtitle}</p>}
+          {subtitle && <p className="text-sm text-slate-500">{subtitle}</p>}
         </div>
         {onViewDetails && (
-          <button
+          <Button
             type="button"
             onClick={onViewDetails}
-            className="text-lg font-semibold text-blue-600 transition hover:text-blue-700"
+            className="bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold px-5 py-2 rounded-xl transition"
           >
-            View Details
-          </button>
+            <>
+              View All
+              <ArrowRight className="h-4 w-4 ml-2" />
+            </>
+          </Button>
         )}
       </CardHeader>
 
-      <CardContent className="space-y-10 px-8 pb-10 pt-4">
+      <CardContent className="space-y-6 px-6 pb-6 pt-2">
         {data.length > 0 ? (
           data.map((row, index) => (
-            <div key={row.label} className="space-y-2">
+            <div key={row.label} className="space-y-1.5">
               <div className="flex items-center justify-between gap-3">
-                <p className="text-2xl font-semibold text-slate-800">
+                <p className="text-lg font-semibold text-slate-800">
                   {row.label}
                 </p>
                 <p
-                  className={`text-2xl font-bold ${
+                  className={`text-lg font-bold ${
                     index === data.length - 1
                       ? "text-emerald-600"
                       : "text-slate-900"
@@ -58,7 +63,7 @@ const CommonOverview = ({
                   {row.value}
                 </p>
               </div>
-              <div className="h-3 overflow-hidden rounded-full bg-slate-100">
+              <div className="h-2 overflow-hidden rounded-full bg-slate-100">
                 <div
                   className={`h-full ${leadStatusColors[index % leadStatusColors.length]}`}
                   style={{
