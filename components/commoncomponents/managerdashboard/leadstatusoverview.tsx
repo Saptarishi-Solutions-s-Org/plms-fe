@@ -1,7 +1,9 @@
 "use client";
 
+import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import type { CommonOverviewProps } from "@/types/org-manager";
+import { ArrowRight } from "lucide-react";
 
 const leadStatusColors = [
   "bg-blue-600",
@@ -21,7 +23,8 @@ const CommonOverview = ({
   const max = data.length ? Math.max(...data.map((row) => row.value), 1) : 1;
 
   return (
-    <Card className="rounded-[2rem] border-0 bg-white shadow-[0_18px_60px_rgba(15,23,42,0.08)] h-full">      <CardHeader className="flex flex-row items-start justify-between gap-4 space-y-0 px-6 pt-6">
+    <Card className="rounded-[2rem] border-0 bg-white h-full">
+      <CardHeader className="flex flex-row items-start justify-between gap-4 space-y-0 px-6 pt-6">
         <div className="space-y-1">
           <CardTitle className="text-[1.7rem] font-bold tracking-tight text-slate-900">
             {title}
@@ -29,13 +32,16 @@ const CommonOverview = ({
           {subtitle && <p className="text-sm text-slate-500">{subtitle}</p>}
         </div>
         {onViewDetails && (
-          <button
+          <Button
             type="button"
             onClick={onViewDetails}
-            className="text-lg font-semibold text-blue-600 transition hover:text-blue-700"
+            className="bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold px-5 py-2 rounded-xl transition"
           >
-            View Details
-          </button>
+            <>
+              View All
+              <ArrowRight className="h-4 w-4 ml-2" />
+            </>
+          </Button>
         )}
       </CardHeader>
 
@@ -48,7 +54,7 @@ const CommonOverview = ({
                   {row.label}
                 </p>
                 <p
-  className={`text-lg font-bold ${
+                  className={`text-lg font-bold ${
                     index === data.length - 1
                       ? "text-emerald-600"
                       : "text-slate-900"

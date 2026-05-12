@@ -7,7 +7,8 @@ import RecentLeadsCard from "@/components/commoncomponents/executivedashboard/ex
 import CommonOverview from "@/components/commoncomponents/managerdashboard/leadstatusoverview";
 import { getExecutiveStats, getRecentLeads } from "@/services/executivestats";
 import { getLeadStats } from "@/services/executivestats";
-import type { RecentLead } from "@/types/executivestats";
+import { RecentLead } from "@/types/executivestats";
+import { useRouter } from "next/navigation";
 
 export default function ExecutiveDashboard() {
   const [stats, setStats] = useState({
@@ -21,11 +22,26 @@ export default function ExecutiveDashboard() {
   const [overview, setOverview] = useState<{ label: string; value: number }[]>(
     [],
   );
+  const router = useRouter();
 
   useEffect(() => {
     const fetchDashboardData = async () => {
       try {
-        const statsRes = await getExecutiveStats();
+        const [statsRes, leadsRes, overviewRes] = await Promise.all([
+          getExecutiveStats(),
+
+          getRecentLeads().catch((err) => {
+            console.error("Recent leads API failed", err);
+            return [];
+          }),
+
+          getLeadStats().catch((err) => {
+            console.error("Lead stats API failed", err);
+            return {};
+          }),
+        ]);
+
+        // Stats
         const statsData = statsRes?.value || statsRes;
 
         setStats({
@@ -35,13 +51,11 @@ export default function ExecutiveDashboard() {
           activeOffers: statsData?.activeOffers ?? 0,
         });
 
-        // Recent Leads API
-        const leadsRes = await getRecentLeads();
-
+        // Recent Leads
         const leadsData = leadsRes?.value || leadsRes;
 
         setRecentLeads(
-          leadsData.map((lead: any) => ({
+          (leadsData || []).map((lead: any) => ({
             leadId: lead.leadId,
             leadName: lead.leadName,
             status: lead.status,
@@ -49,8 +63,7 @@ export default function ExecutiveDashboard() {
           })),
         );
 
-        const overviewRes = await getLeadStats();
-
+        // Overview
         const order = ["New", "Contacted", "Qualified", "Lost"];
 
         const formattedOverview = order.map((status) => ({
@@ -87,7 +100,7 @@ export default function ExecutiveDashboard() {
             title="Recent Leads"
             leads={recentLeads}
             onViewAll={() => {
-              console.log("View all leads");
+              router.push("/leads");
             }}
           />
         </div>
