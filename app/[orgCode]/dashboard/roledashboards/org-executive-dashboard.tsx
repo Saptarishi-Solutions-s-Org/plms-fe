@@ -8,7 +8,7 @@ import CommonOverview from "@/components/commoncomponents/managerdashboard/leads
 import { getExecutiveStats, getRecentLeads } from "@/services/executivestats";
 import { getLeadStats } from "@/services/executivestats";
 import { RecentLead } from "@/types/executivestats";
-import { useRouter } from "next/navigation";
+import { useRouter, useParams } from "next/navigation";
 
 export default function ExecutiveDashboard() {
   const [stats, setStats] = useState({
@@ -23,6 +23,8 @@ export default function ExecutiveDashboard() {
     [],
   );
   const router = useRouter();
+  const params = useParams<{ orgCode: string }>();
+  const orgCode = params.orgCode;
 
   useEffect(() => {
     const fetchDashboardData = async () => {
@@ -100,9 +102,6 @@ export default function ExecutiveDashboard() {
             title="Recent Leads"
             leads={recentLeads}
             onViewAll={() => {
-              const user = JSON.parse(localStorage.getItem("user") || "{}");
-              const orgCode = user?.orgCode || "";
-
               router.push(`/${orgCode}/leads`);
             }}
           />
