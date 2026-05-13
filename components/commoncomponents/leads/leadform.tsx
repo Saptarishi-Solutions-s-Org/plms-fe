@@ -240,9 +240,6 @@ export default function LeadForm({
             <Input placeholder="+91 99999 99999" {...register("phone")} />
           </FieldWrapper>
 
-          <FieldWrapper label="City" required error={errors.city?.message}>
-            <Input placeholder="Hyderabad" {...register("city")} />
-          </FieldWrapper>
 
           <FieldWrapper
             label="Country"
@@ -305,6 +302,11 @@ export default function LeadForm({
                 </Select>
               )}
             />
+          </FieldWrapper>
+
+          
+          <FieldWrapper label="City" required error={errors.city?.message}>
+            <Input placeholder="Hyderabad" {...register("city")} />
           </FieldWrapper>
 
           <FieldWrapper
