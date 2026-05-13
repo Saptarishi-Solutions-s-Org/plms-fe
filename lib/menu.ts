@@ -30,7 +30,7 @@ export const MENU_CONFIG: MenuGroup[] = [
         roles: ["System Admin"],
       },
       {
-        href: "/dashboard/leads",
+        href: "/leads",
         icon: UserCheck,
         label: "Leads",
         modules: ["lead"],
