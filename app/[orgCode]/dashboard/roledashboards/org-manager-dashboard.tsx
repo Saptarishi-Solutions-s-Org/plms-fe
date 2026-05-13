@@ -29,25 +29,29 @@ export default function ManagerDashboard() {
   });
 
   const [overview, setOverview] = useState<LeadStatusRow[]>([]);
-  const [executivePerformance, setExecutivePerformance] =
-  useState<ExecutivePerformanceApiRow[]>([]);
+  const [executivePerformance, setExecutivePerformance] = useState<
+    ExecutivePerformanceApiRow[]
+  >([]);
 
   useEffect(() => {
     const fetchDashboard = async () => {
       try {
-        const dashboardData = await getManagerDashboard();
-        const executivePerformanceData = await getExecutivePerformance().catch(
-          (error) => {
-            console.error("Failed to fetch executive performance", error);
-            return [];
-          },
-        );
+        const [dashboardData, executivePerformanceData, overviewData] =
+          await Promise.all([
+            getManagerDashboard().catch((error) => {
+              return null;
+            }),
+
+            getExecutivePerformance().catch((error) => {
+              return [];
+            }),
+
+            getLeadStatusOverview().catch((error) => {
+              return {};
+            }),
+          ]);
 
         setExecutivePerformance(executivePerformanceData || []);
-        const overviewData = await getLeadStatusOverview().catch((error) => {
-          console.error("Failed to fetch lead status overview data", error);
-          return {};
-        });
 
         const data = dashboardData as DashboardData;
 
@@ -82,12 +86,12 @@ export default function ManagerDashboard() {
   }));
 
   const formattedExecutivePerformance = executivePerformance.map(
-  (row: any) => ({
-    executiveName: row.executiveName,
-    achievement:
-      row.total > 0 ? Math.round((row.qualified / row.total) * 100) : 0,
-  }),
-);
+    (row: any) => ({
+      executiveName: row.executiveName,
+      achievement:
+        row.total > 0 ? Math.round((row.qualified / row.total) * 100) : 0,
+    }),
+  );
   return (
     <>
       {loading ? (
