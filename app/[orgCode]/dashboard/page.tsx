@@ -8,6 +8,7 @@ import SystemAdminDashboard from "./roledashboards/system-admin-dashboard"
 import OrganizationAdminDashboard from "./roledashboards/organization-admin-dashboard"
 import ManagerDashboard from "./roledashboards/org-manager-dashboard"
 import LeadsPage from "./leads/page"
+import ExecutiveDashboard from "./roledashboards/org-executive-dashboard"
 
 function DefaultDashboard() {
   return (
