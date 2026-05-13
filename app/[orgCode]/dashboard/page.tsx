@@ -21,7 +21,8 @@ function DefaultDashboard() {
 const ROLE_DASHBOARD_MAP: Record<string, ComponentType> = {
   "SYSTEM ADMIN": SystemAdminDashboard,
   "ADMIN" : OrganizationAdminDashboard,
-  "MANAGER": ManagerDashboard,LeadsPage,
+  "MANAGER": ManagerDashboard,
+  "EXECUTIVE": ExecutiveDashboard,
 }
 
 export default function DashboardPage() {
