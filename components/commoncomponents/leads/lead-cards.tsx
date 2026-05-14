@@ -3,6 +3,7 @@
 import { PhoneCall, Sparkles, TrendingUp, Users } from "lucide-react";
 import { Card, CardContent, CardTitle } from "@/components/ui/card";
 import type { LeadStats } from "@/types/leadtypes";
+import type { LeadSummaryCardsProps } from "@/types/leadtypes";
 
 const SUMMARY_CARDS: {
   key: keyof LeadStats;
@@ -26,9 +27,6 @@ const SUMMARY_CARDS: {
   },
 ];
 
-interface LeadSummaryCardsProps {
-  stats: LeadStats;
-}
 
 export default function LeadSummaryCards({ stats }: LeadSummaryCardsProps) {
   return (

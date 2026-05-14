@@ -21,6 +21,7 @@ import {
 import type {
   ExecutiveOption,
   Lead,
+  LeadFilters,
   LeadFormData,
   LeadPayload,
   LeadUI,
@@ -28,12 +29,11 @@ import type {
 
 const allFilters = {
   search: "",
-  source: "All",
-  status: "All",
-  priority: "All",
-  assignedTo: "All",
+  sources: [],
+  statuses: [],
+  priorities: [],
+  assignedTo: [],
 };
-
 
 const toLeadPayload = (lead: LeadFormData): LeadPayload => {
   const { assignedToId, ...payload } = lead;
@@ -52,8 +52,7 @@ export default function LeadsPage() {
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingLead, setEditingLead] = useState<Lead | null>(null);
   const [selectedLead, setSelectedLead] = useState<LeadUI | null>(null);
-  const [pendingFilters, setPendingFilters] = useState(allFilters);
-  const [filters, setFilters] = useState(allFilters);
+  const [filters, setFilters] = useState<LeadFilters>(allFilters);
   const [managerExecutives, setManagerExecutives] = useState<ExecutiveOption[]>(
     [],
   );
@@ -62,17 +61,58 @@ export default function LeadsPage() {
     return currentUser ? { id: currentUser.id, name: currentUser.name } : null;
   }, [currentUser]);
 
-  const executives = isExecutive
-    ? currentExecutive
-      ? [currentExecutive]
-      : []
-    : managerExecutives;
+  const executives = useMemo(() => {
+    if (!isExecutive) return managerExecutives;
+
+    return currentExecutive ? [currentExecutive] : [];
+  }, [currentExecutive, isExecutive, managerExecutives]);
 
   const visibleLeads = useMemo(() => {
     if (!isExecutive || !currentUser?.id) return leads;
 
     return leads.filter((lead) => getAssignedToId(lead) === currentUser.id);
   }, [currentUser?.id, isExecutive, leads]);
+
+  const filteredLeads = useMemo(() => {
+    return visibleLeads.filter((lead) => {
+      const search = filters.search.trim().toLowerCase();
+      const assignedExecutive = executives.find(
+        (executive) => executive.id === getAssignedToId(lead),
+      );
+
+      const searchMatch =
+        !search ||
+        lead.name.toLowerCase().includes(search) ||
+        lead.email.toLowerCase().includes(search);
+
+      const sourceMatch =
+        filters.sources.length === 0 ||
+        filters.sources.includes(lead.leadSource);
+
+      const statusMatch =
+        filters.statuses.length === 0 ||
+        filters.statuses.includes(lead.status);
+
+      const priorityMatch =
+        filters.priorities.length === 0 ||
+        filters.priorities.includes(lead.priority);
+
+      const assignedToMatch =
+        isExecutive ||
+        filters.assignedTo.length === 0 ||
+        filters.assignedTo.includes(
+          assignedExecutive?.name ?? lead.assignedToName ?? "",
+        );
+
+      return (
+        searchMatch &&
+        sourceMatch &&
+        statusMatch &&
+        priorityMatch &&
+        assignedToMatch
+      );
+    });
+  }, [executives, filters, isExecutive, visibleLeads]);
 
   const visibleStats = useMemo(() => {
     if (!isExecutive) return stats;
@@ -147,89 +187,62 @@ export default function LeadsPage() {
 
   return (
     <>
-          {isLoading ? (
-            <GlobalLoader />
-          ) : (
-    <div className="w-full h-full p-4 sm:p-5 space-y-5">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-        <div>
-          <h1 className="text-lg sm:text-2xl font-semibold text-gray-900">
-            Leads
-          </h1>
-          <p className="text-xs sm:text-sm text-gray-500">
-            Manage and track your lead pipeline
-          </p>
-        </div>
-
-        <LeadHeader onExport={handleExport} onAddLead={openAddForm} />
-      </div>
-
-      <LeadSummaryCards stats={visibleStats} />
-
-      <LeadTableFilters
-        pendingSearch={pendingFilters.search}
-        pendingSource={pendingFilters.source}
-        pendingStatus={pendingFilters.status}
-        pendingPriority={pendingFilters.priority}
-        pendingAssignedTo={pendingFilters.assignedTo}
-        executives={executives}
-        showAssignedToFilter={!isExecutive}
-        onSearchChange={(search) =>
-          setPendingFilters((current) => ({ ...current, search }))
-        }
-        onSourceChange={(source) =>
-          setPendingFilters((current) => ({ ...current, source }))
-        }
-        onStatusChange={(status) =>
-          setPendingFilters((current) => ({ ...current, status }))
-        }
-        onPriorityChange={(priority) =>
-          setPendingFilters((current) => ({ ...current, priority }))
-        }
-        onAssignedToChange={(assignedTo) =>
-          setPendingFilters((current) => ({ ...current, assignedTo }))
-        }
-        onClearAll={() => {
-          setPendingFilters(allFilters);
-          setFilters(allFilters);
-        }}
-        onApply={() => setFilters(pendingFilters)}
-      />
-
-      {isEmpty ? (
-        <div className="text-center py-10 text-gray-500">No leads found</div>
+      {isLoading ? (
+        <GlobalLoader />
       ) : (
-        <LeadTable
-          leads={visibleLeads}
-          executives={executives}
-          showAssignedTo={!isExecutive}
-          search={filters.search}
-          sourceFilter={filters.source}
-          statusFilter={filters.status}
-          priorityFilter={filters.priority}
-          assignedToFilter={isExecutive ? "All" : filters.assignedTo}
-          renderActions={(lead) => (
-            <LeadActions
-              lead={lead}
-              onEdit={openEditForm}
-              onViewDetails={handleViewDetails}
+        <div className="w-full h-full p-4 sm:p-5 space-y-5">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+            <div>
+              <h1 className="text-lg sm:text-2xl font-semibold text-gray-900">
+                Leads
+              </h1>
+              <p className="text-xs sm:text-sm text-gray-500">
+                Manage and track your lead pipeline
+              </p>
+            </div>
+
+            <LeadHeader onExport={handleExport} onAddLead={openAddForm} />
+          </div>
+
+          <LeadSummaryCards stats={visibleStats} />
+
+          <LeadTableFilters
+            executives={executives}
+            showAssignedToFilter={!isExecutive}
+            onApply={setFilters}
+          />
+
+          {isEmpty ? (
+            <div className="text-center py-10 text-gray-500">
+              No leads found
+            </div>
+          ) : (
+            <LeadTable
+              leads={filteredLeads}
+              executives={executives}
+              showAssignedTo={!isExecutive}
+              renderActions={(lead) => (
+                <LeadActions
+                  lead={lead}
+                  onEdit={openEditForm}
+                  onViewDetails={handleViewDetails}
+                />
+              )}
             />
           )}
-        />
-      )}
 
-      <LeadDialogs
-        isFormOpen={isFormOpen}
-        editingLead={editingLead}
-        onFormSubmit={handleFormSubmit}
-        onFormClose={closeForm}
-        selectedLead={selectedLead}
-        onDetailsClose={() => setSelectedLead(null)}
-        fixedAssignedToId={isExecutive ? currentUser?.id : undefined}
-        hideAssignedTo={isExecutive}
-      />
-    </div>
-    )}
-  </>
-);
+          <LeadDialogs
+            isFormOpen={isFormOpen}
+            editingLead={editingLead}
+            onFormSubmit={handleFormSubmit}
+            onFormClose={closeForm}
+            selectedLead={selectedLead}
+            onDetailsClose={() => setSelectedLead(null)}
+            fixedAssignedToId={isExecutive ? currentUser?.id : undefined}
+            hideAssignedTo={isExecutive}
+          />
+        </div>
+      )}
+    </>
+  );
 }

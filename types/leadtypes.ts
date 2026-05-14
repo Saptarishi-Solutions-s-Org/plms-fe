@@ -54,6 +54,14 @@ export interface LeadsWithStatsResponse {
   stats: LeadStats;
 }
 
+export type LeadFilters = {
+  search: string;
+  sources: string[];
+  statuses: string[];
+  priorities: string[];
+  assignedTo: string[];
+};
+
 export const getAssignedToId = (lead: Lead) =>
   lead.assignedToId || lead.assignedTo || "";
 
@@ -95,3 +103,7 @@ export type LeadActionsProps = {
   onEdit: (lead: Lead) => void;
   onViewDetails: (lead: Lead) => void;
 };
+
+export interface LeadSummaryCardsProps {
+  stats: LeadStats;
+}
