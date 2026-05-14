@@ -83,10 +83,10 @@ export default function ExecutiveDashboard() {
   }, []);
 
   return (
-    <div className="space-y-6 p-4 sm:p-6">
+    <div className="w-full space-y-4 px-3 py-4 sm:px-5 sm:py-6 lg:px-6">
       {/* Page Header */}
       <div>
-        <h1 className="text-xl font-bold text-slate-900 sm:text-2xl">
+        <h1 className="text-xl font-bold text-slate-900 sm:text-2xl lg:text-3xl">
           Executive Dashboard
         </h1>
 
@@ -96,8 +96,8 @@ export default function ExecutiveDashboard() {
       </div>
 
       <ExecutiveCards stats={stats} />
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-[0.9fr_1.3fr] items-stretch">
-        <div className="min-w-0 h-full">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
+        <div className="min-w-0 overflow-hidden lg:col-span-5">
           <RecentLeadsCard
             title="Recent Leads"
             leads={recentLeads}
@@ -106,7 +106,7 @@ export default function ExecutiveDashboard() {
             }}
           />
         </div>
-        <div className="min-w-0 h-full">
+        <div className="min-w-0 overflow-hidden lg:col-span-7">
           <CommonOverview
             title="My Stats"
             subtitle="Lead status distribution"
