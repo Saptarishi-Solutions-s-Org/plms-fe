@@ -97,11 +97,11 @@ export default function ManagerDashboard() {
       {loading ? (
         <GlobalLoader />
       ) : (
-        <div className="w-full h-full p-5 sm:p-5">
-          <div className="flex flex-col w-full h-full">
+        <div className="w-full min-h-screen px-4 py-4 sm:px-5 sm:py-5">
+          <div className="flex w-full flex-col gap-6">
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
               <div>
-                <h1 className="text-lg sm:text-2xl font-semibold">
+                <h1 className="text-xl font-semibold sm:text-2xl lg:text-3xl">
                   Manager Dashboard
                 </h1>
 
@@ -117,8 +117,8 @@ export default function ManagerDashboard() {
             </div>
 
             {/* Charts */}
-            <div className="mt-6 sm:mt-10 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-2 gap-4">
-              <div className="w-full overflow-x-auto">
+            <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
+              <div className="min-w-0 overflow-hidden rounded-xl">
                 <CommonOverview
                   title="Lead Status Overview"
                   subtitle="Pipeline distribution by stage"
@@ -126,7 +126,7 @@ export default function ManagerDashboard() {
                 />
               </div>
 
-              <div className="w-full overflow-x-auto">
+              <div className="min-w-0 overflow-hidden rounded-xl">
                 <ExecutivePerformance data={formattedExecutivePerformance} />
               </div>
             </div>
