@@ -9,12 +9,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-
-type LeadActionsProps = {
-  lead: Lead;
-  onEdit: (lead: Lead) => void;
-  onViewDetails: (lead: Lead) => void;
-};
+import type { LeadActionsProps } from "@/types/leadtypes";
 
 export default function LeadActions({
   lead,

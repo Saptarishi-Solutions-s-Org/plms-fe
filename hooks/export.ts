@@ -1,9 +1,9 @@
-import { api } from "@/lib/api";
+import { exportLeads } from "@/services/leads";
 
 export function useLeadExport() {
   const handleExport = async () => {
     try {
-      const rows = await api("/odata/v4/lead/exportLeads", { method: "POST" });
+      const rows = await exportLeads();
 
       if (!rows?.length) {
         window.alert("There are no leads to export.");
@@ -11,25 +11,27 @@ export function useLeadExport() {
       }
 
       const headers = Object.keys(rows[0]);
+
       const csvLines = [
         headers.join(","),
-        ...rows.map((row: Record<string, any>) =>
+        ...rows.map((row: Record<string, unknown>) =>
           headers
-            .map((h) => {
-              const val = row[h] ?? "";
-              const str = String(val).replace(/"/g, '""');
-              return /[,"\n]/.test(str) ? `"${str}"` : str;
+            .map((header) => {
+              const value = String(row[header] ?? "").replace(/"/g, '""');
+              return /[,"\n]/.test(value) ? `"${value}"` : value;
             })
-            .join(",")
+            .join(","),
         ),
       ];
 
-      const csvContent = csvLines.join("\n");
-      const blob       = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
-      const url        = URL.createObjectURL(blob);
-      const link       = document.createElement("a");
+      const blob = new Blob([csvLines.join("\n")], {
+        type: "text/csv;charset=utf-8;",
+      });
 
-      link.href     = url;
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+
+      link.href = url;
       link.download = "leads-export.csv";
       link.click();
 

@@ -2,11 +2,8 @@
 
 import { Download, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { LeadHeaderProps } from "@/types/leadtypes";
 
-type LeadHeaderProps = {
-  onExport:  () => void;
-  onAddLead: () => void;
-};
 
 export default function LeadHeader({ onExport, onAddLead }: LeadHeaderProps) {
   return (

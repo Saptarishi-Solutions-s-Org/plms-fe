@@ -15,16 +15,21 @@ export interface LeadFormData {
   notes: string;
 }
 
+export type LeadPayload = Omit<LeadFormData, "assignedToId"> & {
+  assignedTo: string;
+};
+
 export interface Lead extends LeadFormData {
   uuid: string;
   leadCode: string;
   state: string;
   country: string;
+  assignedTo?: string;
   assignedToName?: string;
 }
 
-export interface LeadUI extends Lead {
-  assignedTo?: ExecutiveOption ;
+export interface LeadUI extends Omit<Lead, "assignedTo"> {
+  assignedTo: ExecutiveOption;
 }
 
 export interface ExecutiveOption {
@@ -36,6 +41,21 @@ export interface Option {
   id: string;
   name: string;
 }
+
+export interface LeadStats {
+  total: number;
+  new: number;
+  contacted: number;
+  qualified: number;
+}
+
+export interface LeadsWithStatsResponse {
+  leads: Lead[];
+  stats: LeadStats;
+}
+
+export const getAssignedToId = (lead: Lead) =>
+  lead.assignedToId || lead.assignedTo || "";
 
 export const LEAD_SOURCE_OPTIONS = [
   { value: "Social_Media", label: "Social Media" },
@@ -63,3 +83,15 @@ export const GENDER_OPTIONS = [
   { value: "Female", label: "Female" },
   { value: "Other", label: "Other" },
 ] as const;
+
+export type LeadHeaderProps = {
+  onExport: () => void;
+  onAddLead: () => void;
+};
+
+
+export type LeadActionsProps = {
+  lead: Lead;
+  onEdit: (lead: Lead) => void;
+  onViewDetails: (lead: Lead) => void;
+};

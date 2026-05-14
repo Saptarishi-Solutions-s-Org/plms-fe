@@ -1,13 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
-import { Lead } from "@/types/leadtypes";
+import type { Lead, LeadStats } from "@/types/leadtypes";
 import { getLeadsWithStats } from "@/services/leads";
-
-export interface LeadStats {
-  total: number;
-  new: number;
-  contacted: number;
-  qualified: number;
-}
 
 export function useLeads() {
   const [leads, setLeads] = useState<Lead[]>([]);
@@ -27,8 +20,7 @@ export function useLeads() {
       const res = await getLeadsWithStats();
       setLeads(res.leads);
       setStats(res.stats);
-    } catch (err) {
-      console.error("Error fetching leads:", err);
+    } catch {
       setError("Failed to load leads. Please try again.");
     } finally {
       setIsLoading(false);

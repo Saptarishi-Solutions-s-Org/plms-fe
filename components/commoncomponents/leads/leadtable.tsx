@@ -12,6 +12,7 @@ import {
   ExecutiveOption,
   Lead,
   LEAD_SOURCE_OPTIONS,
+  getAssignedToId,
 } from "@/types/leadtypes";
 
 export interface LeadTableProps {
@@ -50,7 +51,7 @@ export default function LeadTable({
     const matchPriority =
       priorityFilter === "All" || lead.priority === priorityFilter;
     const matchAssignedTo =
-      assignedToFilter === "All" || lead.assignedToId === assignedToFilter;
+      assignedToFilter === "All" || getAssignedToId(lead) === assignedToFilter;
 
     return (
       matchSearch &&
@@ -134,7 +135,7 @@ export default function LeadTable({
                 {showAssignedTo && (
                   <TableCell className="text-gray-600">
                     {executives.find(
-                      (executive) => executive.id === lead.assignedToId,
+                      (executive) => executive.id === getAssignedToId(lead),
                     )?.name ||
                       lead.assignedToName ||
                       "-"}

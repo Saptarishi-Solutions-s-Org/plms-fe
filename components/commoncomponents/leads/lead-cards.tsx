@@ -2,7 +2,7 @@
 
 import { PhoneCall, Sparkles, TrendingUp, Users } from "lucide-react";
 import { Card, CardContent, CardTitle } from "@/components/ui/card";
-import { LeadStats } from "@/hooks/use-leads";
+import type { LeadStats } from "@/types/leadtypes";
 
 const SUMMARY_CARDS: {
   key: keyof LeadStats;

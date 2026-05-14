@@ -9,48 +9,71 @@ import LeadActions from "@/components/commoncomponents/leads/leadactions";
 import LeadHeader from "@/components/commoncomponents/leads/leadheader";
 import LeadTableFilters from "@/components/commoncomponents/leads/leadtable-filters";
 import LeadTable from "@/components/commoncomponents/leads/leadtable";
-import { useLeadActions } from "@/hooks/use-lead-actions";
-import { useLeadExport } from "@/hooks/export";
-import { useLeadFilters } from "@/hooks/use-lead-filters";
 import { useLeads } from "@/hooks/use-leads";
+import { useLeadExport } from "@/hooks/export";
+import { getAssignedToId } from "@/types/leadtypes";
 import { getUser } from "@/lib/auth";
-import { getExecutiveUsers } from "@/services/leads";
-import { ExecutiveOption, Lead, LeadUI } from "@/types/leadtypes";
+import {
+  createLead,
+  getExecutiveUsers,
+  updateLead,
+} from "@/services/leads";
+import type {
+  ExecutiveOption,
+  Lead,
+  LeadFormData,
+  LeadPayload,
+  LeadUI,
+} from "@/types/leadtypes";
+
+const allFilters = {
+  search: "",
+  source: "All",
+  status: "All",
+  priority: "All",
+  assignedTo: "All",
+};
+
+
+const toLeadPayload = (lead: LeadFormData): LeadPayload => {
+  const { assignedToId, ...payload } = lead;
+
+  return {
+    ...payload,
+    assignedTo: assignedToId,
+  };
+};
 
 export default function LeadsPage() {
   const { leads, stats, isLoading, refetch } = useLeads();
-  const filters = useLeadFilters();
-
-  const {
-    isFormOpen,
-    editingLead,
-    selectedLead,
-    openAddForm,
-    openEditForm,
-    closeForm,
-    setSelectedLead,
-    handleFormSubmit,
-  } = useLeadActions({ onSuccess: refetch });
-
-  const { handleExport } = useLeadExport();
   const currentUser = getUser();
   const isExecutive = currentUser?.role?.toUpperCase().trim() === "EXECUTIVE";
-  const currentExecutive = useMemo<ExecutiveOption | null>(() => {
-    return currentUser ? { id: currentUser.id, name: currentUser.name } : null;
-  }, [currentUser]);
+
+  const [isFormOpen, setIsFormOpen] = useState(false);
+  const [editingLead, setEditingLead] = useState<Lead | null>(null);
+  const [selectedLead, setSelectedLead] = useState<LeadUI | null>(null);
+  const [pendingFilters, setPendingFilters] = useState(allFilters);
+  const [filters, setFilters] = useState(allFilters);
   const [managerExecutives, setManagerExecutives] = useState<ExecutiveOption[]>(
     [],
   );
+
+  const currentExecutive = useMemo<ExecutiveOption | null>(() => {
+    return currentUser ? { id: currentUser.id, name: currentUser.name } : null;
+  }, [currentUser]);
+
   const executives = isExecutive
     ? currentExecutive
       ? [currentExecutive]
       : []
     : managerExecutives;
+
   const visibleLeads = useMemo(() => {
     if (!isExecutive || !currentUser?.id) return leads;
 
-    return leads.filter((lead) => lead.assignedToId === currentUser.id);
+    return leads.filter((lead) => getAssignedToId(lead) === currentUser.id);
   }, [currentUser?.id, isExecutive, leads]);
+
   const visibleStats = useMemo(() => {
     if (!isExecutive) return stats;
 
@@ -74,14 +97,41 @@ export default function LeadsPage() {
     getExecutiveUsers().then(setManagerExecutives).catch(console.error);
   }, [isExecutive]);
 
-  const mapLead = (lead: Lead): LeadUI => {
-    const assignedTo = executives.find(
-      (executive) => executive.id === lead.assignedToId,
-    );
+  const openAddForm = () => {
+    setEditingLead(null);
+    setIsFormOpen(true);
+  };
 
-    if (!assignedTo) {
-      throw new Error(`Executive not found for lead ${lead.uuid}`);
+  const openEditForm = (lead: Lead) => {
+    setEditingLead(lead);
+    setIsFormOpen(true);
+  };
+
+  const closeForm = () => {
+    setIsFormOpen(false);
+    setEditingLead(null);
+  };
+
+  const handleFormSubmit = async (data: LeadFormData) => {
+    if (editingLead) {
+      await updateLead({ id: editingLead.uuid, ...toLeadPayload(data) });
+    } else {
+      await createLead(toLeadPayload(data));
     }
+
+    await refetch();
+    closeForm();
+  };
+
+  const { handleExport } = useLeadExport();
+
+  const mapLead = (lead: Lead): LeadUI => {
+    const assignedToId = getAssignedToId(lead);
+    const assignedTo =
+      executives.find((executive) => executive.id === assignedToId) ?? {
+        id: assignedToId,
+        name: lead.assignedToName ?? "Unassigned",
+      };
 
     return {
       ...lead,
@@ -95,9 +145,11 @@ export default function LeadsPage() {
 
   const isEmpty = !isLoading && visibleLeads.length === 0;
 
-  if (isLoading) return <GlobalLoader />;
-
   return (
+    <>
+          {isLoading ? (
+            <GlobalLoader />
+          ) : (
     <div className="w-full h-full p-4 sm:p-5 space-y-5">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
@@ -115,20 +167,33 @@ export default function LeadsPage() {
       <LeadSummaryCards stats={visibleStats} />
 
       <LeadTableFilters
-        pendingSearch={filters.pendingSearch}
-        pendingSource={filters.pendingSource}
-        pendingStatus={filters.pendingStatus}
-        pendingPriority={filters.pendingPriority}
-        pendingAssignedTo={filters.pendingAssignedTo}
+        pendingSearch={pendingFilters.search}
+        pendingSource={pendingFilters.source}
+        pendingStatus={pendingFilters.status}
+        pendingPriority={pendingFilters.priority}
+        pendingAssignedTo={pendingFilters.assignedTo}
         executives={executives}
         showAssignedToFilter={!isExecutive}
-        onSearchChange={filters.setPendingSearch}
-        onSourceChange={filters.setPendingSource}
-        onStatusChange={filters.setPendingStatus}
-        onPriorityChange={filters.setPendingPriority}
-        onAssignedToChange={filters.setPendingAssignedTo}
-        onClearAll={filters.handleClearAll}
-        onApply={filters.handleApply}
+        onSearchChange={(search) =>
+          setPendingFilters((current) => ({ ...current, search }))
+        }
+        onSourceChange={(source) =>
+          setPendingFilters((current) => ({ ...current, source }))
+        }
+        onStatusChange={(status) =>
+          setPendingFilters((current) => ({ ...current, status }))
+        }
+        onPriorityChange={(priority) =>
+          setPendingFilters((current) => ({ ...current, priority }))
+        }
+        onAssignedToChange={(assignedTo) =>
+          setPendingFilters((current) => ({ ...current, assignedTo }))
+        }
+        onClearAll={() => {
+          setPendingFilters(allFilters);
+          setFilters(allFilters);
+        }}
+        onApply={() => setFilters(pendingFilters)}
       />
 
       {isEmpty ? (
@@ -139,10 +204,10 @@ export default function LeadsPage() {
           executives={executives}
           showAssignedTo={!isExecutive}
           search={filters.search}
-          sourceFilter={filters.sourceFilter}
-          statusFilter={filters.statusFilter}
-          priorityFilter={filters.priorityFilter}
-          assignedToFilter={isExecutive ? "All" : filters.assignedToFilter}
+          sourceFilter={filters.source}
+          statusFilter={filters.status}
+          priorityFilter={filters.priority}
+          assignedToFilter={isExecutive ? "All" : filters.assignedTo}
           renderActions={(lead) => (
             <LeadActions
               lead={lead}
@@ -164,5 +229,7 @@ export default function LeadsPage() {
         hideAssignedTo={isExecutive}
       />
     </div>
-  );
+    )}
+  </>
+);
 }

@@ -22,15 +22,12 @@ import {
   LEAD_STATUS_OPTIONS,
   LEAD_PRIORITY_OPTIONS,
   LEAD_SOURCE_OPTIONS,
+  Option,
 } from "@/types/leadtypes";
 
 import { leadFormSchema } from "@/lib/validators/lead-form-schema";
-import {
-  getExecutiveUsers,
-  getCountries,
-  getStatesByCountry,
-} from "@/services/leads";
-import { Option } from "@/types/leadtypes";
+import { getExecutiveUsers } from "@/services/leads";
+import { getCountries, getStatesByCountry } from "@/services/location";
 
 const PRIORITY_ACTIVE_CLASS: Record<string, string> = {
   Low: "bg-red-100 border-gray-300 text-gray-700",
@@ -38,24 +35,6 @@ const PRIORITY_ACTIVE_CLASS: Record<string, string> = {
   High: "bg-red-300 border-orange-400 text-gray-900",
   Urgent: "bg-red-500 border-red-500 text-white",
 };
-
-const emptyForm: LeadFormData = {
-  name: "",
-  gender: "",
-  email: "",
-  phone: "",
-  city: "",
-  stateId: "",
-  countryId: "",
-  postalCode: "",
-  status: "",
-  leadSource: "",
-  assignedToId: "",
-  priority: "",
-  notes: "",
-};
-
-// UI Helpers
 
 function SectionLabel({ children }: { children: React.ReactNode }) {
   return (
@@ -79,6 +58,7 @@ function FieldWrapper({
       <Label required={required} className="text-sm font-normal text-gray-700">
         {label}
       </Label>
+
       <div
         className={
           error
@@ -86,15 +66,13 @@ function FieldWrapper({
             : ""
         }
       >
-        {" "}
         {children}
       </div>
+
       {error && <p className="text-xs text-red-500">{error}</p>}
     </div>
   );
 }
-
-// Component
 
 export default function LeadForm({
   onSubmit,
@@ -121,72 +99,85 @@ export default function LeadForm({
     handleSubmit,
     control,
     reset,
-    watch,
     setValue,
     formState: { errors },
   } = useForm<LeadFormData>({
     resolver: zodResolver(leadFormSchema),
     defaultValues: {
-      ...(initialData ?? emptyForm),
-      assignedToId: initialData?.assignedToId || fixedAssignedToId || "",
+      name: initialData?.name ?? "",
+      gender: initialData?.gender ?? "",
+      email: initialData?.email ?? "",
+      phone: initialData?.phone ?? "",
+      city: initialData?.city ?? "",
+      stateId: initialData?.stateId ?? "",
+      countryId: initialData?.countryId ?? "",
+      postalCode: initialData?.postalCode ?? "",
+      status: initialData?.status ?? "",
+      leadSource: initialData?.leadSource ?? "",
+      assignedToId: initialData?.assignedToId ?? fixedAssignedToId ?? "",
+      priority: initialData?.priority ?? "",
+      notes: initialData?.notes ?? "",
     },
   });
 
-  const watchedCountryId = watch("countryId");
-
-  // 1. Fetch countries + executives ONCE on mount
-
   useEffect(() => {
-    let cancelled = false;
-
-    (async () => {
+    const fetchInitialData = async () => {
       try {
-        const [countryList, executiveList] = await Promise.all([
-          getCountries(),
-          hideAssignedTo ? Promise.resolve([]) : getExecutiveUsers(),
-        ]);
-        if (cancelled) return;
+        const countryList = await getCountries();
         setCountries(countryList);
-        setExecutives(executiveList);
+
+        if (!hideAssignedTo) {
+          const executiveList = await getExecutiveUsers();
+          setExecutives(executiveList);
+        }
       } catch (err) {
         console.error(err);
       }
-    })();
-
-    return () => {
-      cancelled = true;
     };
+
+    fetchInitialData();
   }, [hideAssignedTo]);
 
   useEffect(() => {
-    const assignedToId = initialData?.assignedToId || fixedAssignedToId || "";
+    const assignedToId = initialData?.assignedToId ?? fixedAssignedToId ?? "";
 
     reset({
-      ...(initialData ?? emptyForm),
+      name: initialData?.name ?? "",
+      gender: initialData?.gender ?? "",
+      email: initialData?.email ?? "",
+      phone: initialData?.phone ?? "",
+      city: initialData?.city ?? "",
+      stateId: initialData?.stateId ?? "",
+      countryId: initialData?.countryId ?? "",
+      postalCode: initialData?.postalCode ?? "",
+      status: initialData?.status ?? "",
+      leadSource: initialData?.leadSource ?? "",
       assignedToId,
+      priority: initialData?.priority ?? "",
+      notes: initialData?.notes ?? "",
     });
-    setValue("assignedToId", assignedToId, {
-      shouldDirty: false,
-      shouldValidate: false,
-    });
-  }, [fixedAssignedToId, initialData, reset, setValue]);
+  }, [fixedAssignedToId, initialData, reset]);
 
-  useEffect(() => {
-    if (!watchedCountryId) {
-      setStates([]);
-      return;
+  const handleCountryChange = async (countryId: string) => {
+    setValue("countryId", countryId);
+    setValue("stateId", "");
+    setStates([]);
+
+    try {
+      const stateList = await getStatesByCountry(countryId);
+      setStates(stateList);
+    } catch (err) {
+      console.error(err);
     }
-    getStatesByCountry(watchedCountryId).then(setStates).catch(console.error);
-  }, [watchedCountryId]);
-
-  // 4. Submit
+  };
 
   const onValid = async (data: LeadFormData) => {
     setIsSubmitting(true);
+
     try {
       await onSubmit({
         ...data,
-        assignedToId: fixedAssignedToId || data.assignedToId,
+        assignedToId: fixedAssignedToId ?? data.assignedToId,
       });
     } finally {
       setIsSubmitting(false);
@@ -200,7 +191,7 @@ export default function LeadForm({
 
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <FieldWrapper label="Name" required error={errors.name?.message}>
-            <Input placeholder="e.g. John Doe" {...register("name")} />
+            <Input placeholder="Enter the Name" {...register("name")} />
           </FieldWrapper>
 
           <FieldWrapper label="Gender" required error={errors.gender?.message}>
@@ -227,7 +218,7 @@ export default function LeadForm({
           <FieldWrapper label="Email" required error={errors.email?.message}>
             <Input
               type="email"
-              placeholder="john.doe@example.com"
+              placeholder="Enter The Mail"
               {...register("email")}
             />
           </FieldWrapper>
@@ -237,9 +228,11 @@ export default function LeadForm({
             required
             error={errors.phone?.message}
           >
-            <Input placeholder="+91 99999 99999" {...register("phone")} />
+            <Input
+              placeholder="Enter the Phone Number"
+              {...register("phone")}
+            />
           </FieldWrapper>
-
 
           <FieldWrapper
             label="Country"
@@ -252,11 +245,7 @@ export default function LeadForm({
               render={({ field }) => (
                 <Select
                   value={field.value}
-                  onValueChange={(val) => {
-                    field.onChange(val);
-                    setValue("stateId", "");
-                    setStates([]);
-                  }}
+                  onValueChange={handleCountryChange}
                 >
                   <SelectTrigger className="w-full">
                     <SelectValue placeholder="Select country" />
@@ -281,16 +270,10 @@ export default function LeadForm({
                 <Select
                   value={field.value}
                   onValueChange={field.onChange}
-                  disabled={!watchedCountryId}
+                  disabled={states.length === 0}
                 >
                   <SelectTrigger className="w-full">
-                    <SelectValue
-                      placeholder={
-                        watchedCountryId
-                          ? "Select state"
-                          : "Select country first"
-                      }
-                    />
+                    <SelectValue placeholder="Select state" />
                   </SelectTrigger>
                   <SelectContent>
                     {states.map((s) => (
@@ -304,9 +287,8 @@ export default function LeadForm({
             />
           </FieldWrapper>
 
-          
           <FieldWrapper label="City" required error={errors.city?.message}>
-            <Input placeholder="Hyderabad" {...register("city")} />
+            <Input placeholder="Enter the City" {...register("city")} />
           </FieldWrapper>
 
           <FieldWrapper
@@ -314,7 +296,10 @@ export default function LeadForm({
             required
             error={errors.postalCode?.message}
           >
-            <Input placeholder="500001" {...register("postalCode")} />
+            <Input
+              placeholder="Enter the Postal Code"
+              {...register("postalCode")}
+            />
           </FieldWrapper>
         </div>
       </div>
@@ -386,6 +371,7 @@ export default function LeadForm({
                     <SelectTrigger className="w-full">
                       <SelectValue placeholder="Select executive" />
                     </SelectTrigger>
+
                     <SelectContent className="z-[9999] bg-white shadow-lg">
                       {executives.length === 0 ? (
                         <div className="px-3 py-2 text-sm text-gray-400">
@@ -405,20 +391,21 @@ export default function LeadForm({
             </FieldWrapper>
           )}
 
-          {/* Priority */}
           <div className="flex flex-col gap-1.5 sm:col-span-2">
             <Label required className="text-sm font-normal text-gray-700">
               Priority
             </Label>
+
             <Controller
               name="priority"
               control={control}
               render={({ field }) => (
                 <div className="flex flex-wrap gap-2">
                   {LEAD_PRIORITY_OPTIONS.map(({ value }) => (
-                    <button
+                    <Button
                       key={value}
                       type="button"
+                      variant="outline"
                       onClick={() => field.onChange(value)}
                       className={`rounded-md border px-4 py-1.5 text-xs font-semibold transition-all ${
                         field.value === value
@@ -427,11 +414,12 @@ export default function LeadForm({
                       }`}
                     >
                       {value}
-                    </button>
+                    </Button>
                   ))}
                 </div>
               )}
             />
+
             {errors.priority && (
               <p className="text-xs text-red-500">{errors.priority.message}</p>
             )}
@@ -441,9 +429,10 @@ export default function LeadForm({
 
       <div>
         <SectionLabel>Additional Information</SectionLabel>
+
         <FieldWrapper required label="Notes" error={errors.notes?.message}>
           <Textarea
-            placeholder="Add detailed notes or requirements for this lead..."
+            placeholder="Enter the Notes"
             className="min-h-[100px] resize-none"
             {...register("notes")}
           />
@@ -461,6 +450,7 @@ export default function LeadForm({
             Cancel
           </Button>
         )}
+
         <Button
           type="submit"
           disabled={isSubmitting}
