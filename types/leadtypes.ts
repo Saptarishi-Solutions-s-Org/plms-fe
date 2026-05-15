@@ -37,6 +37,17 @@ export interface LeadStats {
   qualified: number;
 }
 
+export interface LeadDialogsProps {
+  isFormOpen: boolean;
+  editingLead: Lead | null;
+  onFormSubmit: (data: LeadFormData) => Promise<void>;
+  onFormClose: () => void;
+  selectedLead: Lead | null;
+  onDetailsClose: () => void;
+  fixedAssignedToId?: string;
+  hideAssignedTo?: boolean;
+}
+
 export type LeadFilters = {
   search: string;
   sources: string[];

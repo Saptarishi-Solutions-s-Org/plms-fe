@@ -30,7 +30,6 @@ export default function LeadTable({
   emptyMessage,
 }: LeadTableProps) {
   const showActionsColumn = renderActions !== undefined;
-  const defaultEmpty = "No leads found";
 
   return (
     <div className="overflow-x-auto rounded-lg border border-gray-200 bg-white shadow-sm">
@@ -79,7 +78,7 @@ export default function LeadTable({
                 }
                 className="py-12 text-center text-sm font-semibold text-gray-400"
               >
-                {emptyMessage ?? defaultEmpty}
+                {emptyMessage}
               </TableCell>
             </TableRow>
           ) : (

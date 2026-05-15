@@ -8,18 +8,7 @@ import {
 } from "@/components/ui/dialog";
 import LeadForm from "@/components/commoncomponents/leads/leadform";
 import LeadDetails from "@/components/commoncomponents/leads/leaddetails";
-import { Lead, LeadFormData } from "@/types/leadtypes";
-
-interface LeadDialogsProps {
-  isFormOpen: boolean;
-  editingLead: Lead | null;
-  onFormSubmit: (data: LeadFormData) => Promise<void>;
-  onFormClose: () => void;
-  selectedLead: Lead | null;
-  onDetailsClose: () => void;
-  fixedAssignedToId?: string;
-  hideAssignedTo?: boolean;
-}
+import {LeadDialogsProps} from "@/types/leadtypes";
 
 export default function LeadDialogs({
   isFormOpen,
