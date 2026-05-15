@@ -10,26 +10,17 @@ export interface LeadFormData {
   leadSource: string;
   status: string;
 
-  assignedToId: string;
+  assignedTo: string;
   priority: string;
   notes: string;
 }
-
-export type LeadPayload = Omit<LeadFormData, "assignedToId"> & {
-  assignedTo: string;
-};
 
 export interface Lead extends LeadFormData {
   uuid: string;
   leadCode: string;
   state: string;
   country: string;
-  assignedTo?: string;
   assignedToName?: string;
-}
-
-export interface LeadUI extends Omit<Lead, "assignedTo"> {
-  assignedTo: ExecutiveOption;
 }
 
 export interface ExecutiveOption {
@@ -61,9 +52,6 @@ export type LeadFilters = {
   priorities: string[];
   assignedTo: string[];
 };
-
-export const getAssignedToId = (lead: Lead) =>
-  lead.assignedToId || lead.assignedTo || "";
 
 export const LEAD_SOURCE_OPTIONS = [
   { value: "Social_Media", label: "Social Media" },

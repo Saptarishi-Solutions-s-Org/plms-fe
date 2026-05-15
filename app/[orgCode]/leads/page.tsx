@@ -11,7 +11,6 @@ import LeadTableFilters from "@/components/commoncomponents/leads/leadtable-filt
 import LeadTable from "@/components/commoncomponents/leads/leadtable";
 import { useLeads } from "@/hooks/use-leads";
 import { useLeadExport } from "@/hooks/export";
-import { getAssignedToId } from "@/types/leadtypes";
 import { getUser } from "@/lib/auth";
 import {
   createLead,
@@ -23,8 +22,6 @@ import type {
   Lead,
   LeadFilters,
   LeadFormData,
-  LeadPayload,
-  LeadUI,
 } from "@/types/leadtypes";
 
 const allFilters = {
@@ -35,15 +32,6 @@ const allFilters = {
   assignedTo: [],
 };
 
-const toLeadPayload = (lead: LeadFormData): LeadPayload => {
-  const { assignedToId, ...payload } = lead;
-
-  return {
-    ...payload,
-    assignedTo: assignedToId,
-  };
-};
-
 export default function LeadsPage() {
   const { leads, stats, isLoading, refetch } = useLeads();
   const currentUser = getUser();
@@ -51,7 +39,7 @@ export default function LeadsPage() {
 
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingLead, setEditingLead] = useState<Lead | null>(null);
-  const [selectedLead, setSelectedLead] = useState<LeadUI | null>(null);
+  const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
   const [filters, setFilters] = useState<LeadFilters>(allFilters);
   const [managerExecutives, setManagerExecutives] = useState<ExecutiveOption[]>(
     [],
@@ -70,14 +58,14 @@ export default function LeadsPage() {
   const visibleLeads = useMemo(() => {
     if (!isExecutive || !currentUser?.id) return leads;
 
-    return leads.filter((lead) => getAssignedToId(lead) === currentUser.id);
+    return leads.filter((lead) => lead.assignedTo === currentUser.id);
   }, [currentUser?.id, isExecutive, leads]);
 
   const filteredLeads = useMemo(() => {
     return visibleLeads.filter((lead) => {
       const search = filters.search.trim().toLowerCase();
       const assignedExecutive = executives.find(
-        (executive) => executive.id === getAssignedToId(lead),
+        (executive) => executive.id === lead.assignedTo,
       );
 
       const searchMatch =
@@ -154,9 +142,9 @@ export default function LeadsPage() {
 
   const handleFormSubmit = async (data: LeadFormData) => {
     if (editingLead) {
-      await updateLead({ id: editingLead.uuid, ...toLeadPayload(data) });
+      await updateLead({ id: editingLead.uuid, ...data });
     } else {
-      await createLead(toLeadPayload(data));
+      await createLead(data);
     }
 
     await refetch();
@@ -165,17 +153,15 @@ export default function LeadsPage() {
 
   const { handleExport } = useLeadExport();
 
-  const mapLead = (lead: Lead): LeadUI => {
-    const assignedToId = getAssignedToId(lead);
-    const assignedTo =
-      executives.find((executive) => executive.id === assignedToId) ?? {
-        id: assignedToId,
-        name: lead.assignedToName ?? "Unassigned",
-      };
+  const mapLead = (lead: Lead): Lead => {
+    const assignedExecutive = executives.find(
+      (executive) => executive.id === lead.assignedTo,
+    );
 
     return {
       ...lead,
-      assignedTo,
+      assignedToName:
+        assignedExecutive?.name ?? lead.assignedToName ?? "Unassigned",
     };
   };
 

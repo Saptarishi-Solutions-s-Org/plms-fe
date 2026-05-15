@@ -1,7 +1,7 @@
 "use client";
 
 import { Label } from "@/components/ui/label";
-import { LeadUI } from "@/types/leadtypes";
+import { Lead } from "@/types/leadtypes";
 
 function SectionLabel({ children }: { children: React.ReactNode }) {
   return (
@@ -34,7 +34,7 @@ function FieldDisplay({
   );
 }
 
-export default function LeadDetails({ lead }: { lead: LeadUI }) {
+export default function LeadDetails({ lead }: { lead: Lead }) {
   return (
     <div className="flex flex-col gap-5 py-2">
       <div>
@@ -58,7 +58,7 @@ export default function LeadDetails({ lead }: { lead: LeadUI }) {
           <FieldDisplay label="Status" value={lead.status} />
           <FieldDisplay
             label="Assigned To"
-            value={lead.assignedTo?.name ?? "Unassigned"}
+            value={lead.assignedToName ?? "Unassigned"}
           />
           <FieldDisplay label="Priority" value={lead.priority} />
         </div>

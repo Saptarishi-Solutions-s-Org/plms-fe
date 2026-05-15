@@ -114,7 +114,7 @@ export default function LeadForm({
       postalCode: initialData?.postalCode ?? "",
       status: initialData?.status ?? "",
       leadSource: initialData?.leadSource ?? "",
-      assignedToId: initialData?.assignedToId ?? fixedAssignedToId ?? "",
+      assignedTo: initialData?.assignedTo ?? fixedAssignedToId ?? "",
       priority: initialData?.priority ?? "",
       notes: initialData?.notes ?? "",
     },
@@ -139,7 +139,7 @@ export default function LeadForm({
   }, [hideAssignedTo]);
 
   useEffect(() => {
-    const assignedToId = initialData?.assignedToId ?? fixedAssignedToId ?? "";
+    const assignedTo = initialData?.assignedTo ?? fixedAssignedToId ?? "";
 
     reset({
       name: initialData?.name ?? "",
@@ -152,7 +152,7 @@ export default function LeadForm({
       postalCode: initialData?.postalCode ?? "",
       status: initialData?.status ?? "",
       leadSource: initialData?.leadSource ?? "",
-      assignedToId,
+      assignedTo,
       priority: initialData?.priority ?? "",
       notes: initialData?.notes ?? "",
     });
@@ -177,7 +177,7 @@ export default function LeadForm({
     try {
       await onSubmit({
         ...data,
-        assignedToId: fixedAssignedToId ?? data.assignedToId,
+        assignedTo: fixedAssignedToId ?? data.assignedTo,
       });
     } finally {
       setIsSubmitting(false);
@@ -358,10 +358,10 @@ export default function LeadForm({
             <FieldWrapper
               label="Assigned To"
               required
-              error={errors.assignedToId?.message}
+              error={errors.assignedTo?.message}
             >
               <Controller
-                name="assignedToId"
+                name="assignedTo"
                 control={control}
                 render={({ field }) => (
                   <Select
