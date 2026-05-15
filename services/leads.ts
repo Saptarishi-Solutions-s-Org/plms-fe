@@ -1,14 +1,10 @@
 import { api } from "@/lib/api";
-import type {
-  ExecutiveOption,
-  LeadFormData,
-  LeadsWithStatsResponse,
-} from "@/types/leadtypes";
+import type { LeadFormData } from "@/types/leadtypes";
 
-export const getLeadsWithStats = (): Promise<LeadsWithStatsResponse> =>
+export const getLeadsWithStats = () =>
   api("/odata/v4/lead/getLeadsWithStats()");
 
-export const getExecutiveUsers = (): Promise<ExecutiveOption[]> =>
+export const getExecutiveUsers = () =>
   api("/odata/v4/lead/getExecutiveUsers()");
 
 export const createLead = (payload: LeadFormData) =>
@@ -23,13 +19,7 @@ export const updateLead = (payload: { id: string } & LeadFormData) =>
     body: JSON.stringify(payload),
   });
 
-// export const importLeads = (data: unknown) =>
-//   api("/odata/v4/lead/importLeads", {
-//     method: "POST",
-//     body: JSON.stringify(data),
-//   });
-
-export const exportLeads = (): Promise<Record<string, unknown>[]> =>
+export const exportLeads = () =>
   api("/odata/v4/lead/exportLeads", {
     method: "POST",
   });
