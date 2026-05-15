@@ -5,11 +5,17 @@ import { toast } from "sonner";
 
 import ManagerCards from "@/components/commoncomponents/managerdashboard/card";
 import CommonOverview from "@/components/commoncomponents/managerdashboard/leadstatusoverview";
+import ExecutivePerformance from "@/components/commoncomponents/managerdashboard/executiveperformance";
 import {
   getManagerDashboard,
   getLeadStatusOverview,
+  getExecutivePerformance,
 } from "@/services/managerdashboard";
-import { DashboardData, LeadStatusRow } from "@/types/org-manager";
+import {
+  DashboardData,
+  LeadStatusRow,
+  ExecutivePerformanceApiRow,
+} from "@/types/org-manager";
 import GlobalLoader from "@/components/commoncomponents/globalloader";
 
 export default function ManagerDashboard() {
@@ -23,16 +29,29 @@ export default function ManagerDashboard() {
   });
 
   const [overview, setOverview] = useState<LeadStatusRow[]>([]);
+  const [executivePerformance, setExecutivePerformance] = useState<
+    ExecutivePerformanceApiRow[]
+  >([]);
 
   useEffect(() => {
     const fetchDashboard = async () => {
       try {
-        const dashboardData = await getManagerDashboard();
+        const [dashboardData, executivePerformanceData, overviewData] =
+          await Promise.all([
+            getManagerDashboard().catch((error) => {
+              return null;
+            }),
 
-        const overviewData = await getLeadStatusOverview().catch((error) => {
-          console.error("Failed to fetch lead status overview data", error);
-          return {};
-        });
+            getExecutivePerformance().catch((error) => {
+              return [];
+            }),
+
+            getLeadStatusOverview().catch((error) => {
+              return {};
+            }),
+          ]);
+
+        setExecutivePerformance(executivePerformanceData || []);
 
         const data = dashboardData as DashboardData;
 
@@ -65,16 +84,24 @@ export default function ManagerDashboard() {
     label: row.status,
     value: row.count,
   }));
+
+  const formattedExecutivePerformance = executivePerformance.map(
+    (row: any) => ({
+      executiveName: row.executiveName,
+      achievement:
+        row.total > 0 ? Math.round((row.qualified / row.total) * 100) : 0,
+    }),
+  );
   return (
     <>
       {loading ? (
         <GlobalLoader />
       ) : (
-        <div className="w-full h-full p-5 sm:p-5">
-          <div className="flex flex-col w-full h-full">
+        <div className="w-full min-h-screen px-4 py-4 sm:px-5 sm:py-5">
+          <div className="flex w-full flex-col gap-6">
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
               <div>
-                <h1 className="text-lg sm:text-2xl font-semibold">
+                <h1 className="text-xl font-semibold sm:text-2xl lg:text-3xl">
                   Manager Dashboard
                 </h1>
 
@@ -90,8 +117,8 @@ export default function ManagerDashboard() {
             </div>
 
             {/* Charts */}
-            <div className="mt-6 sm:mt-10 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-2 gap-4">
-              <div className="w-full overflow-x-auto">
+            <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
+              <div className="min-w-0 overflow-hidden rounded-xl">
                 <CommonOverview
                   title="Lead Status Overview"
                   subtitle="Pipeline distribution by stage"
@@ -99,7 +126,9 @@ export default function ManagerDashboard() {
                 />
               </div>
 
-              <div className="w-full overflow-x-auto"></div>
+              <div className="min-w-0 overflow-hidden rounded-xl">
+                <ExecutivePerformance data={formattedExecutivePerformance} />
+              </div>
             </div>
           </div>
         </div>
