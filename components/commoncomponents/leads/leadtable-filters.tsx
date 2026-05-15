@@ -62,9 +62,8 @@ export default function LeadTableFilters({
 
   return (
     <div className="w-full flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-
-      <div className="flex flex-col sm:flex-row sm:items-center gap-4">
-        <div className="w-full sm:w-56">
+      <div className="flex flex-col sm:flex-row sm:flex-1 sm:flex-wrap sm:items-center sm:justify-end gap-4">
+        <div className="w-full sm:w-50">
           <Input
             search
             type="text"

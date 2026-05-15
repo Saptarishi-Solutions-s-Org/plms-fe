@@ -12,11 +12,7 @@ import LeadTable from "@/components/commoncomponents/leads/leadtable";
 import { useLeads } from "@/hooks/use-leads";
 import { useLeadExport } from "@/hooks/export";
 import { getUser } from "@/lib/auth";
-import {
-  createLead,
-  getExecutiveUsers,
-  updateLead,
-} from "@/services/leads";
+import { createLead, getExecutiveUsers, updateLead } from "@/services/leads";
 import type {
   ExecutiveOption,
   Lead,
@@ -78,8 +74,7 @@ export default function LeadsPage() {
         filters.sources.includes(lead.leadSource);
 
       const statusMatch =
-        filters.statuses.length === 0 ||
-        filters.statuses.includes(lead.status);
+        filters.statuses.length === 0 || filters.statuses.includes(lead.status);
 
       const priorityMatch =
         filters.priorities.length === 0 ||
@@ -169,8 +164,6 @@ export default function LeadsPage() {
     setSelectedLead(mapLead(lead));
   };
 
-  const isEmpty = !isLoading && visibleLeads.length === 0;
-
   return (
     <>
       {isLoading ? (
@@ -198,24 +191,19 @@ export default function LeadsPage() {
             onApply={setFilters}
           />
 
-          {isEmpty ? (
-            <div className="text-center py-10 text-gray-500">
-              No leads found
-            </div>
-          ) : (
-            <LeadTable
-              leads={filteredLeads}
-              executives={executives}
-              showAssignedTo={!isExecutive}
-              renderActions={(lead) => (
-                <LeadActions
-                  lead={lead}
-                  onEdit={openEditForm}
-                  onViewDetails={handleViewDetails}
-                />
-              )}
-            />
-          )}
+          <LeadTable
+            leads={filteredLeads}
+            executives={executives}
+            showAssignedTo={!isExecutive}
+            emptyMessage="No leads found"
+            renderActions={(lead) => (
+              <LeadActions
+                lead={lead}
+                onEdit={openEditForm}
+                onViewDetails={handleViewDetails}
+              />
+            )}
+          />
 
           <LeadDialogs
             isFormOpen={isFormOpen}
