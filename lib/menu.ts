@@ -45,6 +45,7 @@ export const MENU_CONFIG: MenuGroup[] = [
         permissions: ["view","create","update","delete"],// U need to update this based on the actual permissions required
         roles: ["Admin"],// U need to update this based on the actual roles that should have access
       },
+      
     ],
   },
 ];
