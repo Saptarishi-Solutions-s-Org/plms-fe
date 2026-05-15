@@ -1,123 +1,75 @@
-﻿// types/offer.ts
-
-// ─── Discount ──────────────────────────────────────────────────────────────────
+﻿// ─── Discount ─────────────────────────────────────────────────────────────────
 
 export const DISCOUNT_TYPES = [
-  "fixed",
-  "percentage",
-  "combo",
-  "bogo",
-  "conditional",
-  "flag",
+  "Fixed_Amount",
+  "Percentage",
+  "Combo_Offer",
+  "Buy_One_Get_One_Free",
+  "Conditional_Discount",
+  "Flag_Discount",
 ] as const;
 
-export type DiscountType = (typeof DISCOUNT_TYPES)[number];
-
-
+export type DiscountType = (typeof DISCOUNT_TYPES)[number] | "";
 
 export type OfferStatus = "active" | "inactive" | "expired";
 
-// ─── Refs ──────────────────────────────────────────────────────────────────────
+// ─── Refs ─────────────────────────────────────────────────────────────────────
 
-export interface OrganizationRef {
-  id:   string;
+export interface OfferManager {
+  id: string;
   name: string;
 }
 
-// ─── API Offer (response from getOffers) ──────────────────────────────────────
-
-export interface Offer {
-  id:                        string;
-  title:                     string;
-  code:                      string;
-  description?:              string;
-  isGlobal:                  boolean;
-  status:                    OfferStatus;
-  assignedUsers?: string
-  discountType:              DiscountType | "";
-
-  // fixed
-  discountAmount?:           number;
-
-  // percentage
-  discountPercentage?:       number;
-  maxDiscountAmount?:        number;
-
-  // combo
-  comboDescription?:         string;
-
-  // bogo
-  buyQuantity?:              number;
-  getQuantity?:              number;
-
-  // conditional
-  minPurchaseAmount?:        number;
-  conditionalDiscountValue?: number;
-
-  // flag
-  flagDiscountAmount?:       number;
-
-  validFrom:                 string;
-  validTo:                   string;
-  createdAt:                 string;
-  createdBy:                 string;
-  organization?:             OrganizationRef | null;
+export interface OrganizationRef {
+  id: string;
+  name: string;
 }
 
+// ─── Offer ────────────────────────────────────────────────────────────────────
+
+export interface Offer {
+  id: string;
+  title: string;
+  code: string;
+  description: string;
+  assignedUsers: string;
+  isGlobal: boolean;
+  status: OfferStatus;
+  discountType: DiscountType;
+  discountAmount?: number;
+  discountPercentage?: number;
+  maxDiscountAmount?: number;
+  comboDescription?: string;
+  buyQuantity?: number;
+  getQuantity?: number;
+  minPurchaseAmount?: number;
+  conditionalDiscountValue?: number;
+  flagDiscountAmount?: number;
+  validFrom: string;
+  validTo: string;
+  createdAt: string;
+  createdBy: string;
+  organization: OrganizationRef | null;
+  managers?: OfferManager[];
+}
 
 export interface OfferFilters {
   search: string;
   status: "all" | OfferStatus;
 }
 
-
-
 export interface OfferSummary {
-  totalCount:    number;
-  activeCount:   number;
+  totalCount: number;
+  activeCount: number;
   inactiveCount: number;
-  expiredCount:  number;
-  globalCount:   number;
+  expiredCount: number;
+  globalCount: number;
 }
 
-// ─── Form data (all strings — controlled inputs) ───────────────────────────────
-
-export interface OfferFormData {
-  offerName:                string;
-  description:              string;
-  discountType:             DiscountType | "";
-
-  // fixed
-  discountAmount:           string;
-
-  // percentage
-  discountPercentage:       string;
-  maxDiscountAmount:        string;
-
-  // combo
-  comboDescription:         string;
-
-  // bogo
-  buyQuantity:              string;
-  getQuantity:              string;
-
-  // conditional
-  minPurchaseAmount:        string;
-  conditionalDiscountValue: string;
-
-  // flag
-  flagDiscountAmount:       string;
-
-  validFrom:                string;
-  validTo:                  string;
-}
-
-export type OfferFormErrors = Partial<Record<keyof OfferFormData | "dateRange", string>>;
-
-// ─── API wrappers ──────────────────────────────────────────────────────────────
+// ─── API wrappers ─────────────────────────────────────────────────────────────
 
 export interface ApiResponse<T> {
-  data:    T;
+  data: T;
   message: string;
   success: boolean;
 }

@@ -1,28 +1,12 @@
-﻿// lib/offer-utils.ts
+﻿import { z } from "zod";
+import { format } from "date-fns";
+import { DISCOUNT_TYPES, type DiscountType, type OfferManager as Manager } from "@/types/offer";
+import type { DateRange } from "@/components/commoncomponents/react-day-picker";
 
-import { z } from "zod";
+export type { DiscountType, Manager, DateRange };
+export { DISCOUNT_TYPES };
 
-// ─── Manager ─────────────────────────────────────────────────────────────────
-
-export interface Manager {
-  id: string;
-  name: string;
-}
-
-// ─── Discount types ─────────────────────────────────────────────────────────
-
-export const DISCOUNT_TYPES = [
-  "Fixed_Amount",
-  "Percentage",
-  "Combo_Offer",
-  "Buy_One_Get_One_Free",
-  "Conditional_Discount",
-  "Flag_Discount",
-] as const;
-
-export type DiscountType = (typeof DISCOUNT_TYPES)[number] | "";
-
-// ─── Discount options for dropdown ─────────────────────────────────────────
+// ─── Discount options ──────────────────────────────────────────────────────
 
 export const DISCOUNT_OPTIONS: { value: DiscountType; label: string }[] = [
   { value: "Fixed_Amount",         label: "Fixed Amount" },
@@ -41,55 +25,38 @@ export interface OfferFormData {
   discountType: DiscountType;
   isGlobal: boolean;
   managerIds: string[];
-
   discountAmount: string;
   discountPercentage: string;
   maxDiscountAmount: string;
-
   comboDescription: string;
-
   buyQuantity: string;
   getQuantity: string;
-
   minPurchaseAmount: string;
   conditionalDiscountValue: string;
-
   flagDiscountAmount: string;
-
-  validFrom: string;
-  validTo: string;
+  dateRange: DateRange | undefined;
 }
 
-export type OfferFormErrors = Partial<
-  Record<keyof OfferFormData | "dateRange", string>
->;
+export type OfferFormErrors = Partial<Record<keyof OfferFormData, string>>;
 
-// ─── API payload shape ─────────────────────────────────────────────────────
+// ─── API payload ───────────────────────────────────────────────────────────
 
 export interface OfferPayload {
   title: string;
   description: string;
   discount_type: string;
   is_global: boolean;
-
   manager_ids: string[];
-  user_id?: string;
-
   valid_from: string;
   valid_to: string;
-
   discount_amount?: number;
   discount_percentage?: number;
   max_discount_amount?: number;
-
   combo_description?: string;
-
   buy_quantity?: number;
   get_quantity?: number;
-
   min_purchase_amount?: number;
-  discount_value?: number;
-
+  conditional_discount_value?: number;
   flag_discount_amount?: number;
 }
 
@@ -101,68 +68,52 @@ export const EMPTY_FORM: OfferFormData = {
   discountType: "",
   isGlobal: false,
   managerIds: [],
-
   discountAmount: "",
   discountPercentage: "",
   maxDiscountAmount: "",
-
   comboDescription: "",
-
   buyQuantity: "",
   getQuantity: "",
-
   minPurchaseAmount: "",
   conditionalDiscountValue: "",
-
   flagDiscountAmount: "",
-
-  validFrom: "",
-  validTo: "",
+  dateRange: undefined,
 };
 
-// ─── Zod Schema ────────────────────────────────────────────────────────────
+// ─── Zod schema ────────────────────────────────────────────────────────────
 
 export const offerFormSchema = z
   .object({
-    offerName:    z.string().trim().min(1, "Offer name is required.").max(100),
-    description:  z.string().trim().min(1, "Description is required."),
-    discountType: z.union([z.literal(""), z.enum(DISCOUNT_TYPES)]),
-    isGlobal:     z.boolean(),
-    managerIds:   z.array(z.string()),
-
+    offerName:                z.string().trim().min(1, "Offer name is required.").max(100),
+    description:              z.string().trim().min(1, "Description is required."),
+    discountType:             z.union([z.literal(""), z.enum(DISCOUNT_TYPES)]),
+    isGlobal:                 z.boolean(),
+    managerIds:               z.array(z.string()),
     discountAmount:           z.string(),
     discountPercentage:       z.string(),
     maxDiscountAmount:        z.string(),
-
     comboDescription:         z.string(),
-
     buyQuantity:              z.string(),
     getQuantity:              z.string(),
-
     minPurchaseAmount:        z.string(),
     conditionalDiscountValue: z.string(),
-
     flagDiscountAmount:       z.string(),
-
-    validFrom: z.string().min(1, "Valid from date is required."),
-    validTo:   z.string().min(1, "Valid to date is required."),
+    dateRange:                z.any().optional(),
   })
-
   .superRefine((data, ctx) => {
     const issue = (path: string, message: string) =>
       ctx.addIssue({ code: "custom", path: [path], message });
 
-    if (!data.discountType) {
+    if (!data.discountType)
       issue("discountType", "Please select a discount type.");
-    }
 
-    if (!data.isGlobal && data.managerIds.length === 0) {
+    if (!data.isGlobal && data.managerIds.length === 0)
       issue("managerIds", "Please select at least one manager.");
-    }
 
-    if (data.validFrom && data.validTo && data.validTo <= data.validFrom) {
-      issue("dateRange", "Valid to must be after valid from.");
-    }
+    if (!data.dateRange?.from || !data.dateRange?.to)
+      issue("dateRange", "Please select a valid date range.");
+    else if (data.dateRange.to < data.dateRange.from)
+      issue("dateRange", "End date must be after start date.");
 
     const positiveNum = (field: keyof OfferFormData, msg: string) => {
       const raw = String(data[field] ?? "").trim();
@@ -185,14 +136,12 @@ export const offerFormSchema = z
     };
 
     const validators: Record<string, () => void> = {
-      Fixed_Amount: () => {
-        positiveNum("discountAmount", "Discount amount is required.");
-      },
-      Percentage: () => {
+      Fixed_Amount:         () => positiveNum("discountAmount", "Discount amount is required."),
+      Percentage:           () => {
         percent("discountPercentage", "Discount percentage is required.");
         positiveNum("maxDiscountAmount", "Max discount amount is required.");
       },
-      Combo_Offer: () => {
+      Combo_Offer:          () => {
         if (!String(data.comboDescription ?? "").trim())
           issue("comboDescription", "Combo description is required.");
       },
@@ -204,9 +153,7 @@ export const offerFormSchema = z
         positiveNum("minPurchaseAmount", "Minimum purchase amount is required.");
         positiveNum("conditionalDiscountValue", "Discount value is required.");
       },
-      Flag_Discount: () => {
-        positiveNum("flagDiscountAmount", "Discount amount is required.");
-      },
+      Flag_Discount:        () => positiveNum("flagDiscountAmount", "Discount amount is required."),
     };
 
     validators[data.discountType]?.();
@@ -233,48 +180,33 @@ export function buildOfferPayload(data: OfferFormData): OfferPayload {
     discount_type: data.discountType,
     is_global:     data.isGlobal,
     manager_ids:   data.isGlobal ? [] : data.managerIds,
-    valid_from:    data.validFrom,
-    valid_to:      data.validTo,
+    valid_from:    data.dateRange?.from ? format(data.dateRange.from, "yyyy-MM-dd") : "",
+    valid_to:      data.dateRange?.to   ? format(data.dateRange.to,   "yyyy-MM-dd") : "",
   };
 
   const n = (f: keyof OfferFormData) => Number(data[f]);
 
   const map: Record<string, () => void> = {
-    Fixed_Amount: () => {
-      base.discount_amount = n("discountAmount");
-    },
-    Percentage: () => {
-      base.discount_percentage = n("discountPercentage");
-      base.max_discount_amount = n("maxDiscountAmount");
-    },
-    Combo_Offer: () => {
-      base.combo_description = data.comboDescription.trim();
-    },
-    Buy_One_Get_One_Free: () => {
-      base.buy_quantity = n("buyQuantity");
-      base.get_quantity = n("getQuantity");
-    },
-    Conditional_Discount: () => {
-      base.min_purchase_amount = n("minPurchaseAmount");
-      base.discount_value      = n("conditionalDiscountValue");
-    },
-    Flag_Discount: () => {
-      base.flag_discount_amount = n("flagDiscountAmount");
-    },
+    Fixed_Amount:         () => { base.discount_amount            = n("discountAmount"); },
+    Percentage:           () => { base.discount_percentage        = n("discountPercentage");
+                                  base.max_discount_amount        = n("maxDiscountAmount"); },
+    Combo_Offer:          () => { base.combo_description          = data.comboDescription.trim(); },
+    Buy_One_Get_One_Free: () => { base.buy_quantity               = n("buyQuantity");
+                                  base.get_quantity               = n("getQuantity"); },
+    Conditional_Discount: () => { base.min_purchase_amount        = n("minPurchaseAmount");
+                                  base.conditional_discount_value = n("conditionalDiscountValue"); },
+    Flag_Discount:        () => { base.flag_discount_amount       = n("flagDiscountAmount"); },
   };
 
   map[data.discountType]?.();
-
   return base;
 }
 
-// ─── Date helper ───────────────────────────────────────────────────────────
+// ─── Date helpers ──────────────────────────────────────────────────────────
 
 export function getTodayIso(): string {
   return new Date().toISOString().split("T")[0];
 }
-
-// ─── Date formatter ────────────────────────────────────────────────────────
 
 export function formatDate(date: string | Date | null | undefined): string {
   if (!date) return "—";

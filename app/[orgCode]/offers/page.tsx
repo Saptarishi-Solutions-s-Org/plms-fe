@@ -3,63 +3,58 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 
 import { getOffers, getOfferSummary, createOffer, toggleOfferStatus } from "@/services/offers";
-import { OffersTable } from "@/components/offers/OffersTable";
-import { OfferFilters } from "@/components/offers/OfferFilters";
-import { OfferCards } from "@/components/offers/offercards";
-import { CreateOfferDialog } from "@/components/offers/CreateOfferDialog";
+import { OffersTable } from "@/components/commoncomponents/offers/OffersTable";
+import { OfferFilters } from "@/components/commoncomponents/offers/OfferFilters";
+import { OfferCards } from "@/components/commoncomponents/offers/offercards";
+import { CreateOfferDialog } from "@/components/commoncomponents/offers/CreateOfferDialog";
 import { Button } from "@/components/ui/button";
-import type { OfferPayload } from "@/lib/offer-utils";
+import type { OfferPayload } from "@/lib/validators/offervalidation";
 import type { Offer, OfferFilters as OfferFiltersType, DiscountType, OfferStatus } from "@/types/offer";
 
-
+// ─── Helpers ───────────────────────────────────────────────────────────────
 
 const str = (v: unknown): string => (typeof v === "string" ? v : "");
+
 const bool = (v: unknown): boolean => {
   if (typeof v === "boolean") return v;
   if (typeof v === "number") return v !== 0;
   if (typeof v === "string") return v === "true" || v === "1";
   return false;
 };
+
 const num = (v: unknown): number | undefined => {
   const n = typeof v === "string" ? Number(v) : v;
   return typeof n === "number" && Number.isFinite(n) ? n : undefined;
 };
+
 const toStatus = (v: unknown): OfferStatus => {
   const s = str(v).toLowerCase();
   return s === "active" || s === "inactive" || s === "expired" ? s : "active";
 };
-const toDiscountType = (v: unknown): DiscountType | "" => {
+
+const toDiscountType = (v: unknown): DiscountType => {
   if (typeof v !== "string") return "";
-
-  const value = v.toLowerCase();
-
   const map: Record<string, DiscountType> = {
-    fixed: "fixed",
-    fixed_amount: "fixed",
-
-    percentage: "percentage",
-
-    combo: "combo",
-    combo_offer: "combo",
-
-    bogo: "bogo",
-    buy_one_get_one_free: "bogo",
-
-    conditional: "conditional",
-    conditional_discount: "conditional",
-
-    flag: "flag",
-    flag_discount: "flag",
+    fixed_amount: "Fixed_Amount",
+    percentage: "Percentage",
+    combo_offer: "Combo_Offer",
+    buy_one_get_one_free: "Buy_One_Get_One_Free",
+    conditional_discount: "Conditional_Discount",
+    flag_discount: "Flag_Discount",
   };
-
-  return map[value] || "";
+  return map[v.toLowerCase()] ?? "";
 };
-const isObj = (v: unknown): v is Record<string, unknown> => typeof v === "object" && v !== null;
+
+const isObj = (v: unknown): v is Record<string, unknown> =>
+  typeof v === "object" && v !== null;
+
 const toArray = (res: unknown): Record<string, unknown>[] => {
   if (Array.isArray(res)) return res;
   if (isObj(res) && Array.isArray(res.value)) return res.value;
   return [];
 };
+
+// ─── Mapper ────────────────────────────────────────────────────────────────
 
 const mapOffer = (o: Record<string, unknown>): Offer => ({
   id: str(o.id),
@@ -68,66 +63,33 @@ const mapOffer = (o: Record<string, unknown>): Offer => ({
   description: str(o.description),
 
   assignedUsers: Array.isArray(o.managers)
-    ? o.managers
-      .map((m: any) => m.name)
-      .filter(Boolean)
-      .join(", ")
+    ? o.managers.map((m: any) => m.name).filter(Boolean).join(", ")
     : "",
 
   validFrom: str(o.validFrom || o.valid_from),
   validTo: str(o.validTo || o.valid_to),
 
   isGlobal: bool(o.isGlobal ?? o.is_global),
-
   status: toStatus(o.status),
 
-  discountType: toDiscountType(
-    o.discountType || o.discount_type
-  ),
+  discountType: toDiscountType(o.discountType || o.discount_type),
 
-  discountAmount: num(
-    o.discountAmount ?? o.discount_amount
-  ),
-
-  discountPercentage: num(
-    o.discountPercentage ?? o.discount_percentage
-  ),
-
-  maxDiscountAmount: num(
-    o.maxDiscountAmount ?? o.max_discount_amount
-  ),
-
-  comboDescription: str(
-    o.comboDescription as string ||
-    o.combo_description as string
-  ),
-
-  buyQuantity: num(
-    o.buyQuantity ?? o.buy_quantity
-  ),
-
-  getQuantity: num(
-    o.getQuantity ?? o.get_quantity
-  ),
-
-  minPurchaseAmount: num(
-    o.minPurchaseAmount ?? o.min_purchase_amount
-  ),
-
-  conditionalDiscountValue: num(
-    o.conditionalDiscountValue ??
-    o.conditional_discount_value
-  ),
-
-  flagDiscountAmount: num(
-    o.flagDiscountAmount ??
-    o.flag_discount_amount
-  ),
+  discountAmount: num(o.discountAmount ?? o.discount_amount),
+  discountPercentage: num(o.discountPercentage ?? o.discount_percentage),
+  maxDiscountAmount: num(o.maxDiscountAmount ?? o.max_discount_amount),
+  comboDescription: str((o.comboDescription ?? o.combo_description) as string),
+  buyQuantity: num(o.buyQuantity ?? o.buy_quantity),
+  getQuantity: num(o.getQuantity ?? o.get_quantity),
+  minPurchaseAmount: num(o.minPurchaseAmount ?? o.min_purchase_amount),
+  conditionalDiscountValue: num(o.conditionalDiscountValue ?? o.conditional_discount_value),
+  flagDiscountAmount: num(o.flagDiscountAmount ?? o.flag_discount_amount),
 
   createdAt: "",
   createdBy: "",
   organization: null,
 });
+
+// ─── Constants ─────────────────────────────────────────────────────────────
 
 const generateCode = (name: string) =>
   name.toUpperCase().replace(/\s+/g, "_").slice(0, 20) || `OFFER_${Date.now()}`;
@@ -136,7 +98,7 @@ const DEFAULT_FILTERS: OfferFiltersType = { search: "", status: "all" };
 
 type Summary = { totalCount: number; globalCount: number };
 
-
+// ─── Page ──────────────────────────────────────────────────────────────────
 
 export default function OffersPage() {
   const [offers, setOffers] = useState<Offer[]>([]);
@@ -146,7 +108,6 @@ export default function OffersPage() {
   const [createOpen, setCreateOpen] = useState(false);
   const [filters, setFilters] = useState(DEFAULT_FILTERS);
   const [draftFilters, setDraftFilters] = useState(DEFAULT_FILTERS);
-
 
   const activeCount = useMemo(() => offers.filter((o) => o.status === "active").length, [offers]);
   const inactiveCount = useMemo(() => offers.filter((o) => o.status === "inactive").length, [offers]);
@@ -188,7 +149,8 @@ export default function OffersPage() {
         ...(data.buy_quantity !== undefined && { buy_quantity: data.buy_quantity }),
         ...(data.get_quantity !== undefined && { get_quantity: data.get_quantity }),
         ...(data.min_purchase_amount !== undefined && { min_purchase_amount: data.min_purchase_amount }),
-        ...(data.discount_value !== undefined && { discount_value: data.discount_value }),
+        // Fixed line below:
+        ...(data.conditional_discount_value !== undefined && { conditional_discount_value: data.conditional_discount_value }),
         ...(data.flag_discount_amount !== undefined && { flag_discount_amount: data.flag_discount_amount }),
       };
       await createOffer(payload);
@@ -203,21 +165,15 @@ export default function OffersPage() {
     const offer = offers.find((o) => o.id === id);
     if (!offer) return;
 
-    const newStatus = (offer.status === "active" ? "inactive" : "active") as OfferStatus;
+    const newStatus: OfferStatus = offer.status === "active" ? "inactive" : "active";
 
-
-    setOffers((prev) =>
-      prev.map((o) => o.id === id ? { ...o, status: newStatus } : o)
-    );
+    setOffers((prev) => prev.map((o) => o.id === id ? { ...o, status: newStatus } : o));
 
     try {
       await toggleOfferStatus(id);
     } catch (err) {
       console.error("Toggle failed:", err);
-      // Revert on error
-      setOffers((prev) =>
-        prev.map((o) => o.id === id ? { ...o, status: offer.status } : o)
-      );
+      setOffers((prev) => prev.map((o) => o.id === id ? { ...o, status: offer.status } : o));
     }
   }, [offers]);
 
@@ -228,7 +184,8 @@ export default function OffersPage() {
         o.code.toLowerCase().includes(filters.search.toLowerCase());
       const matchStatus = filters.status === "all" || o.status === filters.status;
       return matchSearch && matchStatus;
-    }), [offers, filters]);
+    }),
+    [offers, filters]);
 
   return (
     <div className="max-w-6xl mx-auto p-8">
@@ -237,7 +194,7 @@ export default function OffersPage() {
           <h1 className="text-xl font-semibold">Offers</h1>
           <p className="text-sm text-muted-foreground">Manage promotional offers</p>
         </div>
-        <Button onClick={() => setCreateOpen(true)} className="bg-blue-600 hover:bg-blue-700 text-white">
+        <Button onClick={() => setCreateOpen(true)} className="w-full sm:w-auto rounded-full px-6 bg-blue-600 hover:bg-blue-700 text-white">
           + Create Offer
         </Button>
       </div>

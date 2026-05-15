@@ -1,6 +1,6 @@
 ﻿"use client";
 
-import * as React from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { XIcon, TagIcon, GlobeIcon, ChevronDownIcon, CheckIcon, XCircleIcon } from "lucide-react";
 import { toast } from "sonner";
 
@@ -26,6 +26,7 @@ import { Spinner } from "@/components/ui/spinner";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { api } from "@/lib/api";
+import { DateRangeFilter } from "@/components/commoncomponents/daterange";
 
 import {
   type OfferFormData,
@@ -36,27 +37,29 @@ import {
   EMPTY_FORM,
   validateOfferForm,
   buildOfferPayload,
-  getTodayIso,
   DISCOUNT_OPTIONS,
-} from "@/lib/offer-utils";
-
-// ─── API call ──────────────────────────────────────────────────────────────
+} from "@/lib/validators/offervalidation";
 
 async function fetchManagersFromApi(): Promise<Manager[]> {
   try {
     const res = await api(`/odata/v4/offer/getManagers()`);
     const rows: any[] = Array.isArray(res) ? res : Array.isArray(res?.value) ? res.value : [];
-    return rows.map((m: any) => ({ id: String(m.id ?? ""), name: String(m.name ?? "") })).filter((m) => m.id && m.name);
+    return rows
+      .map((m: any) => ({ id: String(m.id ?? ""), name: String(m.name ?? "") }))
+      .filter((m) => m.id && m.name);
   } catch (err) {
     console.error("fetchManagersFromApi error:", err);
     throw err;
   }
 }
 
-// ─── Field wrapper ─────────────────────────────────────────────────────────
 
 function Field({ label, required, error, htmlFor, children }: {
-  label: string; required?: boolean; error?: string; htmlFor?: string; children: React.ReactNode;
+  label: string;
+  required?: boolean;
+  error?: string;
+  htmlFor?: string;
+  children: React.ReactNode;
 }) {
   return (
     <div className="space-y-1.5">
@@ -69,16 +72,19 @@ function Field({ label, required, error, htmlFor, children }: {
   );
 }
 
-// ─── Multi-select Manager Dropdown (Clean Version) ────────────────────────
 
 function MultiManagerSelect({ managers, loading, value, error, disabled, onChange }: {
-  managers: Manager[]; loading: boolean; value: string[]; error?: string;
-  disabled: boolean; onChange: (ids: string[]) => void;
+  managers: Manager[];
+  loading: boolean;
+  value: string[];
+  error?: string;
+  disabled: boolean;
+  onChange: (ids: string[]) => void;
 }) {
-  const [open, setOpen] = React.useState(false);
-  const ref = React.useRef<HTMLDivElement>(null);
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
 
-  React.useEffect(() => {
+  useEffect(() => {
     const handler = (e: MouseEvent) => {
       if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
     };
@@ -143,7 +149,12 @@ function MultiManagerSelect({ managers, loading, value, error, disabled, onChang
           {selected.map((m) => (
             <span key={m.id} className="inline-flex items-center gap-1 rounded-full bg-blue-100 text-blue-700 text-xs px-2.5 py-1 font-medium">
               {m.name}
-              <button type="button" disabled={disabled} onClick={() => toggle(m.id)} className="hover:text-blue-900 disabled:opacity-50 ml-0.5">
+              <button
+                type="button"
+                disabled={disabled}
+                onClick={() => toggle(m.id)}
+                className="hover:text-blue-900 disabled:opacity-50 ml-0.5"
+              >
                 <XCircleIcon className="size-3.5" />
               </button>
             </span>
@@ -157,17 +168,20 @@ function MultiManagerSelect({ managers, loading, value, error, disabled, onChang
 // ─── Discount Fields ───────────────────────────────────────────────────────
 
 function DiscountFields({ data, errors, disabled, update, clearError }: {
-  data: OfferFormData; errors: OfferFormErrors; disabled: boolean;
+  data: OfferFormData;
+  errors: OfferFormErrors;
+  disabled: boolean;
   update: (f: keyof OfferFormData, v: string) => void;
-  clearError: (...f: (keyof OfferFormData | "dateRange")[]) => void;
+  clearError: (...f: (keyof OfferFormData)[]) => void;
 }) {
   const errCls = (hasError: boolean) => hasError ? "border-red-500 focus-visible:ring-red-500" : "";
+  const fieldError = (f: keyof OfferFormData) => (errors as Record<string, string>)[f];
 
   const numInput = (field: keyof OfferFormData, placeholder: string, extra?: React.InputHTMLAttributes<HTMLInputElement>) => (
     <Input
       id={field} placeholder={placeholder} type="number" min="0" step="0.01"
       value={data[field] as string} disabled={disabled}
-      className={`h-10 ${errCls(!!(errors as Record<string, string>)[field])}`}
+      className={`h-10 ${errCls(!!fieldError(field))}`}
       onChange={(e) => { update(field, e.target.value); clearError(field); }}
       {...extra}
     />
@@ -177,12 +191,10 @@ function DiscountFields({ data, errors, disabled, update, clearError }: {
     <Input
       id={field} placeholder={placeholder} type="number" min="1" step="1"
       value={data[field] as string} disabled={disabled}
-      className={`h-10 ${errCls(!!(errors as Record<string, string>)[field])}`}
+      className={`h-10 ${errCls(!!fieldError(field))}`}
       onChange={(e) => { update(field, e.target.value); clearError(field); }}
     />
   );
-
-  const fieldError = (f: keyof OfferFormData) => (errors as Record<string, string>)[f];
 
   switch (data.discountType) {
     case "Fixed_Amount":
@@ -205,9 +217,12 @@ function DiscountFields({ data, errors, disabled, update, clearError }: {
     case "Combo_Offer":
       return (
         <Field label="Combo Description" required error={fieldError("comboDescription")} htmlFor="comboDescription">
-          <Textarea id="comboDescription" placeholder="Describe the combo offer…" value={data.comboDescription} disabled={disabled}
+          <Textarea
+            id="comboDescription" placeholder="Describe the combo offer…"
+            value={data.comboDescription} disabled={disabled}
             className={`min-h-[90px] resize-none ${errCls(!!fieldError("comboDescription"))}`}
-            onChange={(e) => { update("comboDescription", e.target.value); clearError("comboDescription"); }} />
+            onChange={(e) => { update("comboDescription", e.target.value); clearError("comboDescription"); }}
+          />
         </Field>
       );
     case "Buy_One_Get_One_Free":
@@ -255,19 +270,18 @@ interface CreateOfferDialogProps {
 export function CreateOfferDialog({
   open, onOpenChange, onSubmit: onSubmitProp, isSubmitting: externalIsSubmitting = false,
 }: CreateOfferDialogProps) {
-  const [formData, setFormData]               = React.useState<OfferFormData>(EMPTY_FORM);
-  const [errors, setErrors]                   = React.useState<OfferFormErrors>({});
-  const [submitError, setSubmitError]         = React.useState("");
-  const [isSubmitting, setIsSubmitting]       = React.useState(false);
-  const [managers, setManagers]               = React.useState<Manager[]>([]);
-  const [managersLoading, setManagersLoading] = React.useState(false);
-  const [managersFetched, setManagersFetched] = React.useState(false);
-  const [managersError, setManagersError]     = React.useState("");
+  const [formData, setFormData] = useState<OfferFormData>(EMPTY_FORM);
+  const [errors, setErrors] = useState<OfferFormErrors>({});
+  const [submitError, setSubmitError] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [managers, setManagers] = useState<Manager[]>([]);
+  const [managersLoading, setManagersLoading] = useState(false);
+  const [managersFetched, setManagersFetched] = useState(false);
+  const [managersError, setManagersError] = useState("");
 
   const busy = isSubmitting || externalIsSubmitting;
 
-  // Fetch managers
-  React.useEffect(() => {
+  useEffect(() => {
     if (!open || managersFetched) return;
     setManagersLoading(true);
     fetchManagersFromApi()
@@ -276,17 +290,17 @@ export function CreateOfferDialog({
       .finally(() => setManagersLoading(false));
   }, [open, managersFetched]);
 
-  const update = React.useCallback((field: keyof OfferFormData, value: string) =>
+  const update = useCallback((field: keyof OfferFormData, value: string) =>
     setFormData((prev) => ({ ...prev, [field]: value })), []);
 
-  const clearError = React.useCallback((...fields: (keyof OfferFormData | "dateRange")[]) =>
+  const clearError = useCallback((...fields: (keyof OfferFormData)[]) =>
     setErrors((prev) => {
       const next = { ...prev };
-      fields.forEach((f) => delete (next as Record<string, string>)[f]);
+      fields.forEach((f) => delete next[f]);
       return next;
     }), []);
 
-  const resetAll = React.useCallback(() => {
+  const resetAll = useCallback(() => {
     setFormData(EMPTY_FORM);
     setErrors({});
     setSubmitError("");
@@ -308,15 +322,9 @@ export function CreateOfferDialog({
 
   const handleDiscountTypeChange = (value: string) => {
     const resetFields: Partial<OfferFormData> = {
-      discountAmount: "",
-      discountPercentage: "",
-      maxDiscountAmount: "",
-      comboDescription: "",
-      buyQuantity: "",
-      getQuantity: "",
-      minPurchaseAmount: "",
-      conditionalDiscountValue: "",
-      flagDiscountAmount: "",
+      discountAmount: "", discountPercentage: "", maxDiscountAmount: "",
+      comboDescription: "", buyQuantity: "", getQuantity: "",
+      minPurchaseAmount: "", conditionalDiscountValue: "", flagDiscountAmount: "",
     };
     setFormData((prev) => ({ ...prev, discountType: value as DiscountType, ...resetFields }));
     clearError("discountType", ...Object.keys(resetFields) as (keyof OfferFormData)[]);
@@ -333,7 +341,7 @@ export function CreateOfferDialog({
     try {
       const result = await onSubmitProp(buildOfferPayload(formData));
       if (result.success) {
-        toast.success("Offer created", { description: "The offer was saved successfully." });
+        toast.success("Offer created");
         handleOpenChange(false);
       } else {
         setSubmitError(result.error || "Something went wrong. Please try again.");
@@ -382,7 +390,7 @@ export function CreateOfferDialog({
               )}
 
               {/* 1. Offer Scope */}
-              <Field label="Offer Scope" required htmlFor="isGlobal">
+              <Field label="Offer Scope">
                 <div className={`flex items-center justify-between rounded-xl border p-3.5 transition-colors
                   ${formData.isGlobal ? "border-blue-200 bg-blue-50/60" : "border-input bg-muted/30"}`}>
                   <div className="flex items-center gap-2.5">
@@ -396,24 +404,55 @@ export function CreateOfferDialog({
                 </div>
               </Field>
 
-              {/* 2. Managers (only when not global) */}
+              {/* 2. Manager */}
               {!formData.isGlobal && (
-                <Field label="Managers" required error={errors.managerIds}>
+                <Field label="Manager" required error={errors.managerIds}>
                   {managersError && (
                     <div className="mb-2 flex items-center justify-between rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-600">
                       <span>{managersError}</span>
-                      <button type="button" className="ml-2 font-medium underline underline-offset-2"
-                        onClick={() => { setManagersFetched(false); setManagersError(""); }}>
+
+                      <button
+                        type="button"
+                        className="ml-2 font-medium underline underline-offset-2"
+                        onClick={() => {
+                          setManagersFetched(false);
+                          setManagersError("");
+                        }}
+                      >
                         Retry
                       </button>
                     </div>
                   )}
-                  <MultiManagerSelect
-                    managers={managers} loading={managersLoading}
-                    value={formData.managerIds} error={errors.managerIds}
-                    disabled={busy}
-                    onChange={(ids) => { setFormData((prev) => ({ ...prev, managerIds: ids })); clearError("managerIds"); }}
-                  />
+
+                  <Select
+                    value={formData.managerIds[0] || ""}
+                    onValueChange={(value) => {
+                      setFormData((prev) => ({
+                        ...prev,
+                        managerIds: [value],
+                      }));
+
+                      clearError("managerIds");
+                    }}
+                    disabled={busy || managersLoading}
+                  >
+                    <SelectTrigger
+                      className={`w-full h-10 ${errors.managerIds
+                          ? "border-red-500 focus-visible:ring-red-500"
+                          : ""
+                        }`}
+                    >
+                      <SelectValue placeholder="Select manager" />
+                    </SelectTrigger>
+
+                    <SelectContent>
+                      {managers.map((manager) => (
+                        <SelectItem key={manager.id} value={manager.id}>
+                          {manager.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </Field>
               )}
 
@@ -429,7 +468,7 @@ export function CreateOfferDialog({
               <Field label="Description" required error={errors.description} htmlFor="description">
                 <Textarea id="description" placeholder="Describe what this offer includes…"
                   value={formData.description} disabled={busy}
-                  className={`min-h-[80px] resize-none ${errors.description ? "border-red-500 focus-visible:ring-red-500" : ""}`}
+                  className={`min-h-[80px] resize-none ${errors.description ? "border-red-500" : ""}`}
                   onChange={(e) => { update("description", e.target.value); clearError("description"); }} />
               </Field>
 
@@ -455,19 +494,26 @@ export function CreateOfferDialog({
                 />
               )}
 
-              {/* 7. Valid From / Valid To */}
-              <div className="grid grid-cols-2 gap-4">
-                <Field label="Valid From" required error={errors.validFrom} htmlFor="validFrom">
-                  <Input id="validFrom" type="date" min={getTodayIso()} value={formData.validFrom} disabled={busy}
-                    className={`h-10 ${errors.validFrom ? "border-red-500 focus-visible:ring-red-500" : ""}`}
-                    onChange={(e) => { update("validFrom", e.target.value); clearError("validFrom", "dateRange"); }} />
-                </Field>
-                <Field label="Valid To" required error={errors.validTo || errors.dateRange} htmlFor="validTo">
-                  <Input id="validTo" type="date" min={formData.validFrom || getTodayIso()} value={formData.validTo} disabled={busy}
-                    className={`h-10 ${errors.validTo || errors.dateRange ? "border-red-500 focus-visible:ring-red-500" : ""}`}
-                    onChange={(e) => { update("validTo", e.target.value); clearError("validTo", "dateRange"); }} />
-                </Field>
-              </div>
+              {/* 7. Valid Period */}
+              <Field
+                label="Valid Period"
+                required
+                error={errors.dateRange}
+              >
+                <DateRangeFilter
+                  value={formData.dateRange}
+                  onChange={(range) => {
+                    setFormData((prev) => ({ ...prev, dateRange: range }));
+                    clearError("dateRange");
+                  }}
+                  placeholder="Select date range"
+                  className={`w-full justify-between bg-background px-3 font-normal h-10 border rounded-md
+                    ${errors.dateRange
+                      ? "border-red-500"
+                      : "border-input"
+                    }`}
+                />
+              </Field>
 
             </div>
           </ScrollArea>
@@ -479,7 +525,9 @@ export function CreateOfferDialog({
               Cancel
             </Button>
             <Button type="submit" disabled={busy} className="h-9 px-5 bg-blue-600 hover:bg-blue-700 text-white min-w-[120px]">
-              {busy ? <span className="flex items-center gap-2"><Spinner className="size-4" />Saving…</span> : "Save Offer"}
+              {busy
+                ? <span className="flex items-center gap-2"><Spinner className="size-4" />Saving…</span>
+                : "Save Offer"}
             </Button>
           </div>
         </form>

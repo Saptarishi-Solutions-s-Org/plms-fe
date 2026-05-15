@@ -1,8 +1,5 @@
 "use client";
-
-import * as React from "react";
 import { Search } from "lucide-react";
-
 import {
   Select,
   SelectContent,
@@ -12,7 +9,6 @@ import {
 } from "@/components/ui/select";
 
 import type { OfferFilters } from "@/types/offer";
-
 interface OfferFiltersProps {
   filters: OfferFilters;
   onFilterChange: <K extends keyof OfferFilters>(
@@ -38,7 +34,7 @@ export function OfferFilters({
 
         <input
           type="text"
-          placeholder="Search organization / title / code..."
+          placeholder="Search  Offer Type/ Offer Name"
           value={filters.search}
           onChange={(e) =>
             onFilterChange("search", e.target.value)
