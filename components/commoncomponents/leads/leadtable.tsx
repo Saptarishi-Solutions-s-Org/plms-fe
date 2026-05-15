@@ -20,11 +20,6 @@ export interface LeadTableProps {
   renderActions?: (lead: Lead) => React.ReactNode;
   showAssignedTo?: boolean;
   emptyMessage?: string;
-  search?: string;
-  sourceFilter?: string;
-  statusFilter?: string;
-  priorityFilter?: string;
-  assignedToFilter?: string;
 }
 
 export default function LeadTable({
@@ -33,37 +28,9 @@ export default function LeadTable({
   renderActions,
   showAssignedTo = true,
   emptyMessage,
-  search = "",
-  sourceFilter = "All",
-  statusFilter = "All",
-  priorityFilter = "All",
-  assignedToFilter = "All",
 }: LeadTableProps) {
-  const filtered = leads.filter((lead) => {
-    const matchSearch =
-      lead.name.toLowerCase().includes(search.toLowerCase()) ||
-      lead.email.toLowerCase().includes(search.toLowerCase());
-
-    const matchSource =
-      sourceFilter === "All" || lead.leadSource === sourceFilter;
-    const matchStatus = statusFilter === "All" || lead.status === statusFilter;
-    const matchPriority =
-      priorityFilter === "All" || lead.priority === priorityFilter;
-    const matchAssignedTo =
-      assignedToFilter === "All" || lead.assignedTo === assignedToFilter;
-
-    return (
-      matchSearch &&
-      matchSource &&
-      matchStatus &&
-      matchPriority &&
-      matchAssignedTo
-    );
-  });
-
   const showActionsColumn = renderActions !== undefined;
-  const defaultEmpty =
-    leads.length === 0 ? "No leads found" : "No leads match your search.";
+  const defaultEmpty = "No leads found";
 
   return (
     <div className="overflow-x-auto rounded-lg border border-gray-200 bg-white shadow-sm">
@@ -97,14 +64,14 @@ export default function LeadTable({
               </TableHead>
             )}
             {showActionsColumn && (
-              <TableHead className="whitespace-nowrap text-xs sm:text-sm">
+              <TableHead className="w-20 whitespace-nowrap text-center text-xs sm:text-sm">
                 Actions
               </TableHead>
             )}
           </TableRow>
         </TableHeader>
         <TableBody>
-          {filtered.length === 0 ? (
+          {leads.length === 0 ? (
             <TableRow>
               <TableCell
                 colSpan={
@@ -116,7 +83,7 @@ export default function LeadTable({
               </TableCell>
             </TableRow>
           ) : (
-            filtered.map((lead, idx) => (
+            leads.map((lead, idx) => (
               <TableRow key={lead.uuid ?? idx}>
                 <TableCell className="text-gray-600">{idx + 1}</TableCell>
                 <TableCell className="font-medium text-gray-800">
@@ -141,8 +108,10 @@ export default function LeadTable({
                   </TableCell>
                 )}
                 {showActionsColumn && (
-                  <TableCell className="text-right">
-                    {renderActions?.(lead)}
+                  <TableCell className="w-20 text-center">
+                    <div className="flex justify-center">
+                      {renderActions?.(lead)}
+                    </div>
                   </TableCell>
                 )}
               </TableRow>

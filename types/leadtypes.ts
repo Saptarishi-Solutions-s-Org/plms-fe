@@ -4,12 +4,11 @@ export interface LeadFormData {
   email: string;
   phone: string;
   city: string;
-  stateId: string;
-  countryId: string;
+  state: string;
+  country: string;
   postalCode: string;
   leadSource: string;
   status: string;
-
   assignedTo: string;
   priority: string;
   notes: string;
@@ -18,8 +17,6 @@ export interface LeadFormData {
 export interface Lead extends LeadFormData {
   uuid: string;
   leadCode: string;
-  state: string;
-  country: string;
   assignedToName?: string;
 }
 
@@ -38,11 +35,6 @@ export interface LeadStats {
   new: number;
   contacted: number;
   qualified: number;
-}
-
-export interface LeadsWithStatsResponse {
-  leads: Lead[];
-  stats: LeadStats;
 }
 
 export type LeadFilters = {

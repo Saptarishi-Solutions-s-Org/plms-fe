@@ -109,8 +109,8 @@ export default function LeadForm({
       email: initialData?.email ?? "",
       phone: initialData?.phone ?? "",
       city: initialData?.city ?? "",
-      stateId: initialData?.stateId ?? "",
-      countryId: initialData?.countryId ?? "",
+      state: initialData?.state ?? "",
+      country: initialData?.country ?? "",
       postalCode: initialData?.postalCode ?? "",
       status: initialData?.status ?? "",
       leadSource: initialData?.leadSource ?? "",
@@ -147,8 +147,8 @@ export default function LeadForm({
       email: initialData?.email ?? "",
       phone: initialData?.phone ?? "",
       city: initialData?.city ?? "",
-      stateId: initialData?.stateId ?? "",
-      countryId: initialData?.countryId ?? "",
+      state: initialData?.state ?? "",
+      country: initialData?.country ?? "",
       postalCode: initialData?.postalCode ?? "",
       status: initialData?.status ?? "",
       leadSource: initialData?.leadSource ?? "",
@@ -159,8 +159,8 @@ export default function LeadForm({
   }, [fixedAssignedToId, initialData, reset]);
 
   const handleCountryChange = async (countryId: string) => {
-    setValue("countryId", countryId);
-    setValue("stateId", "");
+    setValue("country", countryId);
+    setValue("state", "");
     setStates([]);
 
     try {
@@ -237,10 +237,10 @@ export default function LeadForm({
           <FieldWrapper
             label="Country"
             required
-            error={errors.countryId?.message}
+            error={errors.country?.message}
           >
             <Controller
-              name="countryId"
+              name="country"
               control={control}
               render={({ field }) => (
                 <Select
@@ -262,9 +262,9 @@ export default function LeadForm({
             />
           </FieldWrapper>
 
-          <FieldWrapper label="State" required error={errors.stateId?.message}>
+          <FieldWrapper label="State" required error={errors.state?.message}>
             <Controller
-              name="stateId"
+              name="state"
               control={control}
               render={({ field }) => (
                 <Select

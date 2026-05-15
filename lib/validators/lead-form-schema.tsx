@@ -15,9 +15,9 @@ export const leadFormSchema = z.object({
 
   city: z.string().min(1, "City is required"),
 
-  countryId: z.string().min(1, "Country is required"),
+  country: z.string().min(1, "Country is required"),
 
-  stateId: z.string().min(1, "State is required"),
+  state: z.string().min(1, "State is required"),
 
   postalCode: z
     .string()
