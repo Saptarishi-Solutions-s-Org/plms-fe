@@ -36,12 +36,6 @@ const PRIORITY_ACTIVE_CLASS: Record<string, string> = {
   Urgent: "bg-red-500 border-red-500 text-white",
 };
 
-function SectionLabel({ children }: { children: React.ReactNode }) {
-  return (
-    <h3 className="mb-3 text-sm font-semibold text-blue-600">{children}</h3>
-  );
-}
-
 function FieldWrapper({
   label,
   required,
@@ -187,7 +181,9 @@ export default function LeadForm({
   return (
     <form onSubmit={handleSubmit(onValid)} className="flex flex-col gap-5 py-2">
       <div>
-        <SectionLabel>Personal Information</SectionLabel>
+        <h3 className="mb-3 text-sm font-semibold text-blue-600">
+          Personal Information
+        </h3>
 
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <FieldWrapper label="Name" required error={errors.name?.message}>
@@ -305,7 +301,9 @@ export default function LeadForm({
       </div>
 
       <div>
-        <SectionLabel>Lead Classification</SectionLabel>
+        <h3 className="mb-3 text-sm font-semibold text-blue-600">
+          Lead Classification
+        </h3>
 
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <FieldWrapper
@@ -428,7 +426,9 @@ export default function LeadForm({
       </div>
 
       <div>
-        <SectionLabel>Additional Information</SectionLabel>
+        <h3 className="mb-3 text-sm font-semibold text-blue-600">
+          Additional Information
+        </h3>
 
         <FieldWrapper required label="Notes" error={errors.notes?.message}>
           <Textarea

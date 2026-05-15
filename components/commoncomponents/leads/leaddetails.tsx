@@ -3,12 +3,6 @@
 import { Label } from "@/components/ui/label";
 import { Lead } from "@/types/leadtypes";
 
-function SectionLabel({ children }: { children: React.ReactNode }) {
-  return (
-    <h3 className="mb-3 text-sm font-semibold text-blue-600">{children}</h3>
-  );
-}
-
 function FieldDisplay({
   label,
   value,
@@ -38,7 +32,9 @@ export default function LeadDetails({ lead }: { lead: Lead }) {
   return (
     <div className="flex flex-col gap-5 py-2">
       <div>
-        <SectionLabel>Personal Information</SectionLabel>
+        <h3 className="mb-3 text-sm font-semibold text-blue-600">
+          Personal Information
+        </h3>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <FieldDisplay label="Lead ID" value={lead.leadCode} />
           <FieldDisplay label="Name" value={lead.name} />
@@ -53,7 +49,9 @@ export default function LeadDetails({ lead }: { lead: Lead }) {
       </div>
 
       <div>
-        <SectionLabel>Lead Classification</SectionLabel>
+        <h3 className="mb-3 text-sm font-semibold text-blue-600">
+          Lead Classification
+        </h3>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <FieldDisplay label="Status" value={lead.status} />
           <FieldDisplay
@@ -65,7 +63,9 @@ export default function LeadDetails({ lead }: { lead: Lead }) {
       </div>
 
       <div>
-        <SectionLabel>Additional Information</SectionLabel>
+        <h3 className="mb-3 text-sm font-semibold text-blue-600">
+          Additional Information
+        </h3>
         <FieldDisplay label="Notes" value={lead.notes} multiline />
       </div>
     </div>
