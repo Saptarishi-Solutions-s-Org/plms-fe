@@ -13,6 +13,12 @@ import {
 
 import type { RecentLeadsProps } from "@/types/executivestats";
 import { ArrowRight } from "lucide-react";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 const STATUS_BADGE: Record<string, string> = {
   Qualified: "bg-blue-50 text-blue-600",
@@ -78,10 +84,21 @@ const RecentLeadsCard = ({ title, leads, onViewAll }: RecentLeadsProps) => {
                 >
                   <TableCell className="text-gray-600">{idx + 1}</TableCell>
 
-                  <TableCell className="font-medium text-gray-800">
-                    {lead.leadName}
+                  <TableCell className="font-medium text-gray-800 max-w-[250px] truncate">
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <span className="block truncate cursor-pointer">
+                            {lead.leadName}
+                          </span>
+                        </TooltipTrigger>
+
+                        <TooltipContent>
+                          <p>{lead.leadName}</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
                   </TableCell>
-                  
 
                   <TableCell>
                     <span

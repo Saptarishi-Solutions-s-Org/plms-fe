@@ -1,3 +1,5 @@
+import type { ElementType } from "react";
+
 export interface ManagerCardsProps {
   stats: {
     total_leads: number;
@@ -6,6 +8,14 @@ export interface ManagerCardsProps {
     active_offers: number;
   };
 }
+
+export interface ManagerCard {
+  title: string;
+  value: number;
+  Icon: ElementType;
+  color: string;
+}
+
 export interface LeadStatusRow {
   status: string;
   count: number;

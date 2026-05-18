@@ -1,8 +1,17 @@
+import type { ElementType } from "react";
+
 export interface ExecutiveStats {
   myLeads: number;
   convertedLeads: number;
   thisWeekLeads: number;
   activeOffers: number;
+}
+
+export interface ExecutiveCard {
+  title: string;
+  value: number;
+  Icon: ElementType;
+  color: string;
 }
 
 export interface ExecutiveCardsProps {
