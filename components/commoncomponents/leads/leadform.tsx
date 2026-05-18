@@ -448,7 +448,7 @@ export default function LeadForm({
         <FieldWrapper required label="Notes" error={errors.notes?.message}>
           <Textarea
             placeholder="Enter the Notes"
-            className="h-20 resize-y"
+            className="field-sizing-fixed resize-y"
             {...register("notes")}
           />
         </FieldWrapper>
