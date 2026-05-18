@@ -85,10 +85,18 @@ export default function LeadTable({
             leads.map((lead, idx) => (
               <TableRow key={lead.uuid ?? idx}>
                 <TableCell className="text-gray-600">{idx + 1}</TableCell>
-                <TableCell className="font-medium text-gray-800">
+                <TableCell
+                  title={lead.name}
+                  className="max-w-[180px] font-medium text-gray-800 sm:max-w-[220px]"
+                >
                   {lead.name}
                 </TableCell>
-                <TableCell className="text-gray-600">{lead.email}</TableCell>
+                <TableCell
+                  title={lead.email}
+                  className="max-w-[200px] text-gray-600 sm:max-w-[260px]"
+                >
+                  {lead.email}
+                </TableCell>
                 <TableCell className="text-gray-600">{lead.phone}</TableCell>
                 <TableCell>{lead.status || "-"}</TableCell>
                 <TableCell>{lead.priority || "-"}</TableCell>
