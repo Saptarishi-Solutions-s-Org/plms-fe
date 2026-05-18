@@ -11,14 +11,21 @@ export interface LeadStatusRow {
   count: number;
 }
 
+export interface ExecutivePerformanceApiRow {
+  executiveName: string;
+  total: number;
+  qualified: number;
+}
+
 export interface ExecutivePerformanceRow {
   executiveName: string;
   achievement: number;
 }
 
-
 export interface ExecutivePerformanceProps {
-  performance: ExecutivePerformanceRow[];
+  title?: string;
+  subtitle?: string;
+  data: ExecutivePerformanceRow[];
 }
 
 export interface DashboardData {
