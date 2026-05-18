@@ -446,7 +446,11 @@ export default function LeadForm({
         </h3>
 
         <FieldWrapper required label="Notes" error={errors.notes?.message}>
-          <Input placeholder="Enter the Notes" {...register("notes")} />
+          <Textarea
+            placeholder="Enter the Notes"
+            className="h-20 resize-y"
+            {...register("notes")}
+          />
         </FieldWrapper>
       </div>
 
