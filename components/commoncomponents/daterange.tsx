@@ -68,6 +68,7 @@ export function DateRangeFilter({
           onSelect={onChange}
           numberOfMonths={calendarMonthsToShow}
           showOutsideDays={false}
+          disabled={{ before: new Date() }}
         />
       </PopoverContent>
     </Popover>

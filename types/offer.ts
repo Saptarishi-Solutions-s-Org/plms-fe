@@ -1,4 +1,6 @@
-﻿// ─── Discount ─────────────────────────────────────────────────────────────────
+﻿import type { DateRange } from "@/components/commoncomponents/react-day-picker";
+
+// ─── Constants ────────────────────────────────────────────────────────────
 
 export const DISCOUNT_TYPES = [
   "Fixed_Amount",
@@ -9,75 +11,152 @@ export const DISCOUNT_TYPES = [
   "Flag_Discount",
 ] as const;
 
-export type DiscountType = (typeof DISCOUNT_TYPES)[number] | "";
+// ─── Types ────────────────────────────────────────────────────────────────
 
-export type OfferStatus = "active" | "inactive" | "expired";
+export type DiscountType =
+  (typeof DISCOUNT_TYPES)[number];
 
-// ─── Refs ─────────────────────────────────────────────────────────────────────
+export type OfferStatus =
+  | "active"
+  | "inactive"
+  | "expired";
+
+// ─── Entities (matches CDS schema) ───────────────────────────────────────
 
 export interface OfferManager {
   id: string;
   name: string;
 }
 
-export interface OrganizationRef {
-  id: string;
-  name: string;
-}
-
-// ─── Offer ────────────────────────────────────────────────────────────────────
-
 export interface Offer {
   id: string;
+
   title: string;
+
   code: string;
+
   description: string;
-  assignedUsers: string;
-  isGlobal: boolean;
-  status: OfferStatus;
+
   discountType: DiscountType;
-  discountAmount?: number;
-  discountPercentage?: number;
-  maxDiscountAmount?: number;
-  comboDescription?: string;
-  buyQuantity?: number;
-  getQuantity?: number;
-  minPurchaseAmount?: number;
-  conditionalDiscountValue?: number;
-  flagDiscountAmount?: number;
+
   validFrom: string;
+
   validTo: string;
-  createdAt: string;
-  createdBy: string;
-  organization: OrganizationRef | null;
+
+  isGlobal: boolean;
+
+  status: OfferStatus;
+
+  discountAmount?: number;
+
+  discountPercentage?: number;
+
+  maxDiscountAmount?: number;
+
+  comboDescription?: string;
+
+  buyQuantity?: number;
+
+  getQuantity?: number;
+
+  minPurchaseAmount?: number;
+
+  conditionalDiscountValue?: number;
+
+  flagDiscountAmount?: number;
+
   managers?: OfferManager[];
+
+  assignedUsers?: string;
+
+  createdAt?: string;
+
+  createdBy?: string;
+
+  organization?: {
+    id: string;
+    name: string;
+  } | null;
 }
+
+// ─── Form Data ────────────────────────────────────────────────────────────
+
+export interface OfferFormData {
+  offerName: string;
+
+  description: string;
+
+  discountType: DiscountType | "";
+
+  isGlobal: boolean;
+
+  managerIds: string[];
+
+  dateRange: DateRange | undefined;
+
+  discountAmount: string;
+
+  discountPercentage: string;
+
+  maxDiscountAmount: string;
+
+  comboDescription: string;
+
+  buyQuantity: string;
+
+  getQuantity: string;
+
+  minPurchaseAmount: string;
+
+  conditionalDiscountValue: string;
+
+  flagDiscountAmount: string;
+}
+
+// ─── API Payload ──────────────────────────────────────────────────────────
+
+export interface OfferPayload {
+  title: string;
+
+  description: string;
+
+  discount_type: DiscountType;
+
+  is_global: boolean;
+
+  manager_ids: string[];
+
+  valid_from: string;
+
+  valid_to: string;
+
+  discount_amount?: number;
+
+  discount_percentage?: number;
+
+  max_discount_amount?: number;
+
+  combo_description?: string;
+
+  buy_quantity?: number;
+
+  get_quantity?: number;
+
+  min_purchase_amount?: number;
+
+  discount_value?: number;
+
+  flag_discount_amount?: number;
+}
+
+// ─── Filters ──────────────────────────────────────────────────────────────
 
 export interface OfferFilters {
   search: string;
+
   status: "all" | OfferStatus;
-}
 
-export interface OfferSummary {
-  totalCount: number;
-  activeCount: number;
-  inactiveCount: number;
-  expiredCount: number;
-  globalCount: number;
-}
-
-// ─── API wrappers ─────────────────────────────────────────────────────────────
-
-export interface ApiResponse<T> {
-  data: T;
-  message: string;
-  success: boolean;
-}
-
-export interface CreateOfferResponse {
-  id: string;
-}
-
-export interface ToggleOfferStatusResponse {
-  status: OfferStatus;
+  discountType:
+    | "all"
+    | DiscountType;
 }

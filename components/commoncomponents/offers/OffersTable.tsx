@@ -3,7 +3,6 @@
 import { useCallback, useState } from "react"
 
 import type { Offer } from "@/types/offer"
-import { formatDate } from "@/lib/validators/offervalidation"
 
 import {
   Table,
@@ -18,7 +17,7 @@ import {
   AlertDialog,
   AlertDialogAction,
   AlertDialogCancel,
- AlertDialogContent,
+  AlertDialogContent,
   AlertDialogDescription,
   AlertDialogFooter,
   AlertDialogHeader,
@@ -27,6 +26,7 @@ import {
 } from "@/components/ui/alert-dialog"
 
 import { Button } from "@/components/ui/button"
+import { Badge } from "@/components/ui/badge"
 
 import {
   DropdownMenu,
@@ -35,8 +35,27 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 
-import { Badge } from "@/components/ui/badge"
 import { MoreHorizontal } from "lucide-react"
+
+// ─── Helpers ──────────────────────────────────────────────────────────────
+
+const formatDate = (
+  date: string | Date | null | undefined
+): string => {
+  if (!date) return "—"
+
+  const d = new Date(date)
+
+  if (isNaN(d.getTime())) return "—"
+
+  return d.toLocaleDateString("en-IN", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+  })
+}
+
+// ─── Constants ────────────────────────────────────────────────────────────
 
 const DISCOUNT_TYPE_LABELS: Record<string, string> = {
   Fixed_Amount: "Fixed Amount",
@@ -47,62 +66,92 @@ const DISCOUNT_TYPE_LABELS: Record<string, string> = {
   Flag_Discount: "Flag Discount",
 }
 
-const STATUS_CONFIG = {
+const STATUS_CONFIG: Record<
+  string,
+  {
+    dot: string
+    text: string
+    bg: string
+  }
+> = {
   active: {
     dot: "bg-green-500",
     text: "text-green-700",
     bg: "bg-green-50 border-green-200",
   },
+
   inactive: {
     dot: "bg-gray-400",
     text: "text-gray-600",
     bg: "bg-gray-50 border-gray-200",
   },
+
   expired: {
     dot: "bg-red-400",
     text: "text-red-600",
     bg: "bg-red-50 border-red-200",
   },
-} as const
+}
 
 const DEFAULT_STATUS_CONFIG = {
   dot: "bg-gray-400",
   text: "text-gray-600",
   bg: "bg-gray-50 border-gray-200",
-} as const
+}
 
-function StatusBadge({ status }: { status: string }) {
+// ─── Sub Components ──────────────────────────────────────────────────────
+
+function StatusBadge({
+  status,
+}: {
+  status: string
+}) {
   const config =
-    STATUS_CONFIG[status as keyof typeof STATUS_CONFIG] ||
+    STATUS_CONFIG[status] ??
     DEFAULT_STATUS_CONFIG
 
   return (
     <span
       className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full border text-xs font-medium ${config.bg} ${config.text}`}
     >
-      <span className={`w-1.5 h-1.5 rounded-full ${config.dot}`} />
-      {status.charAt(0).toUpperCase() + status.slice(1)}
+      <span
+        className={`w-1.5 h-1.5 rounded-full ${config.dot}`}
+      />
+
+      {status.charAt(0).toUpperCase() +
+        status.slice(1)}
     </span>
   )
 }
 
-function DiscountSummary({ offer }: { offer: Offer }) {
+function DiscountSummary({
+  offer,
+}: {
+  offer: Offer
+}) {
   switch (offer.discountType) {
     case "Fixed_Amount":
-      return <span>₹{offer.discountAmount}</span>
+      return (
+        <span>
+          ₹{offer.discountAmount}
+        </span>
+      )
 
     case "Percentage":
       return (
         <span>
-          {offer.discountPercentage}% (max ₹{offer.maxDiscountAmount})
+          {offer.discountPercentage}% (max
+          ₹{offer.maxDiscountAmount})
         </span>
       )
 
     case "Combo_Offer":
       return (
         <span
-          className="truncate max-w-[160px] block"
-          title={offer.comboDescription}
+          className="block max-w-[200px] truncate"
+          title={
+            offer.comboDescription
+          }
         >
           {offer.comboDescription}
         </span>
@@ -111,219 +160,315 @@ function DiscountSummary({ offer }: { offer: Offer }) {
     case "Buy_One_Get_One_Free":
       return (
         <span>
-          Buy {offer.buyQuantity} Get {offer.getQuantity}
+          Buy {offer.buyQuantity} Get{" "}
+          {offer.getQuantity}
         </span>
       )
 
     case "Conditional_Discount":
       return (
         <span>
-          Min ₹{offer.minPurchaseAmount} → ₹
-          {offer.conditionalDiscountValue} off
+          Min ₹
+          {offer.minPurchaseAmount} →
+          ₹
+          {
+            offer.conditionalDiscountValue
+          }{" "}
+          off
         </span>
       )
 
     case "Flag_Discount":
-      return <span>₹{offer.flagDiscountAmount}</span>
+      return (
+        <span>
+          ₹
+          {offer.flagDiscountAmount}
+        </span>
+      )
 
     default:
       return <span>—</span>
   }
 }
 
+// ─── Props ────────────────────────────────────────────────────────────────
+
 interface OffersTableProps {
   offers: Offer[]
-  onToggleStatus: (id: string) => void
+
+  onToggleStatus: (
+    id: string
+  ) => void
 }
+
+// ─── Component ────────────────────────────────────────────────────────────
 
 export function OffersTable({
   offers,
   onToggleStatus,
 }: OffersTableProps) {
-  const [openMenuId, setOpenMenuId] = useState<string | null>(null)
+  const [openMenuId, setOpenMenuId] =
+    useState<string | null>(null)
 
-  const handleCloseMenu = useCallback(() => {
-    setOpenMenuId(null)
-  }, [])
-
-  const handleToggleStatus = useCallback(
-    (id: string) => {
-      onToggleStatus(id)
+  const handleCloseMenu =
+    useCallback(() => {
       setOpenMenuId(null)
-    },
-    [onToggleStatus]
-  )
+    }, [])
+
+  const handleToggleStatus =
+    useCallback(
+      (id: string) => {
+        onToggleStatus(id)
+        setOpenMenuId(null)
+      },
+      [onToggleStatus]
+    )
 
   return (
-    <div className="rounded-lg border border-gray-200 bg-white shadow-sm overflow-x-auto">
+    <div className="overflow-x-auto rounded-lg border border-gray-200 bg-white shadow-sm">
       <Table>
-        <TableHeader className="bg-[#7677F41A]">
+        <TableHeader className="border-b border-gray-200 bg-[#7677F41A]">
           <TableRow>
-            <TableHead className="w-12">S.No</TableHead>
-            <TableHead>Offer Name</TableHead>
-            <TableHead>Description</TableHead>
-            <TableHead>Offer Type</TableHead>
-            <TableHead>Assigned</TableHead>
-            <TableHead>Discount Type</TableHead>
-            <TableHead>Discount Value</TableHead>
-            <TableHead>Valid From</TableHead>
-            <TableHead>Valid To</TableHead>
-            <TableHead>Status</TableHead>
-            <TableHead className="text-right">Actions</TableHead>
+            <TableHead className="w-10 whitespace-nowrap text-xs sm:text-sm">
+              S.No
+            </TableHead>
+
+            <TableHead className="min-w-[160px] whitespace-nowrap text-xs sm:text-sm">
+              Offer Name
+            </TableHead>
+
+            <TableHead className="min-w-[200px] whitespace-nowrap text-xs sm:text-sm">
+              Description
+            </TableHead>
+
+            <TableHead className="min-w-[120px] whitespace-nowrap text-xs sm:text-sm">
+              Assigned
+            </TableHead>
+
+            <TableHead className="min-w-[140px] whitespace-nowrap text-xs sm:text-sm">
+              Discount Type
+            </TableHead>
+
+            <TableHead className="min-w-[160px] whitespace-nowrap text-xs sm:text-sm">
+              Discount Value
+            </TableHead>
+
+            <TableHead className="min-w-[110px] whitespace-nowrap text-xs sm:text-sm">
+              Valid From
+            </TableHead>
+
+            <TableHead className="min-w-[110px] whitespace-nowrap text-xs sm:text-sm">
+              Valid To
+            </TableHead>
+
+            <TableHead className="min-w-[120px] whitespace-nowrap text-xs sm:text-sm">
+              Offer Type
+            </TableHead>
+
+            <TableHead className="min-w-[100px] whitespace-nowrap text-xs sm:text-sm">
+              Status
+            </TableHead>
+
+            <TableHead className="w-20 whitespace-nowrap text-center text-xs sm:text-sm">
+              Actions
+            </TableHead>
           </TableRow>
         </TableHeader>
 
         <TableBody>
-          {!offers?.length ? (
+          {offers.length === 0 ? (
             <TableRow>
-              <TableCell colSpan={11} className="h-40 text-center">
-                <p className="text-sm font-medium text-gray-500">
-                  No offers found
-                </p>
-                <p className="text-xs text-gray-400 mt-1">
-                  Create your first offer to get started
-                </p>
+              <TableCell
+                colSpan={11}
+                className="py-12 text-center text-sm font-semibold text-gray-400"
+              >
+                No offers found
               </TableCell>
             </TableRow>
           ) : (
             offers.map((offer, index) => {
-              const isExpired = offer.status === "expired"
-              const isActive = offer.status === "active"
-              const isMenuOpen = openMenuId === offer.id
+              const isExpired =
+                offer.status ===
+                "expired"
+
+              const isActive =
+                offer.status === "active"
+
+              const isMenuOpen =
+                openMenuId ===
+                offer.id
 
               return (
                 <TableRow
-                  key={offer.id}
+                  key={
+                    offer.id ?? index
+                  }
                   className="hover:bg-gray-50/60"
                 >
-                  <TableCell className="text-gray-500 text-sm">
+                  <TableCell className="w-10 text-xs text-gray-600 sm:text-sm">
                     {index + 1}
                   </TableCell>
 
-                  <TableCell>
-                    <span className="font-medium text-sm text-gray-800">
-                      {offer.title}
-                    </span>
+                  <TableCell className="min-w-[160px] whitespace-nowrap text-xs font-medium text-gray-800 sm:text-sm">
+                    {offer.title}
                   </TableCell>
 
-                  <TableCell className="text-sm text-gray-600 max-w-[220px] truncate">
-                    {offer.description || "—"}
+                  <TableCell className="min-w-[200px] max-w-[200px] truncate text-xs text-gray-600 sm:text-sm">
+                    {offer.description ||
+                      "—"}
                   </TableCell>
 
-                  <TableCell>
+                  <TableCell className="min-w-[120px] text-xs text-gray-600 sm:text-sm">
+                    {offer.isGlobal
+                      ? "All Users"
+                      : offer.assignedUsers ||
+                        "—"}
+                  </TableCell>
+
+                  <TableCell className="min-w-[140px] text-xs text-gray-700 sm:text-sm">
+                    {DISCOUNT_TYPE_LABELS[
+                      offer.discountType
+                    ] ??
+                      offer.discountType ??
+                      "—"}
+                  </TableCell>
+
+                  <TableCell className="min-w-[160px] text-xs text-gray-600 sm:text-sm">
+                    <DiscountSummary
+                      offer={offer}
+                    />
+                  </TableCell>
+
+                  <TableCell className="min-w-[110px] whitespace-nowrap text-xs text-gray-600 sm:text-sm">
+                    {offer.validFrom
+                      ? formatDate(
+                          offer.validFrom
+                        )
+                      : "—"}
+                  </TableCell>
+
+                  <TableCell className="min-w-[110px] whitespace-nowrap text-xs text-gray-600 sm:text-sm">
+                    {offer.validTo
+                      ? formatDate(
+                          offer.validTo
+                        )
+                      : "—"}
+                  </TableCell>
+
+                  <TableCell className="min-w-[120px]">
                     {offer.isGlobal ? (
-                      <Badge className="bg-blue-100 text-blue-700 border-blue-200">
+                      <Badge className="border-blue-200 bg-blue-100 text-xs text-blue-700">
                         Global Offer
                       </Badge>
                     ) : (
-                      <Badge className="bg-purple-100 text-purple-700 border-purple-200">
+                      <Badge className="border-purple-200 bg-purple-100 text-xs text-purple-700">
                         Assigned
                       </Badge>
                     )}
                   </TableCell>
 
-                  <TableCell className="text-sm text-gray-600">
-                    {offer.isGlobal
-                      ? "All Users"
-                      : offer.assignedUsers || "—"}
+                  <TableCell className="min-w-[100px]">
+                    <StatusBadge
+                      status={
+                        offer.status
+                      }
+                    />
                   </TableCell>
 
-                  <TableCell className="text-sm text-gray-700">
-                    {DISCOUNT_TYPE_LABELS[offer.discountType] ??
-                      offer.discountType ??
-                      "—"}
-                  </TableCell>
-
-                  <TableCell className="text-sm text-gray-600">
-                    <DiscountSummary offer={offer} />
-                  </TableCell>
-
-                  <TableCell className="text-sm text-gray-600">
-                    {offer.validFrom
-                      ? formatDate(offer.validFrom)
-                      : "—"}
-                  </TableCell>
-
-                  <TableCell className="text-sm text-gray-600">
-                    {offer.validTo
-                      ? formatDate(offer.validTo)
-                      : "—"}
-                  </TableCell>
-
-                  <TableCell>
-                    <StatusBadge status={offer.status} />
-                  </TableCell>
-
-                  <TableCell className="text-right">
+                  <TableCell className="w-20 text-center">
                     {!isExpired && (
-                      <DropdownMenu
-                        open={isMenuOpen}
-                        onOpenChange={(open) =>
-                          setOpenMenuId(open ? offer.id : null)
-                        }
-                      >
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="icon">
-                            <MoreHorizontal className="h-5 w-5" />
-                          </Button>
-                        </DropdownMenuTrigger>
+                      <div className="flex justify-center">
+                        <DropdownMenu
+                          open={
+                            isMenuOpen
+                          }
+                          onOpenChange={(
+                            open
+                          ) =>
+                            setOpenMenuId(
+                              open
+                                ? offer.id
+                                : null
+                            )
+                          }
+                        >
+                          <DropdownMenuTrigger asChild>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                            >
+                              <MoreHorizontal className="h-5 w-5" />
+                            </Button>
+                          </DropdownMenuTrigger>
 
-                        <DropdownMenuContent align="end">
-                          {isActive ? (
-                            <AlertDialog>
-                              <AlertDialogTrigger asChild>
-                                <DropdownMenuItem
-                                  onSelect={(e) =>
-                                    e.preventDefault()
-                                  }
-                                >
-                                  Deactivate
-                                </DropdownMenuItem>
-                              </AlertDialogTrigger>
-
-                              <AlertDialogContent className="sm:max-w-md">
-                                <AlertDialogHeader>
-                                  <AlertDialogTitle className="text-blue-600">
-                                    Deactivate Offer
-                                  </AlertDialogTitle>
-
-                                  <AlertDialogDescription>
-                                    Are you sure you want to
-                                    deactivate this offer?
-                                  </AlertDialogDescription>
-                                </AlertDialogHeader>
-
-                                <AlertDialogFooter>
-                                  <AlertDialogCancel
-                                    onClick={handleCloseMenu}
-                                  >
-                                    Cancel
-                                  </AlertDialogCancel>
-
-                                  <AlertDialogAction
-                                    onClick={() =>
-                                      handleToggleStatus(
-                                        offer.id
-                                      )
+                          <DropdownMenuContent align="end">
+                            {isActive ? (
+                              <AlertDialog>
+                                <AlertDialogTrigger asChild>
+                                  <DropdownMenuItem
+                                    onSelect={(
+                                      e
+                                    ) =>
+                                      e.preventDefault()
                                     }
-                                    className="bg-blue-600 hover:bg-blue-700 text-white"
                                   >
                                     Deactivate
-                                  </AlertDialogAction>
-                                </AlertDialogFooter>
-                              </AlertDialogContent>
-                            </AlertDialog>
-                          ) : (
-                            <DropdownMenuItem
-                              onClick={() =>
-                                handleToggleStatus(offer.id)
-                              }
-                            >
-                              Activate
-                            </DropdownMenuItem>
-                          )}
-                        </DropdownMenuContent>
-                      </DropdownMenu>
+                                  </DropdownMenuItem>
+                                </AlertDialogTrigger>
+
+                                <AlertDialogContent className="sm:max-w-md">
+                                  <AlertDialogHeader>
+                                    <AlertDialogTitle className="text-blue-600">
+                                      Deactivate
+                                      Offer
+                                    </AlertDialogTitle>
+
+                                    <AlertDialogDescription>
+                                      Are you
+                                      sure you
+                                      want to
+                                      deactivate
+                                      this
+                                      offer?
+                                    </AlertDialogDescription>
+                                  </AlertDialogHeader>
+
+                                  <AlertDialogFooter>
+                                    <AlertDialogCancel
+                                      onClick={
+                                        handleCloseMenu
+                                      }
+                                    >
+                                      Cancel
+                                    </AlertDialogCancel>
+
+                                    <AlertDialogAction
+                                      onClick={() =>
+                                        handleToggleStatus(
+                                          offer.id
+                                        )
+                                      }
+                                      className="bg-blue-600 text-white hover:bg-blue-700"
+                                    >
+                                      Deactivate
+                                    </AlertDialogAction>
+                                  </AlertDialogFooter>
+                                </AlertDialogContent>
+                              </AlertDialog>
+                            ) : (
+                              <DropdownMenuItem
+                                onClick={() =>
+                                  handleToggleStatus(
+                                    offer.id
+                                  )
+                                }
+                              >
+                                Activate
+                              </DropdownMenuItem>
+                            )}
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </div>
                     )}
                   </TableCell>
                 </TableRow>
