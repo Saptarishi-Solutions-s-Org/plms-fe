@@ -58,11 +58,16 @@ const EMPTY_FORM: OfferFormData = {
 };
 
 async function fetchManagers(): Promise<Manager[]> {
-  const res = await getManagers();
-  const rows: any[] = Array.isArray(res) ? res : Array.isArray(res?.value) ? res.value : [];
-  return rows
-    .map((m: any) => ({ id: String(m.id ?? ""), name: String(m.name ?? "") }))
-    .filter((m) => m.id && m.name);
+  try {
+    const res = await getManagers();
+    const rows: any[] = Array.isArray(res) ? res : Array.isArray(res?.value) ? res.value : [];
+    return rows
+      .map((m: any) => ({ id: String(m.id ?? ""), name: String(m.name ?? "") }))
+      .filter((m) => m.id && m.name);
+  } catch (error) {
+    console.error("Error fetching managers:", error);
+    return [];
+  }
 }
 
 function FieldWrapper({ label, required, error, children }: {
@@ -92,9 +97,6 @@ interface CreateOfferDialogProps {
 
 export function CreateOfferDialog({ open, onOpenChange, onSubmit }: CreateOfferDialogProps) {
   const [managers, setManagers] = useState<Manager[]>([]);
-  const [managersLoading, setManagersLoading] = useState(false);
-  const [managersError, setManagersError] = useState("");
-  const [managersFetched, setManagersFetched] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState("");
 
@@ -114,14 +116,24 @@ export function CreateOfferDialog({ open, onOpenChange, onSubmit }: CreateOfferD
   const isGlobal = watch("isGlobal");
   const discountType = watch("discountType");
 
+  // Fetch managers when dialog opens
   useEffect(() => {
-    if (!open || managersFetched) return;
-    setManagersLoading(true);
-    fetchManagers()
-      .then((data) => { setManagers(data); setManagersFetched(true); })
-      .catch(() => setManagersError("Failed to load managers."))
-      .finally(() => setManagersLoading(false));
-  }, [open, managersFetched]);
+    let isMounted = true;
+
+    const loadManagers = async () => {
+      if (!open) return;
+      const managerList = await fetchManagers();
+      if (isMounted) {
+        setManagers(managerList);
+      }
+    };
+
+    loadManagers();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [open]);
 
   const handleOpenChange = (next: boolean) => {
     if (!next && isSubmitting) return;
@@ -129,8 +141,6 @@ export function CreateOfferDialog({ open, onOpenChange, onSubmit }: CreateOfferD
       reset(EMPTY_FORM);
       setSubmitError("");
       setManagers([]);
-      setManagersFetched(false);
-      setManagersError("");
     }
     onOpenChange(next);
   };
@@ -267,18 +277,6 @@ export function CreateOfferDialog({ open, onOpenChange, onSubmit }: CreateOfferD
 
                   {!isGlobal && (
                     <FieldWrapper label="Manager" required error={errors.managerIds?.message}>
-                      {managersError && (
-                        <div className="mb-2 flex items-center justify-between rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-600">
-                          <span>{managersError}</span>
-                          <Button
-                            type="button"
-                            className="ml-2 font-medium underline underline-offset-2"
-                            onClick={() => { setManagersFetched(false); setManagersError(""); }}
-                          >
-                            Retry
-                          </Button>
-                        </div>
-                      )}
                       <Controller
                         name="managerIds"
                         control={control}
@@ -286,7 +284,7 @@ export function CreateOfferDialog({ open, onOpenChange, onSubmit }: CreateOfferD
                           <Select
                             value={field.value[0] ?? ""}
                             onValueChange={(v) => field.onChange([v])}
-                            disabled={isSubmitting || managersLoading}
+                            disabled={isSubmitting}
                           >
                             <SelectTrigger className="w-full">
                               <SelectValue placeholder="Select a manager" />
