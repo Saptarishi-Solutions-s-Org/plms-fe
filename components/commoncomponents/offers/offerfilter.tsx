@@ -1,6 +1,7 @@
 "use client";
 
 import { Search } from "lucide-react";
+import { Button } from "@base-ui/react";
 import {
   Select,
   SelectContent,
@@ -71,20 +72,20 @@ export function OfferFilters({ filters, onFilterChange, onApply, onClear }: Offe
       </Select>
 
       {/* Clear */}
-      <button
+      <Button
         onClick={onClear}
         className="h-9 w-full rounded-lg border border-gray-300 bg-white px-5 text-sm font-semibold text-gray-700 hover:bg-gray-50 sm:w-auto"
       >
         Clear All
-      </button>
+      </Button>
 
       {/* Apply */}
-      <button
+      <Button
         onClick={onApply}
         className="h-9 w-full rounded-lg bg-blue-600 px-5 text-sm font-semibold text-white hover:bg-blue-700 sm:w-auto"
       >
         Apply
-      </button>
+      </Button>
     </div>
   );
 }

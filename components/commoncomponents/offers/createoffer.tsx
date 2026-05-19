@@ -6,6 +6,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { GlobeIcon, TagIcon, XIcon } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import { getManagers } from "@/services/offers";
 import {
   Dialog,
   DialogClose,
@@ -13,8 +14,8 @@ import {
   DialogDescription,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Input }      from "@/components/ui/input";
-import { Label }      from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   Select,
@@ -23,12 +24,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Spinner }   from "@/components/ui/spinner";
-import { Switch }    from "@/components/ui/switch";
-import { Textarea }  from "@/components/ui/textarea";
-import { api }       from "@/lib/api";
+import { Spinner } from "@/components/ui/spinner";
+import { Switch } from "@/components/ui/switch";
+import { Textarea } from "@/components/ui/textarea";
 import { DateRangeFilter } from "@/components/commoncomponents/daterange";
-import type { DateRange }  from "@/components/commoncomponents/react-day-picker";
+import type { DateRange } from "@/components/commoncomponents/react-day-picker";
 
 import {
   offerFormSchema,
@@ -38,25 +38,27 @@ import {
   type OfferPayload,
   type OfferFormData,
 } from "@/lib/validators/offervalidation";
+
 const EMPTY_FORM: OfferFormData = {
-  offerName:                "",
-  description:              "",
-  discountType:             "",
-  isGlobal:                 false,
-  managerIds:               [],
-  dateRange:                undefined,
-  discountAmount:           "",
-  discountPercentage:       "",
-  maxDiscountAmount:        "",
-  comboDescription:         "",
-  buyQuantity:              "",
-  getQuantity:              "",
-  minPurchaseAmount:        "",
+  offerName: "",
+  description: "",
+  discountType: "",
+  isGlobal: false,
+  managerIds: [],
+  dateRange: undefined,
+  discountAmount: "",
+  discountPercentage: "",
+  maxDiscountAmount: "",
+  comboDescription: "",
+  buyQuantity: "",
+  getQuantity: "",
+  minPurchaseAmount: "",
   conditionalDiscountValue: "",
-  flagDiscountAmount:       "",
+  flagDiscountAmount: "",
 };
+
 async function fetchManagers(): Promise<Manager[]> {
-  const res  = await api("/odata/v4/offer/getManagers()");
+  const res = await getManagers();
   const rows: any[] = Array.isArray(res) ? res : Array.isArray(res?.value) ? res.value : [];
   return rows
     .map((m: any) => ({ id: String(m.id ?? ""), name: String(m.name ?? "") }))
@@ -64,10 +66,10 @@ async function fetchManagers(): Promise<Manager[]> {
 }
 
 function FieldWrapper({ label, required, error, children }: {
-  label:     string;
+  label: string;
   required?: boolean;
-  error?:    string;
-  children:  React.ReactNode;
+  error?: string;
+  children: React.ReactNode;
 }) {
   return (
     <div className="flex flex-col gap-1.5">
@@ -81,18 +83,20 @@ function FieldWrapper({ label, required, error, children }: {
     </div>
   );
 }
+
 interface CreateOfferDialogProps {
-  open:         boolean;
+  open: boolean;
   onOpenChange: (open: boolean) => void;
-  onSubmit:     (data: OfferPayload) => Promise<{ success: boolean; error?: string }>;
+  onSubmit: (data: OfferPayload) => Promise<{ success: boolean; error?: string }>;
 }
+
 export function CreateOfferDialog({ open, onOpenChange, onSubmit }: CreateOfferDialogProps) {
-  const [managers,        setManagers]        = useState<Manager[]>([]);
+  const [managers, setManagers] = useState<Manager[]>([]);
   const [managersLoading, setManagersLoading] = useState(false);
-  const [managersError,   setManagersError]   = useState("");
+  const [managersError, setManagersError] = useState("");
   const [managersFetched, setManagersFetched] = useState(false);
-  const [isSubmitting,    setIsSubmitting]    = useState(false);
-  const [submitError,     setSubmitError]     = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState("");
 
   const {
     register,
@@ -103,11 +107,11 @@ export function CreateOfferDialog({ open, onOpenChange, onSubmit }: CreateOfferD
     setValue,
     formState: { errors },
   } = useForm<OfferFormData>({
-    resolver:      zodResolver(offerFormSchema),
+    resolver: zodResolver(offerFormSchema),
     defaultValues: EMPTY_FORM,
   });
 
-  const isGlobal     = watch("isGlobal");
+  const isGlobal = watch("isGlobal");
   const discountType = watch("discountType");
 
   useEffect(() => {
@@ -115,8 +119,8 @@ export function CreateOfferDialog({ open, onOpenChange, onSubmit }: CreateOfferD
     setManagersLoading(true);
     fetchManagers()
       .then((data) => { setManagers(data); setManagersFetched(true); })
-      .catch(()    => setManagersError("Failed to load managers."))
-      .finally(()  => setManagersLoading(false));
+      .catch(() => setManagersError("Failed to load managers."))
+      .finally(() => setManagersLoading(false));
   }, [open, managersFetched]);
 
   const handleOpenChange = (next: boolean) => {
@@ -133,15 +137,15 @@ export function CreateOfferDialog({ open, onOpenChange, onSubmit }: CreateOfferD
 
   const handleDiscountTypeChange = (value: string, onChange: (v: string) => void) => {
     onChange(value);
-    setValue("discountAmount",           "");
-    setValue("discountPercentage",       "");
-    setValue("maxDiscountAmount",        "");
-    setValue("comboDescription",         "");
-    setValue("buyQuantity",              "");
-    setValue("getQuantity",              "");
-    setValue("minPurchaseAmount",        "");
+    setValue("discountAmount", "");
+    setValue("discountPercentage", "");
+    setValue("maxDiscountAmount", "");
+    setValue("comboDescription", "");
+    setValue("buyQuantity", "");
+    setValue("getQuantity", "");
+    setValue("minPurchaseAmount", "");
     setValue("conditionalDiscountValue", "");
-    setValue("flagDiscountAmount",       "");
+    setValue("flagDiscountAmount", "");
   };
 
   const onValid = async (data: OfferFormData) => {
@@ -181,11 +185,11 @@ export function CreateOfferDialog({ open, onOpenChange, onSubmit }: CreateOfferD
               </DialogDescription>
             </div>
           </div>
-          <DialogClose asChild>
-            <button type="button" disabled={isSubmitting}
-              className="rounded-md p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-600 transition-colors disabled:opacity-50">
-              <XIcon className="size-4" />
-            </button>
+          <DialogClose
+            disabled={isSubmitting}
+            className="rounded-md p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-600 transition-colors disabled:opacity-50"
+          >
+            <XIcon className="size-4" />
           </DialogClose>
         </div>
 
@@ -266,10 +270,13 @@ export function CreateOfferDialog({ open, onOpenChange, onSubmit }: CreateOfferD
                       {managersError && (
                         <div className="mb-2 flex items-center justify-between rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-600">
                           <span>{managersError}</span>
-                          <button type="button" className="ml-2 font-medium underline underline-offset-2"
-                            onClick={() => { setManagersFetched(false); setManagersError(""); }}>
+                          <Button
+                            type="button"
+                            className="ml-2 font-medium underline underline-offset-2"
+                            onClick={() => { setManagersFetched(false); setManagersError(""); }}
+                          >
                             Retry
-                          </button>
+                          </Button>
                         </div>
                       )}
                       <Controller
@@ -282,7 +289,7 @@ export function CreateOfferDialog({ open, onOpenChange, onSubmit }: CreateOfferD
                             disabled={isSubmitting || managersLoading}
                           >
                             <SelectTrigger className="w-full">
-                              <SelectValue placeholder={"Select a manager"} />
+                              <SelectValue placeholder="Select a manager" />
                             </SelectTrigger>
                             <SelectContent>
                               {managers.map((m) => (
