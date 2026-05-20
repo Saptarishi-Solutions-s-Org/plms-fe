@@ -1,7 +1,5 @@
 "use client";
 
-import { FileText, MoreHorizontal, Pencil } from "lucide-react";
-import { Lead } from "@/types/leadtypes";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -10,33 +8,31 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import type { LeadActionsProps } from "@/types/leadtypes";
+import { MoreHorizontal } from "lucide-react";
+import { useParams, useRouter } from "next/navigation";
 
 export default function LeadActions({
   lead,
   onEdit,
-  onViewDetails,
 }: LeadActionsProps) {
+  const { orgCode } = useParams<{ orgCode: string }>();
+  const router = useRouter();
+
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button
-          type="button"
-          variant="ghost"
-          size="icon"
-          className="h-8 w-8 text-gray-500 hover:bg-gray-50 hover:text-gray-700"
-        >
+        <Button variant="ghost" size="icon" className="h-8 w-8">
           <MoreHorizontal className="h-4 w-4" />
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-40">
-        <DropdownMenuItem onClick={() => onEdit(lead)}>
-          <Pencil className="h-4 w-4" />
-          Edit
+
+      <DropdownMenuContent align="end">
+        <DropdownMenuItem
+          onClick={() => router.push(`/${orgCode}/leads/${lead.uuid}`)}
+        >
+          View Details
         </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => onViewDetails(lead)}>
-          <FileText className="h-4 w-4" />
-          Details
-        </DropdownMenuItem>
+        <DropdownMenuItem onClick={() => onEdit(lead)}>Edit</DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
   );
