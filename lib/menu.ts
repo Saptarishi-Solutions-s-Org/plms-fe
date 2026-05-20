@@ -1,4 +1,9 @@
-import { LayoutDashboard, Building2, UserCheck, Gift } from "lucide-react";
+import {
+  LayoutDashboard,
+  Building2,
+  UserCheck,
+  Gift,
+} from "lucide-react";
 
 import { MenuGroup } from "@/types/menu";
 
@@ -16,6 +21,7 @@ export const MENU_CONFIG: MenuGroup[] = [
       },
     ],
   },
+
   {
     key: "core",
     label: "Core",
@@ -29,24 +35,49 @@ export const MENU_CONFIG: MenuGroup[] = [
         permissions: ["view"],
         roles: ["System Admin"],
       },
+
       {
         href: "/leads",
         icon: UserCheck,
         label: "Leads",
         modules: ["lead"],
-        permissions: ["view", "create", "update", "delete"],// U need to update this based on the actual permissions required
-        roles: ["Admin","Executive","Manager"], // U need to update this based on the actual roles that should have access
+        permissions: [
+          "view",
+          "create",
+          "update",
+          "delete",
+        ],
+        roles: [
+          "Admin",
+          "Executive",
+          "Manager",
+        ],
       },
+
+      // Admin → Full access
       {
         href: "/offers",
         icon: Gift,
         label: "Offers",
         modules: ["offers"],
-        permissions: ["view","create","update","delete"],// U need to update this based on the actual permissions required
-        roles: ["Admin"],// U need to update this based on the actual roles that should have access
+        permissions: [
+          "view",
+          "create",
+          "update",
+          "delete",
+        ],
+        roles: ["Admin"],
       },
-      
+
+      // Manager → View only
+      {
+        href: "/offers",
+        icon: Gift,
+        label: "Offers",
+        modules: ["offers"],
+        permissions: ["view"],
+        roles: ["Manager"],
+      },
     ],
   },
 ];
-
