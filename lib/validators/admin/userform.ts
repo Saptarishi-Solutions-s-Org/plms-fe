@@ -4,12 +4,11 @@ export const userFormSchema = z.object({
   name: z
     .string()
     .min(1, "First Name is required")
-    .max(50)
-    .regex(/^[A-Za-z]+$/, "Only alphabets allowed"),
+    .max(50),
 
     email: z.string().min(1, "Email is required").email("Invalid email format"),
 
-    dob : z.string().min(1, "Date is required"),
+      dob: z.date().min(new Date("1900-01-01"), "Date is required"),
 
     phone : z.string().min(1, "Phone number is required").max(20),
 

@@ -137,7 +137,7 @@ const AddLeadForm = ({ onClose }: { onClose?: () => void }) => {
                 email: data.email,
                 phone: data.phone,
                 gender: data.gender,
-                dob: data.dob,
+                dob: data.dob.toISOString()?.split("T")[0],
                 state: data.state,
                 country: data.country,
                 city: data.city,
@@ -211,9 +211,9 @@ const AddLeadForm = ({ onClose }: { onClose?: () => void }) => {
                                                 <Calendar
                                                     mode="single"
                                                     selected={field.value ? new Date(field.value) : undefined}
-                                                    onSelect={(date) => field.onChange(date)}
                                                     numberOfMonths={calendarMonthsToShow}
                                                     showOutsideDays={false}
+                                                    onSelect={(date) => field.onChange(date?.toISOString())}
 
                                                 />
                                             </PopoverContent>
