@@ -152,6 +152,24 @@ export default function LeadForm({
     });
   }, [fixedAssignedToId, initialData, reset]);
 
+  useEffect(() => {
+    const loadInitialStates = async () => {
+      if (!initialData?.country) {
+        setStates([]);
+        return;
+      }
+
+      try {
+        const stateList = await getStatesByCountry(initialData.country);
+        setStates(stateList);
+      } catch (err) {
+        console.error(err);
+      }
+    };
+
+    loadInitialStates();
+  }, [initialData?.country]);
+
   const handleCountryChange = async (countryId: string) => {
     setValue("country", countryId);
     setValue("state", "");
@@ -239,10 +257,7 @@ export default function LeadForm({
               name="country"
               control={control}
               render={({ field }) => (
-                <Select
-                  value={field.value}
-                  onValueChange={handleCountryChange}
-                >
+                <Select value={field.value} onValueChange={handleCountryChange}>
                   <SelectTrigger className="w-full">
                     <SelectValue placeholder="Select country" />
                   </SelectTrigger>
@@ -433,7 +448,7 @@ export default function LeadForm({
         <FieldWrapper required label="Notes" error={errors.notes?.message}>
           <Textarea
             placeholder="Enter the Notes"
-            className="min-h-[100px] resize-none"
+            className="field-sizing-fixed resize-y"
             {...register("notes")}
           />
         </FieldWrapper>
