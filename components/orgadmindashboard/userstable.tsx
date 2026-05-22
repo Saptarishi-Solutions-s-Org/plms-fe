@@ -8,11 +8,19 @@ import {
 }
     from "@/components/ui/table"
 import { UserDetails } from "@/types/organizationadmindashboard/dashboardtypes"
+import { Button } from "../ui/button";
+import { MoreHorizontal } from "lucide-react";
+import DeactivateForm from "./deactivatedailog";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "../ui/dropdown-menu";
+import { useState } from "react";
+
+
 
 
 
 const UserTable = ({ users, loading }: { users: UserDetails[]; loading: boolean }) => {
 
+const [isDeactivateOpen, setIsDeactivateOpen] = useState(false);
     return (
         <div className="rounded-lg border border-gray-200 bg-white shadow-sm overflow-x-auto">
             <Table>
@@ -32,6 +40,9 @@ const UserTable = ({ users, loading }: { users: UserDetails[]; loading: boolean 
                         </TableHead>
                         <TableHead className="text-xs sm:text-sm whitespace-nowrap">
                             Status
+                        </TableHead>
+                        <TableHead className="text-xs sm:text-sm whitespace-nowrap">
+                            Actions
                         </TableHead>
                     </TableRow>
                 </TableHeader>
@@ -60,13 +71,35 @@ const UserTable = ({ users, loading }: { users: UserDetails[]; loading: boolean 
                                 <TableCell>
                                     {item.is_active ? "Active" : "Inactive"}
                                 </TableCell>
+                                <TableCell className="text-left">
+                                    <DropdownMenu>
+                                        <DropdownMenuTrigger asChild>
+                                            <Button variant="ghost" size="icon">
+                                                <MoreHorizontal />
+                                            </Button>
+                                        </DropdownMenuTrigger>
+
+                                        <DropdownMenuContent align="end">
+                                            <DropdownMenuItem
+                                                onClick={() => setIsDeactivateOpen(true)}
+                                            >
+                                                Deactivate
+                                            </DropdownMenuItem>
+                                        </DropdownMenuContent>
+                                    </DropdownMenu>
+                                </TableCell>
                             </TableRow>
                         ))
                     )}
 
                 </TableBody>
             </Table>
+            <DeactivateForm
+                isOpen={isDeactivateOpen}
+                setIsOpen={setIsDeactivateOpen}
+            />
         </div>
+
     )
 }
 
