@@ -133,7 +133,7 @@ export default function ServicesPage() {
                 transition={{ duration: 0.7, delay: 0.28 }}
                 className="text-base leading-8 text-slate-600"
               >
-                PLMS turns the backend schema into practical workflows for lead
+                LMA turns the backend schema into practical workflows for lead
                 teams: capture, assign, follow up, offer, govern, and report.
               </motion.p>
             </div>
@@ -184,7 +184,7 @@ export default function ServicesPage() {
             </h2>
             <p className="mx-auto mt-5 max-w-2xl text-sm leading-7 text-slate-600">
               The public story, login experience, and dashboard entry now speak
-              the same language as the PLMS schema and day-to-day operations.
+              the same language as the LMA schema and day-to-day operations.
             </p>
             <Link
               href="/login"

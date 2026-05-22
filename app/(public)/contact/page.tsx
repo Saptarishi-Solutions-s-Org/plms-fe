@@ -49,7 +49,7 @@ const contactCards = [
     label: "General",
     title: "General Queries",
     email: "info@saptarishi.tech",
-    desc: "For anything else related to PLMS operations and internal support.",
+    desc: "For anything else related to LMA operations and internal support.",
     color: "#0f766e",
     bg: "#f0fdfa",
   },
@@ -101,7 +101,7 @@ export default function ContactPage() {
                 transition={{ duration: 0.85, delay: 0.1, ease: [0.16, 1, 0.3, 1] }}
                 className="text-[clamp(42px,6vw,78px)] font-bold leading-[1.07] text-[#0b1713]"
               >
-                Reach the right PLMS support channel.
+                Reach the right LMA support channel.
               </motion.h1>
               <motion.p
                 initial={{ opacity: 0, y: 22 }}
@@ -173,7 +173,7 @@ export default function ContactPage() {
                 Office
               </p>
               <h2 className="text-[clamp(28px,4vw,44px)] font-bold text-[#0b1713]">
-                Saptarishi support for PLMS.
+                Saptarishi support for LMA.
               </h2>
               <div className="mt-8 space-y-4">
                 {officeDetails.map((detail) => (

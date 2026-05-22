@@ -38,7 +38,7 @@ export default function PublicHeader() {
         <Link
           href="/"
           className="flex items-center gap-3"
-          aria-label="PLMS home"
+          aria-label="LMA home"
         >
           <Image
             src="/sap.png"
@@ -49,7 +49,7 @@ export default function PublicHeader() {
             className="h-8 w-8"
           />
           <span className="text-sm font-bold tracking-[0.14em] text-[#0b1713]">
-            SRS-PLMS
+            SRS-LMA
           </span>
         </Link>
 

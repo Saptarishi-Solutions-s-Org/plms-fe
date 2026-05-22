@@ -64,7 +64,7 @@ export default function AboutPage() {
             >
               <span className="h-[1.5px] w-8 bg-emerald-600" />
               <span className="text-xs font-semibold uppercase text-emerald-700">
-                About PLMS
+                About LMA
               </span>
             </motion.div>
 
@@ -83,7 +83,7 @@ export default function AboutPage() {
                 transition={{ duration: 0.7, delay: 0.28 }}
                 className="text-base leading-8 text-slate-600"
               >
-                PLMS connects organizations, roles, users, leads, activities,
+                LMA connects organizations, roles, users, leads, activities,
                 offers, and location data into one governed workflow. It keeps
                 executives focused, managers informed, and admins in control.
               </motion.p>
@@ -106,7 +106,7 @@ export default function AboutPage() {
                 <p>
                   Lead work breaks down when data is scattered: one person has
                   the phone call, another has the offer context, and managers
-                  see the issue too late. PLMS keeps the story of each lead in
+                  see the issue too late. LMA keeps the story of each lead in
                   one place.
                 </p>
                 <p>
@@ -185,7 +185,7 @@ export default function AboutPage() {
           <Reveal className="mx-auto flex max-w-7xl flex-col gap-6 md:flex-row md:items-center md:justify-between">
             <div>
               <p className="mb-2 text-xs font-semibold uppercase text-emerald-300">
-                PLMS Portal
+                LMA Portal
               </p>
               <h2 className="text-3xl font-bold">Work the pipeline with context.</h2>
             </div>

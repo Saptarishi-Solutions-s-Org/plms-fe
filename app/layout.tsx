@@ -13,7 +13,7 @@ const poppins = Poppins({
 });
 
 export const metadata: Metadata = {
-  title: "PLMS",
+  title: "SRS-LMA",
   description: "Developed by Team SRS",
 };
 
@@ -35,8 +35,8 @@ export default function RootLayout({
           dangerouslySetInnerHTML={{
             __html: `
               (() => {
-                if (window.__plmsStripExtensionAttrs) return;
-                window.__plmsStripExtensionAttrs = true;
+                if (window.__LMAStripExtensionAttrs) return;
+                window.__LMAStripExtensionAttrs = true;
 
                 const shouldRemove = (name) =>
                   name === "bis_skin_checked" ||
