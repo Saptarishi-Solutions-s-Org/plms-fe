@@ -7,17 +7,42 @@ import GlobalLoader from "@/components/commoncomponents/globalloader";
 import { OfferCards } from "@/components/commoncomponents/offers/offercards";
 import { OfferFilters } from "@/components/commoncomponents/offers/offerfilter";
 
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow,} from "@/components/ui/table";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,} from "@/components/ui/dropdown-menu";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Plus, MoreHorizontal,} from "lucide-react";
+import { Plus, MoreHorizontal } from "lucide-react";
 
-import { assignOfferToExecutive, getManagerOfferOverview,} from "@/services/managerdashboard";
+import {
+  assignOfferToExecutive,
+  getManagerOfferOverview,
+} from "@/services/managerdashboard";
 import { getExecutiveUsers } from "@/services/leads";
 
-import type { Offer, OfferFilters as OfferFiltersType,} from "@/types/Createoffer";
+import type {
+  Offer,
+  OfferFilters as OfferFiltersType,
+} from "@/types/Createoffer";
+import {
+  ExecutiveUser,
+  formatDate,
+  formatStatusLabel,
+  ManagerOffer,
+  ManagerOfferOverviewItem,
+} from "@/types/org-manager";
 
 const DEFAULT_FILTERS: OfferFiltersType = {
   search: "",
@@ -25,33 +50,7 @@ const DEFAULT_FILTERS: OfferFiltersType = {
   discountType: "all",
 };
 
-const formatDate = (
-  date:
-    | string
-    | Date
-    | null
-    | undefined
-): string => {
-  if (!date) return "—";
-
-  const d = new Date(date);
-
-  if (isNaN(d.getTime()))
-    return "—";
-
-  return d.toLocaleDateString(
-    "en-IN",
-    {
-      day: "2-digit",
-      month: "short",
-      year: "numeric",
-    }
-  );
-};
-
-const DISCOUNT_TYPE_LABELS: Record<
-  string, string
-> = {
+const DISCOUNT_TYPE_LABELS: Record<string, string> = {
   Fixed_Amount: "Fixed Amount",
   Percentage: "Percentage",
   Combo_Offer: "Combo Offer",
@@ -60,47 +59,8 @@ const DISCOUNT_TYPE_LABELS: Record<
   Flag_Discount: "Flag Discount",
 };
 
-const formatStatusLabel = (status?: string) => {
-  if (!status) return "—";
-
-  return status.charAt(0).toUpperCase() + status.slice(1).toLowerCase();
-};
-
-type ManagerOffer = Offer & {
-  assignStatus?: string;
-};
-
-type ManagerOfferOverviewItem = {
-  id: string;
-  title?: string;
-  code?: string;
-  description?: string;
-  is_global?: boolean;
-  status?: string;
-  discount_type?: Offer["discountType"];
-  discount_amount?: number;
-  discount_percentage?: number;
-  max_discount_amount?: number;
-  combo_description?: string;
-  buy_quantity?: number;
-  get_quantity?: number;
-  min_purchase_amount?: number;
-  discount_value?: number;
-  flag_discount_amount?: number;
-  valid_from?: string;
-  valid_to?: string;
-  createdat?: string;
-  assignStatus?: string;
-};
-
-type ExecutiveUser = {
-  id: string;
-  name: string;
-};
-
 export default function OrgManagerOffersPage() {
-
-  const [offers, setOffers] =useState<ManagerOffer[]>([]);
+  const [offers, setOffers] = useState<ManagerOffer[]>([]);
 
   const [executives, setExecutives] = useState<ExecutiveUser[]>([]);
 
@@ -108,9 +68,9 @@ export default function OrgManagerOffersPage() {
 
   const [activeCount, setActiveCount] = useState(0);
 
-  const [inactiveCount,setInactiveCount,] = useState(0);
+  const [inactiveCount, setInactiveCount] = useState(0);
 
-  const [globalCount, setGlobalCount] =useState(0);
+  const [globalCount, setGlobalCount] = useState(0);
 
   const [isLoading, setIsLoading] = useState(true);
 
@@ -120,34 +80,32 @@ export default function OrgManagerOffersPage() {
 
   const [draftFilters, setDraftFilters] = useState(DEFAULT_FILTERS);
 
-  const fetchOffers = useCallback(
-    async () => {
-      try {
-        setIsLoading(true);
-        setError(null);
+  const fetchOffers = useCallback(async () => {
+    try {
+      setIsLoading(true);
+      setError(null);
 
-        const [ response, executivesResponse,] = await Promise.all([
-          getManagerOfferOverview(),
-          getExecutiveUsers(),
-        ]);
+      const [response, executivesResponse] = await Promise.all([
+        getManagerOfferOverview(),
+        getExecutiveUsers(),
+      ]);
 
-        const data = response?.value || response;
+      const data = response?.value || response;
 
-        const stats = data?.stats || {};
+      const stats = data?.stats || {};
 
-        setExecutives(executivesResponse?.value || executivesResponse || []);
+      setExecutives(executivesResponse?.value || executivesResponse || []);
 
-        setTotalCount(stats.totalOffers || 0);
+      setTotalCount(stats.totalOffers || 0);
 
-        setActiveCount(stats.activeOffers || 0);
+      setActiveCount(stats.activeOffers || 0);
 
-        setInactiveCount(stats.inactiveOffers || 0);
+      setInactiveCount(stats.inactiveOffers || 0);
 
-        setGlobalCount(stats.globalOffers || 0);
+      setGlobalCount(stats.globalOffers || 0);
 
-        const formattedOffers: ManagerOffer[] = (data?.offers || []).map(
+      const formattedOffers: ManagerOffer[] = (data?.offers || []).map(
         (item: ManagerOfferOverviewItem) => ({
-
           id: item.id,
 
           title: item.title,
@@ -195,93 +153,63 @@ export default function OrgManagerOffersPage() {
           organization: null,
 
           managers: [],
-        })
+        }),
       );
-
-        setOffers(formattedOffers);
-      } catch (err) {
-        setError(
-          err instanceof Error
-            ? err.message
-            : "Failed to load offers"
-        );
-      } finally {
-        setIsLoading(false);
-      }
-    },
-    []
-  );
+      setOffers(formattedOffers);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to load offers");
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
 
   useEffect(() => {
     fetchOffers();
   }, [fetchOffers]);
 
-  const handleFilterChange =
-    useCallback(
-      (
-        key: keyof OfferFiltersType,
-        value: string
-      ) => {
-        setDraftFilters((prev) => ({
-          ...prev,
-          [key]: value,
-        }));
-      },
-      []
-    );
+  const handleFilterChange = useCallback(
+    (key: keyof OfferFiltersType, value: string) => {
+      setDraftFilters((prev) => ({
+        ...prev,
+        [key]: value,
+      }));
+    },
+    [],
+  );
 
-  const handleApplyFilters =
-    useCallback(() => {
-      setFilters(draftFilters);
-    }, [draftFilters]);
+  const handleApplyFilters = useCallback(() => {
+    setFilters(draftFilters);
+  }, [draftFilters]);
 
-  const handleClearFilters =
-    useCallback(() => {
-      setFilters(DEFAULT_FILTERS);
+  const handleClearFilters = useCallback(() => {
+    setFilters(DEFAULT_FILTERS);
 
-      setDraftFilters(
-        DEFAULT_FILTERS
-      );
-    }, []);
+    setDraftFilters(DEFAULT_FILTERS);
+  }, []);
 
   const filteredOffers = useMemo(
     () =>
       offers.filter((offer) => {
-        const query =
-          filters.search.toLowerCase();
+        const query = filters.search.toLowerCase();
 
         const matchSearch =
           !query ||
-          offer.title
-            .toLowerCase()
-            .includes(query) ||
-          offer.code
-            .toLowerCase()
-            .includes(query);
+          offer.title.toLowerCase().includes(query) ||
+          offer.code.toLowerCase().includes(query);
 
         const matchStatus =
-          filters.status === "all" ||
-          offer.status ===
-            filters.status;
+          filters.status === "all" || offer.status === filters.status;
 
         const matchDiscount =
-          filters.discountType ===
-            "all" ||
-          offer.discountType ===
-            filters.discountType;
+          filters.discountType === "all" ||
+          offer.discountType === filters.discountType;
 
-        return (
-          matchSearch &&
-          matchStatus &&
-          matchDiscount
-        );
+        return matchSearch && matchStatus && matchDiscount;
       }),
-    [offers, filters]
+    [offers, filters],
   );
 
-  const getDiscountValue = (
-    offer: Offer
-  ) => {
+  const getDiscountValue = (offer: Offer) => {
     switch (offer.discountType) {
       case "Fixed_Amount":
         return `₹${offer.discountAmount}`;
@@ -290,7 +218,7 @@ export default function OrgManagerOffersPage() {
         return `${offer.discountPercentage}%`;
 
       case "Combo_Offer":
-        return (offer.comboDescription || "—" );
+        return offer.comboDescription || "—";
 
       case "Buy_One_Get_One_Free":
         return `Buy ${offer.buyQuantity} Get ${offer.getQuantity}`;
@@ -306,30 +234,24 @@ export default function OrgManagerOffersPage() {
     }
   };
 
-  const handleAssignOffer =
-    async (
-      offerId: string,
-      executiveId: string
-    ) => {
-      try {
-        const response =
-          await assignOfferToExecutive({
-            offerId,
-            executiveId,
-          });
+  const handleAssignOffer = async (offerId: string, executiveId: string) => {
+    try {
+      const response = await assignOfferToExecutive({
+        offerId,
+        executiveId,
+      });
 
-        toast.success(
-          response?.message ||
-            "Offer assigned to executive successfully"
-        );
-      } catch (error) {
-        toast.error(
-          error instanceof Error
-            ? error.message
-            : "Failed to assign offer to executive"
-        );
-      }
-    };
+      toast.success(
+        response?.message || "Offer assigned to executive successfully",
+      );
+    } catch (error) {
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : "Failed to assign offer to executive",
+      );
+    }
+  };
 
   if (isLoading) {
     return <GlobalLoader />;
@@ -337,7 +259,6 @@ export default function OrgManagerOffersPage() {
 
   return (
     <div className="w-full h-full p-4 sm:p-5 space-y-5">
-
       {/* Header */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
@@ -363,24 +284,16 @@ export default function OrgManagerOffersPage() {
       <OfferCards
         totalCount={totalCount}
         activeCount={activeCount}
-        inactiveCount={
-          inactiveCount
-        }
+        inactiveCount={inactiveCount}
         globalCount={globalCount}
       />
 
       {/* Filters */}
       <OfferFilters
         filters={draftFilters}
-        onFilterChange={
-          handleFilterChange
-        }
-        onApply={
-          handleApplyFilters
-        }
-        onClear={
-          handleClearFilters
-        }
+        onFilterChange={handleFilterChange}
+        onApply={handleApplyFilters}
+        onClear={handleClearFilters}
       />
 
       {/* Table */}
@@ -393,121 +306,83 @@ export default function OrgManagerOffersPage() {
           <Table>
             <TableHeader className="bg-[#7677F41A]">
               <TableRow>
-                <TableHead>
-                  S.No
-                </TableHead>
+                <TableHead>S.No</TableHead>
 
-                <TableHead>
-                  Offer Name
-                </TableHead>
+                <TableHead>Offer Name</TableHead>
 
-                <TableHead>
-                  Description
-                </TableHead>
+                <TableHead>Description</TableHead>
 
-                <TableHead>
-                  Discount Type
-                </TableHead>
+                <TableHead>Discount Type</TableHead>
 
-                <TableHead>
-                  Discount Value
-                </TableHead>
+                <TableHead>Discount Value</TableHead>
 
-                <TableHead>
-                  Valid From
-                </TableHead>
+                <TableHead>Valid From</TableHead>
 
-                <TableHead>
-                  Valid To
-                </TableHead>
+                <TableHead>Valid To</TableHead>
 
-                <TableHead>
-                  Status
-                </TableHead>
+                <TableHead>Status</TableHead>
 
-                <TableHead>
-                  Assign Status
-                </TableHead>
+                <TableHead>Assign Status</TableHead>
 
-                <TableHead className="text-center">
-                  Actions
-                </TableHead>
+                <TableHead className="text-center">Actions</TableHead>
               </TableRow>
             </TableHeader>
 
             <TableBody>
-              {filteredOffers.length ===
-              0 ? (
+              {offers.length === 0 ? (
                 <TableRow>
                   <TableCell
                     colSpan={10}
                     className="py-10 text-center text-gray-500"
                   >
-                    No offers found
+                    No Offers Available
+                  </TableCell>
+                </TableRow>
+              ) : filteredOffers.length === 0 ? (
+                <TableRow>
+                  <TableCell
+                    colSpan={10}
+                    className="py-10 text-center text-gray-500"
+                  >
+                    No Offers Match the Applied Filters
                   </TableCell>
                 </TableRow>
               ) : (
-                filteredOffers.map(
-                  ( offer, index ) => (
-                    <TableRow
-                      key={offer.id}
-                    >
-                      <TableCell>
-                        {index + 1}
-                      </TableCell>
+                filteredOffers.map((offer, index) => (
+                  <TableRow key={offer.id}>
+                    <TableCell>{index + 1}</TableCell>
 
-                      <TableCell className="font-medium">
-                        {offer.title}
-                      </TableCell>
+                    <TableCell className="font-medium">{offer.title}</TableCell>
 
-                      <TableCell className="max-w-[250px] truncate">
-                        {offer.description ||
-                          "—"}
-                      </TableCell>
+                    <TableCell className="max-w-[250px] truncate">
+                      {offer.description || "—"}
+                    </TableCell>
 
-                      <TableCell>
-                        {DISCOUNT_TYPE_LABELS[
-                          offer
-                            .discountType
-                        ] ??
-                          offer.discountType}
-                      </TableCell>
+                    <TableCell>
+                      {DISCOUNT_TYPE_LABELS[offer.discountType] ??
+                        offer.discountType}
+                    </TableCell>
 
-                      <TableCell>
-                        {getDiscountValue(
-                          offer
-                        )}
-                      </TableCell>
+                    <TableCell>{getDiscountValue(offer)}</TableCell>
 
-                      <TableCell>
-                        {formatDate(
-                          offer.validFrom
-                        )}
-                      </TableCell>
+                    <TableCell>{formatDate(offer.validFrom)}</TableCell>
 
-                      <TableCell>
-                        {formatDate(
-                          offer.validTo
-                        )}
-                      </TableCell>
+                    <TableCell>{formatDate(offer.validTo)}</TableCell>
 
-                      <TableCell>
-                        <Badge
-                          variant="outline"
-                          className={
-                            offer.status ===
-                            "active"
-                              ? "border-green-200 bg-green-50 text-green-700"
-                              : "border-gray-200 bg-gray-50 text-gray-600"
-                          }
-                        >
-                          {formatStatusLabel(
-                            offer.status
-                          )}
-                        </Badge>
-                      </TableCell>
+                    <TableCell>
+                      <Badge
+                        variant="outline"
+                        className={
+                          offer.status === "active"
+                            ? "border-green-200 bg-green-50 text-green-700"
+                            : "border-gray-200 bg-gray-50 text-gray-600"
+                        }
+                      >
+                        {formatStatusLabel(offer.status)}
+                      </Badge>
+                    </TableCell>
 
-                      <TableCell>
+                    <TableCell>
                       {offer.assignStatus ? (
                         <Badge
                           className={
@@ -523,60 +398,48 @@ export default function OrgManagerOffersPage() {
                       )}
                     </TableCell>
 
-                      <TableCell className="text-center">
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                            >
-                              <MoreHorizontal className="h-4 w-4" />
-                            </Button>
-                          </DropdownMenuTrigger>
+                    <TableCell className="text-center">
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="icon">
+                            <MoreHorizontal className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
 
-                          <DropdownMenuContent
-                            align="end"
-                            className="max-h-60 overflow-y-auto"
-                          >
-                            <div className="px-2 py-1.5 text-xs font-semibold text-gray-500">
-                              Assign To
-                            </div>
+                        <DropdownMenuContent
+                          align="end"
+                          className="max-h-60 overflow-y-auto"
+                        >
+                          <div className="px-2 py-1.5 text-xs font-semibold text-gray-500">
+                            Assign To
+                          </div>
 
-                            {executives.length ===
-                            0 ? (
-                              <DropdownMenuItem disabled>
-                                No
-                                Executives
-                              </DropdownMenuItem>
-                            ) : (
-                              executives.map(
-                                ( // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                                  executive: any
-                                ) => (
-                                  <DropdownMenuItem
-                                    key={
-                                      executive.id
-                                    }
-                                    onClick={() =>
-                                      handleAssignOffer(
-                                        offer.id,
-                                        executive.id
-                                      )
-                                    }
-                                  >
-                                    {
-                                      executive.name
-                                    }
-                                  </DropdownMenuItem>
-                                )
-                              )
-                            )}
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </TableCell>
-                    </TableRow>
-                  )
-                )
+                          {executives.length === 0 ? (
+                            <DropdownMenuItem disabled>
+                              No Executives
+                            </DropdownMenuItem>
+                          ) : (
+                            executives.map(
+                              (
+                                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                                executive: any,
+                              ) => (
+                                <DropdownMenuItem
+                                  key={executive.id}
+                                  onClick={() =>
+                                    handleAssignOffer(offer.id, executive.id)
+                                  }
+                                >
+                                  {executive.name}
+                                </DropdownMenuItem>
+                              ),
+                            )
+                          )}
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </TableCell>
+                  </TableRow>
+                ))
               )}
             </TableBody>
           </Table>
