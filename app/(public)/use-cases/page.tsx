@@ -95,7 +95,7 @@ export default function UseCasesPage() {
               Each role owns a clear part of the same pipeline.
             </h2>
             <p className="mt-5 text-sm leading-8 text-slate-600">
-              PLMS works best when teams want structured ownership without
+              LMA works best when teams want structured ownership without
               turning every follow-up into a separate manual report.
             </p>
           </Reveal>
@@ -123,10 +123,10 @@ export default function UseCasesPage() {
             Compare it with scattered work.
           </h2>
           <Link
-            href="/why-plms"
+            href="/why-LMA"
             className="mt-8 inline-flex h-12 items-center justify-center gap-2 rounded-full bg-[#0b1713] px-6 text-sm font-semibold text-white transition hover:-translate-y-0.5 hover:bg-emerald-900"
           >
-            Why PLMS
+            Why LMA
             <ArrowRight className="h-4 w-4" />
           </Link>
         </Reveal>

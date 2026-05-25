@@ -7,7 +7,7 @@ const publicNavLinks = [
   { label: "Services", href: "/services" },
   { label: "Features", href: "/features" },
   { label: "Use Cases", href: "/use-cases" },
-  { label: "Why PLMS", href: "/why-plms" },
+  { label: "Why LMA", href: "/why-LMA" },
 ];
 
 const legalLinks = [
@@ -54,7 +54,7 @@ export default function PublicFooter() {
                 className="brightness-0 invert"
               />
               <span className="rounded-full border border-emerald-300/20 bg-emerald-300/10 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.18em] text-emerald-200">
-                PLMS
+                LMA
               </span>
             </div>
             <p className="max-w-sm text-sm leading-7 text-white/58">

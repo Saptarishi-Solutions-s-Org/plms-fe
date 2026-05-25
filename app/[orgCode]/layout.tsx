@@ -181,9 +181,9 @@ export default function Layout({ children }: { children: ReactNode }) {
       if (latestUser) setUser(latestUser);
     };
 
-    window.addEventListener("plms-auth-changed", handleAuthChanged);
+    window.addEventListener("LMA-auth-changed", handleAuthChanged);
     return () =>
-      window.removeEventListener("plms-auth-changed", handleAuthChanged);
+      window.removeEventListener("LMA-auth-changed", handleAuthChanged);
   }, []);
 
   const toggle = (key: string) => {
@@ -263,7 +263,7 @@ export default function Layout({ children }: { children: ReactNode }) {
           <div className="flex items-center gap-2 sm:gap-4 min-w-0">
             <SidebarTrigger />
             <h1 className="text-xs sm:text-sm md:text-base font-semibold text-gray-700 truncate max-w-[70vw]">
-              <span className="block sm:hidden">PLMS</span>
+              <span className="block sm:hidden">LMA</span>
               <span className="hidden sm:block">{quote}</span>
             </h1>
           </div>

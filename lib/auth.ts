@@ -135,5 +135,5 @@ export function redirectToLogin() {
 
 function notifyAuthChanged() {
   if (typeof window === "undefined") return;
-  window.dispatchEvent(new Event("plms-auth-changed"));
+  window.dispatchEvent(new Event("LMA-auth-changed"));
 }

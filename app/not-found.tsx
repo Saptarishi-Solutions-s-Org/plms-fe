@@ -15,7 +15,7 @@ const helpfulLinks = [
     label: "Back Home",
     href: "/",
     icon: Home,
-    text: "Return to the public PLMS landing page.",
+    text: "Return to the public LMA landing page.",
   },
   {
     label: "Features",
@@ -73,7 +73,7 @@ export default function NotFound() {
               404
             </p>
             <h1 className="relative max-w-4xl text-[clamp(44px,7vw,92px)] font-black leading-[0.98] tracking-tight">
-              This route slipped out of the PLMS pipeline.
+              This route slipped out of the LMA pipeline.
             </h1>
           </div>
 

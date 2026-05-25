@@ -218,7 +218,7 @@ export default function ProfilePage() {
   }, [form?.country]);
 
   const initials = useMemo(
-    () => getInitials(profile?.name || "PLMS"),
+    () => getInitials(profile?.name || "LMA"),
     [profile?.name],
   );
 

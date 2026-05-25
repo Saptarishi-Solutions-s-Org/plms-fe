@@ -164,7 +164,7 @@ export default function HomePage() {
               transition={{ duration: 0.72, delay: 0.26 }}
               className="mt-7 max-w-2xl text-base leading-8 text-slate-600"
             >
-              PLMS gives organizations a structured way to capture leads, assign
+              LMA gives organizations a structured way to capture leads, assign
               executives, track every activity, manage offers, and keep managers
               focused on what needs attention next.
             </motion.p>
@@ -329,7 +329,7 @@ export default function HomePage() {
               Every user sees the work they own.
             </h2>
             <p className="mt-5 text-sm leading-7 text-slate-600">
-              PLMS is shaped around organization roles, modules, permissions,
+              LMA is shaped around organization roles, modules, permissions,
               and manager reporting lines. The result is a focused workspace for
               each operating layer.
             </p>

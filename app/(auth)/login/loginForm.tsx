@@ -121,7 +121,7 @@ export default function LoginForm() {
 
       setSession(data.accessToken, data.user);
 
-      toast.success("Welcome to PLMS portal", {
+      toast.success("Welcome to LMA portal", {
         description: "You have successfully signed in",
       });
 
@@ -150,7 +150,7 @@ export default function LoginForm() {
           <div className="mb-6 flex items-center gap-3">
             <span className="h-[1.5px] w-8 bg-emerald-600" />
             <span className="text-xs font-semibold uppercase text-emerald-700">
-              Secure PLMS Access
+              Secure LMA Access
             </span>
           </div>
           <h1 className="max-w-3xl text-[clamp(42px,6vw,76px)] font-bold leading-[1.06] text-[#0b1713]">
@@ -190,7 +190,7 @@ export default function LoginForm() {
                 className="h-9 w-9"
               />
               <span className="text-sm font-bold uppercase text-[#0b1713]">
-                SRS-PLMS
+                SRS-LMA
               </span>
             </div>
             <h2 className="text-2xl font-bold text-[#0b1713]">Welcome back</h2>
