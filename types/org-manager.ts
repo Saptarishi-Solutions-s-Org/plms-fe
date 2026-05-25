@@ -1,4 +1,5 @@
 import type { ElementType } from "react";
+import { Offer } from "./Createoffer";
 
 export interface ManagerCardsProps {
   stats: {
@@ -59,3 +60,64 @@ export interface CommonOverviewProps {
   data: OverviewRow[];
   onViewDetails?: () => void;
 }
+
+export type ManagerOffer = Offer & {
+  assignStatus?: string;
+};
+
+export interface ManagerOfferOverviewItem {
+  id: string;
+  title?: string;
+  code?: string;
+  description?: string;
+  is_global?: boolean;
+  status?: string;
+  discount_type?: Offer["discountType"];
+  discount_amount?: number;
+  discount_percentage?: number;
+  max_discount_amount?: number;
+  combo_description?: string;
+  buy_quantity?: number;
+  get_quantity?: number;
+  min_purchase_amount?: number;
+  discount_value?: number;
+  flag_discount_amount?: number;
+  valid_from?: string;
+  valid_to?: string;
+  createdat?: string;
+  assignStatus?: string;
+};
+
+export interface ExecutiveUser {
+  id: string;
+  name: string;
+};
+
+export const formatDate = (
+  date:
+    | string
+    | Date
+    | null
+    | undefined
+): string => {
+  if (!date) return "—";
+
+  const d = new Date(date);
+
+  if (isNaN(d.getTime()))
+    return "—";
+
+  return d.toLocaleDateString(
+    "en-IN",
+    {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+    }
+  );
+};
+
+export const formatStatusLabel = (status?: string) => {
+  if (!status) return "—";
+  return status.charAt(0).toUpperCase() + status.slice(1).toLowerCase();
+};
