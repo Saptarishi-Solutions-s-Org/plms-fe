@@ -8,3 +8,16 @@ export const getLeadStatusOverview = () =>
 
 export const getExecutivePerformance = () =>
   api("/odata/v4/manager-dashboard/getExecutivePerformance()");
+
+export const getManagerOfferOverview = () =>
+  api("/odata/v4/manager-dashboard/getManagerOfferOverview()");
+
+export const assignOfferToExecutive = (payload: {
+  offerId: string;
+  executiveId: string;
+}) =>
+  api("/odata/v4/manager-dashboard/assignOfferToExecutive", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+
