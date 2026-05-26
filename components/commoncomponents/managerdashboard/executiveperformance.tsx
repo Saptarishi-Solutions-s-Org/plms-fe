@@ -17,7 +17,7 @@ const ExecutivePerformance = ({
   data,
 }: ExecutivePerformanceProps) => {
   return (
-    <Card className="rounded-[2rem] border-0 bg-white h-full">
+    <Card className="rounded-[2rem] border border-gray-200 bg-white h-full shadow-md">
       <CardHeader className="flex flex-row items-start justify-between gap-4 space-y-0 px-6 pt-6">
         <div className="space-y-1">
           <CardTitle className="text-[1.7rem] font-bold tracking-tight text-slate-900">
