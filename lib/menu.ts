@@ -54,6 +54,23 @@ export const MENU_CONFIG: MenuGroup[] = [
         ],
       },
 
+      {
+        href: "/org-reports",
+        icon: UserCheck,
+        label: "Reports",
+        modules: ["lead"],
+        permissions: [
+          "view",
+          "create",
+          "update",
+          "delete",
+        ],
+        roles: [
+          "Manager",
+        ],
+      },
+
+
       // Admin → Full access
       {
         href: "/offers",
