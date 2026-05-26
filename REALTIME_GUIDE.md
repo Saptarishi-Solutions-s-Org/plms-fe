@@ -1,6 +1,6 @@
-# PLMS Realtime Guide
+# LMA Realtime Guide
 
-Realtime in PLMS uses Socket.IO as an invalidation system.
+Realtime in LMA uses Socket.IO as an invalidation system.
 
 Do not send full business data through sockets. Send a small event that says
 "something changed", then let the page refetch through its normal API.
@@ -81,7 +81,7 @@ executive:dashboard:changed
 
 Keep event names specific enough that pages only refetch when needed.
 
-In the frontend, put shared PLMS event names in:
+In the frontend, put shared LMA event names in:
 
 ```ts
 types/realtime.ts

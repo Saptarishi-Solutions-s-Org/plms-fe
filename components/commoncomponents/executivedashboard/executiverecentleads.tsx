@@ -29,10 +29,10 @@ const STATUS_BADGE: Record<string, string> = {
 
 const RecentLeadsCard = ({ title, leads, onViewAll }: RecentLeadsProps) => {
   return (
-    <Card className="rounded-2xl border-0 bg-white shadow-md h-full">
+    <Card className="w-full h-[420px] rounded-[2rem] border border-gray-200 shadow-md flex flex-col">
       {/* Header */}
-      <CardHeader className="flex flex-row items-center justify-between px-5 py-4">
-        <CardTitle className="text-lg font-semibold text-slate-900">
+      <CardHeader className="flex flex-row items-start justify-between gap-4 space-y-0 px-6 pt-6">
+        <CardTitle className="text-[1.7rem] font-bold tracking-tight text-slate-900">
           {title}
         </CardTitle>
 
@@ -50,68 +50,72 @@ const RecentLeadsCard = ({ title, leads, onViewAll }: RecentLeadsProps) => {
         )}
       </CardHeader>
 
-      <CardContent className="px-0 pb-0">
-        <Table>
-          <TableHeader className="bg-[#7677F41A] table w-full table-fixed">
-            <TableRow className="border-b hover:bg-transparent">
-              <TableHead className="text-sm font-semibold text-slate-900">
-                S.No
-              </TableHead>
-              <TableHead className="text-sm font-semibold text-slate-900">
-                Lead Name
-              </TableHead>
-              <TableHead className="text-sm font-semibold text-slate-900">
-                Status
-              </TableHead>
-            </TableRow>
-          </TableHeader>
-
-          <TableBody className="block max-h-[260px] overflow-y-auto w-full">
-            {leads.length === 0 ? (
-              <TableRow>
-                <TableCell
-                  colSpan={4}
-                  className="py-10 text-center text-sm font-semibold text-gray-400"
-                >
-                  No recent leads
-                </TableCell>
+      <CardContent className="px-5 pb-5 flex-1 overflow-hidden">
+        <div className="h-full overflow-hidden rounded-lg border border-2 bg-white">
+          <Table>
+            <TableHeader className="bg-[#7677F41A] table w-full table-fixed ">
+              <TableRow className="hover:bg-transparent">
+                <TableHead className="w-[60px] text-sm font-semibold text-slate-900">
+                  S.No
+                </TableHead>
+                <TableHead className="w-[250px] text-sm font-semibold text-slate-900">
+                  Lead Name
+                </TableHead>
+                <TableHead className="w-[150px] text-sm font-semibold text-slate-900">
+                  Status
+                </TableHead>
               </TableRow>
-            ) : (
-              leads.slice(0, 10).map((lead, idx) => (
-                <TableRow
-                  key={lead.leadId}
-                  className="table w-full table-fixed"
-                >
-                  <TableCell className="text-gray-600">{idx + 1}</TableCell>
+            </TableHeader>
 
-                  <TableCell className="font-medium text-gray-800 max-w-[250px] truncate">
-                    <TooltipProvider>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <span className="block truncate cursor-pointer">
-                            {lead.leadName}
-                          </span>
-                        </TooltipTrigger>
-
-                        <TooltipContent>
-                          <p>{lead.leadName}</p>
-                        </TooltipContent>
-                      </Tooltip>
-                    </TooltipProvider>
-                  </TableCell>
-
-                  <TableCell>
-                    <span
-                      className={`font-medium ${STATUS_BADGE[lead.status] ?? "text-gray-500"}`}
-                    >
-                      {lead.status || "—"}
-                    </span>
+            <TableBody className="block h-[260px] overflow-y-auto w-full custom-scrollbar">
+              {leads.length === 0 ? (
+                <TableRow className="table w-full h-[260px]">
+                  <TableCell
+                    colSpan={3}
+                    className="h-[260px] align-middle text-center text-sm font-semibold text-gray-400"
+                  >
+                    No recent leads
                   </TableCell>
                 </TableRow>
-              ))
-            )}
-          </TableBody>
-        </Table>
+              ) : (
+                leads.slice(0, 10).map((lead, idx) => (
+                  <TableRow
+                    key={lead.leadId}
+                    className="table w-full table-fixed"
+                  >
+                    <TableCell className="w-[60px] text-gray-600">
+                      {idx + 1}
+                    </TableCell>
+
+                    <TableCell className="w-[250px] font-medium text-gray-800 truncate">
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <span className="block truncate cursor-pointer">
+                              {lead.leadName}
+                            </span>
+                          </TooltipTrigger>
+
+                          <TooltipContent className="max-w-[230px] whitespace-normal break-words">
+                            <p>{lead.leadName}</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    </TableCell>
+
+                    <TableCell className="w-[150px]">
+                      <span
+                        className={`font-medium ${STATUS_BADGE[lead.status] ?? "text-gray-500"}`}
+                      >
+                        {lead.status || "—"}
+                      </span>
+                    </TableCell>
+                  </TableRow>
+                ))
+              )}
+            </TableBody>
+          </Table>
+        </div>
       </CardContent>
     </Card>
   );

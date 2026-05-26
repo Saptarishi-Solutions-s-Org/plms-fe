@@ -2,6 +2,7 @@
 import { Button } from "../ui/button";
 import { Input } from "../ui/input";
 import { Label } from "../ui/label";
+
 import {
     Select,
     SelectContent,
@@ -18,6 +19,14 @@ import { useEffect, useState } from "react";
 import { getCountries, getStatesByCountry } from "@/services/location";
 import { createOrganizationUser, getReportingManagers } from "@/services/organizationAdmin";
 import { toast } from "sonner";
+import { ReactDayPicker as Calendar } from "@/components/commoncomponents/react-day-picker";
+import { CalendarIcon } from "lucide-react";
+import {
+    Popover,
+    PopoverTrigger,
+    PopoverContent,
+} from "@/components/ui/popover";
+import { format } from "date-fns";
 
 const GenderOptions = [
     { value: "Male", label: "Male" },
@@ -35,7 +44,20 @@ const AddLeadForm = ({ onClose }: { onClose?: () => void }) => {
     const [countries, setCountries] = useState<any[]>([]);
     const [states, setStates] = useState<any[]>([]);
     const [managers, setManagers] = useState<any[]>([]);
+    const [calendarMonthsToShow, setCalendarMonthsToShow] = useState(1);
 
+
+     useEffect(() => {
+    const media = window.matchMedia("(max-width: 639px)");  
+    const updateCalendarMonths = () => {
+      setCalendarMonthsToShow(media.matches ? 2 : 1);
+    };
+
+    updateCalendarMonths();
+    media.addEventListener("change", updateCalendarMonths);
+
+    return () => media.removeEventListener("change", updateCalendarMonths);
+  }, []);
     const [isSubmitting, setIsSubmitting] = useState(false);
 
     const {
@@ -61,7 +83,6 @@ const AddLeadForm = ({ onClose }: { onClose?: () => void }) => {
             reportingManager: "",
         },
     });
-
     const selectedCountry = watch("country");
     const selectedRole = watch("userRole");
 
@@ -116,7 +137,7 @@ const AddLeadForm = ({ onClose }: { onClose?: () => void }) => {
                 email: data.email,
                 phone: data.phone,
                 gender: data.gender,
-                dob: data.dob,
+                dob: data.dob.toISOString()?.split("T")[0],
                 state: data.state,
                 country: data.country,
                 city: data.city,
@@ -145,7 +166,7 @@ const AddLeadForm = ({ onClose }: { onClose?: () => void }) => {
             <form onSubmit={handleSubmit(onSubmit)} className="w-full h-full" >
 
                 {/* YOUR FULL FORM UI (UNCHANGED) */}
-                      <div className="flex flex-col gap-2">
+                <div className="flex flex-col gap-2">
                     <h2 className="text-lg font-bold text-blue-600">
                         Personal Details
                     </h2>
@@ -166,7 +187,40 @@ const AddLeadForm = ({ onClose }: { onClose?: () => void }) => {
                                 <Label htmlFor="date" required>
                                     Date
                                 </Label>
-                                <Input id="date" type="date"  {...register("dob")} className={`border-2 ${errors.dob ? "border-red-500" : "border-gray-300"}`} />
+                                <Controller
+                                    control={control}
+                                    name="dob"
+                                    render={({ field }) => (
+                                        <Popover>
+                                            <PopoverTrigger asChild>
+                                                <Button
+                                                    variant="outline"
+                                                    className={`w-full justify-start text-left font-normal border-2 ${errors.dob ? "border-red-500" : "border-gray-300"
+                                                        }`}
+                                                >
+                                                    <CalendarIcon className="mr-2 h-4 w-4" />
+                                                    {field.value ? (
+                                                        format(new Date(field.value), "dd MMM yyyy")
+                                                    ) : (
+                                                        <span className="text-gray-400">Select Date</span>
+                                                    )}
+                                                </Button>
+                                            </PopoverTrigger>
+
+                                            <PopoverContent className="w-auto p-0">
+                                                <Calendar
+                                                    mode="single"
+                                                    selected={field.value ? new Date(field.value) : undefined}
+                                                    numberOfMonths={calendarMonthsToShow}
+                                                    showOutsideDays={false}
+                                                    onSelect={(date) => field.onChange(date?.toISOString())}
+
+                                                />
+                                            </PopoverContent>
+                                        </Popover>
+                                    )}
+                                />
+
                                 <span className="text-sm text-red-500 ">{errors.dob?.message}</span>
                             </div>
 
@@ -365,10 +419,10 @@ const AddLeadForm = ({ onClose }: { onClose?: () => void }) => {
                 <div className="mt-3">
                     <Button
                         type="submit"
-                        disabled={isSubmitting} 
+                        disabled={isSubmitting}
                         className="bg-blue-500 hover:bg-blue-600 text-white w-full"
                     >
-                        {isSubmitting ? "Submitting..." : "Submit"} 
+                        {isSubmitting ? "Submitting..." : "Submit"}
                     </Button>
                 </div>
             </form>
@@ -377,4 +431,3 @@ const AddLeadForm = ({ onClose }: { onClose?: () => void }) => {
 };
 
 export default AddLeadForm;
-          

@@ -95,7 +95,7 @@ export default function FeaturesPage() {
               transition={{ duration: 0.7, delay: 0.28 }}
               className="text-base leading-8 text-slate-600"
             >
-              PLMS brings capture, follow-up discipline, offers, permissions,
+              LMA brings capture, follow-up discipline, offers, permissions,
               and reporting into one focused workflow.
             </motion.p>
           </div>
@@ -152,7 +152,7 @@ export default function FeaturesPage() {
         <Reveal className="mx-auto flex max-w-7xl flex-col gap-6 md:flex-row md:items-center md:justify-between">
           <div>
             <ShieldCheck className="mb-4 h-8 w-8 text-emerald-300" />
-            <h2 className="text-3xl font-bold">Explore how teams use PLMS.</h2>
+            <h2 className="text-3xl font-bold">Explore how teams use LMA.</h2>
           </div>
           <Link
             href="/use-cases"

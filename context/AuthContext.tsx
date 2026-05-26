@@ -23,8 +23,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     const syncUser = () => setUser(getUser());
-    window.addEventListener("plms-auth-changed", syncUser);
-    return () => window.removeEventListener("plms-auth-changed", syncUser);
+    window.addEventListener("LMA-auth-changed", syncUser);
+    return () => window.removeEventListener("LMA-auth-changed", syncUser);
   }, []);
 
   const login = (data: { accessToken: string; user: AuthUser }) => {

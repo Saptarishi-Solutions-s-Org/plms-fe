@@ -1,4 +1,4 @@
-name: PLMS FE CI Pipeline
+name: LMA FE CI Pipeline
 
 on:
   push:
