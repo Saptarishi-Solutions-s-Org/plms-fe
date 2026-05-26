@@ -121,3 +121,22 @@ export const formatStatusLabel = (status?: string) => {
   if (!status) return "—";
   return status.charAt(0).toUpperCase() + status.slice(1).toLowerCase();
 };
+
+export type ExecutiveStatus =
+  | "Active"
+  | "Inactive";
+
+export interface ExecutiveFilters {
+  search: string;
+  status: "all" | ExecutiveStatus;
+}
+
+export type ExecutiveRow = {
+  id: string;
+  name: string;
+  email: string;
+  phone: string;
+  status: ExecutiveStatus;
+  leadCount: number;
+  offerCount: number;
+};

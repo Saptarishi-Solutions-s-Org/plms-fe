@@ -1,4 +1,5 @@
 ﻿import type { DateRange } from "@/components/commoncomponents/react-day-picker";
+
 export const DISCOUNT_TYPES = [
   "Fixed_Amount",
   "Percentage",
@@ -7,6 +8,7 @@ export const DISCOUNT_TYPES = [
   "Conditional_Discount",
   "Flag_Discount",
 ] as const;
+
 export type DiscountType =
   (typeof DISCOUNT_TYPES)[number];
 
@@ -14,6 +16,7 @@ export type OfferStatus =
   | "active"
   | "inactive"
   | "expired";
+
 export interface OfferManager {
   id: string;
   name: string;
@@ -137,9 +140,7 @@ export interface OfferPayload {
 }
 export interface OfferFilters {
   search: string;
-
   status: "all" | OfferStatus;
-
   discountType:
     | "all"
     | DiscountType;

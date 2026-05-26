@@ -1,0 +1,273 @@
+"use client";
+
+import { useCallback, useEffect, useMemo, useState } from "react";
+
+import { Badge } from "@/components/ui/badge";
+
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+
+import { getExecutiveOverview } from "@/services/managerdashboard";
+import type { ExecutiveFilters, ExecutiveRow } from "@/types/org-manager";
+import GlobalLoader from "@/components/commoncomponents/globalloader";
+
+import ExecutiveStatCards from "@/components/commoncomponents/managerdashboard/executive-stat-card";
+import ExecutiveTableFilters from "@/components/commoncomponents/managerdashboard/executive-table-filter";
+
+const DEFAULT_FILTERS: ExecutiveFilters = {
+  search: "",
+  status: "all",
+};
+
+const formatCount = (value: number) => value.toLocaleString("en-IN");
+
+export default function ExecutivesPage() {
+  const [executives, setExecutives] = useState<ExecutiveRow[]>([]);
+
+  const [totalCount, setTotalCount] = useState(0);
+
+  const [activeCount, setActiveCount] = useState(0);
+
+  const [inactiveCount, setInactiveCount] = useState(0);
+
+  const [isLoading, setIsLoading] = useState(true);
+
+  const [error, setError] = useState<string | null>(null);
+
+  const [filters, setFilters] = useState<ExecutiveFilters>(DEFAULT_FILTERS);
+
+  const [draftFilters, setDraftFilters] =
+    useState<ExecutiveFilters>(DEFAULT_FILTERS);
+
+  const fetchExecutives = useCallback(async () => {
+    try {
+      setIsLoading(true);
+
+      setError(null);
+
+      const response = await getExecutiveOverview();
+
+      const data = response?.value || response;
+
+      const stats = data?.stats || {};
+
+      setTotalCount(stats.totalExecutives || 0);
+
+      setActiveCount(stats.activeExecutives || 0);
+
+      setInactiveCount(stats.inactiveExecutives || 0);
+
+      const formattedExecutives: ExecutiveRow[] = (data?.executives || []).map(
+        (item: ExecutiveRow) => ({
+          id: item.id,
+
+          name: item.name,
+
+          email: item.email,
+
+          phone: item.phone,
+
+          status: item.status,
+
+          leadCount: item.leadCount,
+
+          offerCount: item.offerCount,
+        }),
+      );
+
+      setExecutives(formattedExecutives);
+    } catch (err) {
+      setError(
+        err instanceof Error ? err.message : "Failed to load executives",
+      );
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchExecutives();
+  }, [fetchExecutives]);
+
+  const handleFilterChange = useCallback(
+    (key: keyof ExecutiveFilters, value: string) => {
+      setDraftFilters((prev) => ({
+        ...prev,
+        [key]: value,
+      }));
+    },
+    [],
+  );
+
+  const handleApplyFilters = useCallback(() => {
+    setFilters(draftFilters);
+  }, [draftFilters]);
+
+  const handleClearFilters = useCallback(() => {
+    setFilters(DEFAULT_FILTERS);
+
+    setDraftFilters(DEFAULT_FILTERS);
+  }, []);
+
+  const filteredExecutives = useMemo(
+    () =>
+      executives.filter((executive) => {
+        const query = filters.search.toLowerCase();
+
+        const matchesSearch =
+          !query ||
+          executive.name.toLowerCase().includes(query) ||
+          executive.email.toLowerCase().includes(query) ||
+          executive.phone.toLowerCase().includes(query);
+
+        const matchesStatus =
+          filters.status === "all" ||
+          executive.status.toLowerCase() === filters.status.toLowerCase();
+
+        return matchesSearch && matchesStatus;
+      }),
+    [executives, filters],
+  );
+
+  if (isLoading) {
+    return <GlobalLoader />;
+  }
+
+  return (
+    <div className="w-full h-full p-4 sm:p-5 space-y-5">
+      {/* Header */}
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h1 className="text-lg font-semibold text-gray-900 sm:text-2xl">
+            Executives
+          </h1>
+
+          <p className="text-xs text-gray-500 sm:text-sm">
+            Track and manage your executives.
+          </p>
+        </div>
+      </div>
+
+      {/* Cards */}
+      <ExecutiveStatCards
+        stats={{
+          totalExecutives: totalCount,
+          activeExecutives: activeCount,
+          inactiveExecutives: inactiveCount,
+        }}
+      />
+
+      {/* Filters */}
+      <ExecutiveTableFilters
+        search={draftFilters.search}
+        status={draftFilters.status}
+        onSearchChange={(value) => handleFilterChange("search", value)}
+        onStatusChange={(value) => handleFilterChange("status", value)}
+        onApply={handleApplyFilters}
+        onClear={handleClearFilters}
+      />
+
+      {/* Table */}
+      {error ? (
+        <div className="flex items-center justify-center py-20 text-red-500">
+          {error}
+        </div>
+      ) : (
+        <div className="overflow-x-auto rounded-lg border border-gray-200 bg-white shadow-sm">
+          <Table>
+            <TableHeader className="bg-[#7677F41A]">
+              <TableRow>
+                <TableHead className="w-16 whitespace-nowrap text-xs sm:text-sm">S.No</TableHead>
+
+                <TableHead className="min-w-[160px] whitespace-nowrap text-xs sm:text-sm">Executive Name</TableHead>
+
+                <TableHead className="min-w-[220px] whitespace-nowrap text-xs sm:text-sm">Email</TableHead>
+
+                <TableHead className="min-w-[160px] whitespace-nowrap text-xs sm:text-sm">Phone</TableHead>
+
+                <TableHead className="min-w-[120px] whitespace-nowrap text-xs sm:text-sm">Status</TableHead>
+
+                <TableHead className="min-w-[100px] whitespace-nowrap text-xs sm:text-sm">Leads</TableHead>
+
+                <TableHead className="min-w-[140px] whitespace-nowrap text-xs sm:text-sm">Assigned Offers</TableHead>
+              </TableRow>
+            </TableHeader>
+
+            <TableBody>
+              {executives.length === 0 ? (
+                <TableRow>
+                  <TableCell
+                    colSpan={7}
+                    className="py-10 text-center text-gray-500"
+                  >
+                    No Executives Available
+                  </TableCell>
+                </TableRow>
+              ) : filteredExecutives.length === 0 ? (
+                <TableRow>
+                  <TableCell
+                    colSpan={7}
+                    className="py-10 text-center text-gray-500"
+                  >
+                    No Executives Match the Applied Filters
+                  </TableCell>
+                </TableRow>
+              ) : (
+                filteredExecutives.map((executive, index) => (
+                  <TableRow key={executive.id}>
+                    <TableCell>{index + 1}</TableCell>
+
+                    <TableCell 
+                      title={executive.name}
+                      className="font-medium"
+                    >
+                      {executive.name}
+                    </TableCell>
+
+                    <TableCell
+                      title={executive.email}
+                      className="max-w-[220px] truncate"
+                    >
+                      {executive.email}
+                    </TableCell>
+
+                    <TableCell>
+                      {executive.phone}
+                    </TableCell>
+
+                    <TableCell>
+                      <Badge
+                        variant="outline"
+                        className={
+                          executive.status.toLowerCase() === "active"
+                            ? "border-green-200 bg-green-50 text-green-700"
+                            : "border-gray-200 bg-gray-50 text-gray-600"
+                        }
+                      >
+                        {executive.status}
+                      </Badge>
+                    </TableCell>
+
+                    <TableCell className="font-semibold">
+                      {formatCount(executive.leadCount)}
+                    </TableCell>
+
+                    <TableCell className="font-semibold">
+                      {formatCount(executive.offerCount)}
+                    </TableCell>
+                  </TableRow>
+                ))
+              )}
+            </TableBody>
+          </Table>
+        </div>
+      )}
+    </div>
+  );
+}

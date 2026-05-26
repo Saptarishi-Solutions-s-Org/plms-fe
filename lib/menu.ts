@@ -3,6 +3,7 @@ import {
   Building2,
   UserCheck,
   Gift,
+  Users,
 } from "lucide-react";
 
 import { MenuGroup } from "@/types/menu";
@@ -78,6 +79,18 @@ export const MENU_CONFIG: MenuGroup[] = [
         permissions: ["view"],
         roles: ["Manager"],
       },
+
+      {
+        href: "/executives",
+        icon: Users,
+        label: "Executives",
+        modules: ["lead"],
+        permissions: ["view"],
+        roles: [
+          "Manager",
+        ],
+      },
+
     ],
   },
 ];
