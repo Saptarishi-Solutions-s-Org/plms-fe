@@ -23,7 +23,7 @@ const CommonOverview = ({
   const max = data.length ? Math.max(...data.map((row) => row.value), 1) : 1;
 
   return (
-    <Card className="rounded-[2rem] border border-gray-200 bg-white h-full shadow-md">
+    <Card className="w-full h-[420px] rounded-[2rem] border border-gray-200 bg-white shadow-md flex flex-col">
       <CardHeader className="flex flex-row items-start justify-between gap-4 space-y-0 px-6 pt-6">
         <div className="space-y-1">
           <CardTitle className="text-[1.7rem] font-bold tracking-tight text-slate-900">
@@ -45,7 +45,7 @@ const CommonOverview = ({
         )}
       </CardHeader>
 
-      <CardContent className="space-y-6 px-6 pb-6 pt-2">
+      <CardContent className="flex-1 space-y-6 px-6 pb-6 pt-2 overflow-y-auto custom-scrollbar">
         {data.length > 0 ? (
           data.map((row, index) => (
             <div key={row.label} className="space-y-1.5">
@@ -74,7 +74,9 @@ const CommonOverview = ({
             </div>
           ))
         ) : (
-          <p className="text-base text-slate-500">No data</p>
+          <div className="flex h-full items-center justify-center">
+            <p className="text-base font-semibold text-slate-400">No data</p>
+          </div>
         )}
       </CardContent>
     </Card>
