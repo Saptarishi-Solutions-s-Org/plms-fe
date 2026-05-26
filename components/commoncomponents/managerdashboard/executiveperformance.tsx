@@ -68,10 +68,10 @@ const ExecutivePerformance = ({
           ))
         ) : (
           <div className="flex h-full items-center justify-center">
-            <p className="text-base font-semibold text-slate-400">
-              No performance data
-            </p>
-          </div>
+  <p className="text-base font-semibold text-slate-400">
+    No performance data
+  </p>
+</div>
         )}
       </CardContent>
     </Card>
