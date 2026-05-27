@@ -174,100 +174,100 @@ export default function ExecutivesPage() {
       />
 
       {/* Table */}
-      {error ? (
-        <div className="flex items-center justify-center py-20 text-red-500">
-          {error}
-        </div>
-      ) : (
-        <div className="overflow-x-auto rounded-lg border border-gray-200 bg-white shadow-sm">
-          <Table>
-            <TableHeader className="bg-[#7677F41A]">
+      <div className="overflow-x-auto rounded-lg border border-gray-200 bg-white shadow-sm">
+        <Table>
+          <TableHeader className="bg-[#7677F41A]">
+            <TableRow>
+              <TableHead className="w-16 whitespace-nowrap text-xs sm:text-sm">S.No</TableHead>
+
+              <TableHead className="min-w-[160px] whitespace-nowrap text-xs sm:text-sm">Executive Name</TableHead>
+
+              <TableHead className="min-w-[220px] whitespace-nowrap text-xs sm:text-sm">Email</TableHead>
+
+              <TableHead className="min-w-[160px] whitespace-nowrap text-xs sm:text-sm">Phone</TableHead>
+
+              <TableHead className="min-w-[120px] whitespace-nowrap text-xs sm:text-sm">Status</TableHead>
+
+              <TableHead className="min-w-[100px] whitespace-nowrap text-xs sm:text-sm">Leads</TableHead>
+
+              <TableHead className="min-w-[140px] whitespace-nowrap text-xs sm:text-sm">Assigned Offers</TableHead>
+            </TableRow>
+          </TableHeader>
+
+          <TableBody>
+            {error ? (
               <TableRow>
-                <TableHead className="w-16 whitespace-nowrap text-xs sm:text-sm">S.No</TableHead>
-
-                <TableHead className="min-w-[160px] whitespace-nowrap text-xs sm:text-sm">Executive Name</TableHead>
-
-                <TableHead className="min-w-[220px] whitespace-nowrap text-xs sm:text-sm">Email</TableHead>
-
-                <TableHead className="min-w-[160px] whitespace-nowrap text-xs sm:text-sm">Phone</TableHead>
-
-                <TableHead className="min-w-[120px] whitespace-nowrap text-xs sm:text-sm">Status</TableHead>
-
-                <TableHead className="min-w-[100px] whitespace-nowrap text-xs sm:text-sm">Leads</TableHead>
-
-                <TableHead className="min-w-[140px] whitespace-nowrap text-xs sm:text-sm">Assigned Offers</TableHead>
+                <TableCell colSpan={7} className="py-10 text-center text-red-500">
+                  {error}
+                </TableCell>
               </TableRow>
-            </TableHeader>
+            ) : executives.length === 0 ? (
+              <TableRow>
+                <TableCell
+                  colSpan={7}
+                  className="py-10 text-center text-gray-500"
+                >
+                  No Executives Available
+                </TableCell>
+              </TableRow>
+            ) : filteredExecutives.length === 0 ? (
+              <TableRow>
+                <TableCell
+                  colSpan={7}
+                  className="py-10 text-center text-gray-500"
+                >
+                  No Executives Match the Applied Filters
+                </TableCell>
+              </TableRow>
+            ) : (
+              filteredExecutives.map((executive, index) => (
+                <TableRow key={executive.id}>
+                  <TableCell>{index + 1}</TableCell>
 
-            <TableBody>
-              {executives.length === 0 ? (
-                <TableRow>
-                  <TableCell
-                    colSpan={7}
-                    className="py-10 text-center text-gray-500"
+                  <TableCell 
+                    title={executive.name}
+                    className="font-medium"
                   >
-                    No Executives Available
+                    {executive.name}
+                  </TableCell>
+
+                  <TableCell
+                    title={executive.email}
+                    className="max-w-[220px] truncate"
+                  >
+                    {executive.email}
+                  </TableCell>
+
+                  <TableCell>
+                    {executive.phone}
+                  </TableCell>
+
+                  <TableCell>
+                    <Badge
+                      variant="outline"
+                      className={
+                        executive.status.toLowerCase() === "active"
+                          ? "border-green-200 bg-green-50 text-green-700"
+                          : "border-gray-200 bg-gray-50 text-gray-600"
+                      }
+                    >
+                      {executive.status}
+                    </Badge>
+                  </TableCell>
+
+                  <TableCell className="font-semibold">
+                    {formatCount(executive.leadCount)}
+                  </TableCell>
+
+                  <TableCell className="font-semibold">
+                    {formatCount(executive.offerCount)}
                   </TableCell>
                 </TableRow>
-              ) : filteredExecutives.length === 0 ? (
-                <TableRow>
-                  <TableCell
-                    colSpan={7}
-                    className="py-10 text-center text-gray-500"
-                  >
-                    No Executives Match the Applied Filters
-                  </TableCell>
-                </TableRow>
-              ) : (
-                filteredExecutives.map((executive, index) => (
-                  <TableRow key={executive.id}>
-                    <TableCell>{index + 1}</TableCell>
-
-                    <TableCell 
-                      title={executive.name}
-                      className="font-medium"
-                    >
-                      {executive.name}
-                    </TableCell>
-
-                    <TableCell
-                      title={executive.email}
-                      className="max-w-[220px] truncate"
-                    >
-                      {executive.email}
-                    </TableCell>
-
-                    <TableCell>
-                      {executive.phone}
-                    </TableCell>
-
-                    <TableCell>
-                      <Badge
-                        variant="outline"
-                        className={
-                          executive.status.toLowerCase() === "active"
-                            ? "border-green-200 bg-green-50 text-green-700"
-                            : "border-gray-200 bg-gray-50 text-gray-600"
-                        }
-                      >
-                        {executive.status}
-                      </Badge>
-                    </TableCell>
-
-                    <TableCell className="font-semibold">
-                      {formatCount(executive.leadCount)}
-                    </TableCell>
-
-                    <TableCell className="font-semibold">
-                      {formatCount(executive.offerCount)}
-                    </TableCell>
-                  </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
-        </div>
-      )}
+              ))
+            )}
+          </TableBody>
+        </Table>
+      </div>
     </div>
   );
 }
