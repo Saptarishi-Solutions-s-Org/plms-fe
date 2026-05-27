@@ -12,6 +12,8 @@ import {
 } from "@/components/ui/select";
 import { DISCOUNT_OPTIONS } from "@/lib/validators/offervalidation";
 import type { OfferFilters } from "@/types/Createoffer";
+import { OFFER_STATUS_OPTIONS } from "@/types/Createoffer";
+
 interface OfferFiltersProps {
   filters: OfferFilters;
   onFilterChange: <K extends keyof OfferFilters>(key: K, value: OfferFilters[K]) => void;
@@ -66,9 +68,11 @@ export function OfferFilters({ filters, onFilterChange, onApply, onClear }: Offe
         </SelectTrigger>
         <SelectContent>
           <SelectItem value="all">All Status</SelectItem>
-          <SelectItem value="active">Active</SelectItem>
-          <SelectItem value="inactive">Inactive</SelectItem>
-          <SelectItem value="expired">Expired</SelectItem>
+          {OFFER_STATUS_OPTIONS.map((option) => (
+            <SelectItem key={option.value} value={option.value}>
+              {option.label}
+            </SelectItem>
+          ))}
         </SelectContent>
       </Select>
 

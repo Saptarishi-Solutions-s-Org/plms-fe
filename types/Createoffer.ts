@@ -145,3 +145,9 @@ export interface OfferFilters {
     | "all"
     | DiscountType;
 }
+
+export const OFFER_STATUS_OPTIONS = [
+  { value: "active", label: "Active" },
+  { value: "inactive", label: "Inactive" },
+  { value: "expired", label: "Expired" },
+] as const;

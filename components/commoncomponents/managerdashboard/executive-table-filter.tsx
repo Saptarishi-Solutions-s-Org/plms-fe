@@ -12,7 +12,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 
-import { ExecutiveFilters } from "@/types/org-manager";
+import { ExecutiveFilters, EXECUTIVE_STATUS_OPTIONS } from "@/types/org-manager";
 
 interface ExecutiveTableFiltersProps {
   search: string;
@@ -56,8 +56,11 @@ export default function ExecutiveTableFilters({
         </SelectTrigger>
         <SelectContent>
           <SelectItem value="all">All Status</SelectItem>
-          <SelectItem value="Active">Active</SelectItem>
-          <SelectItem value="Inactive">Inactive</SelectItem>
+          {EXECUTIVE_STATUS_OPTIONS.map((option) => (
+            <SelectItem key={option.value} value={option.value}>
+              {option.label}
+            </SelectItem>
+          ))}
         </SelectContent>
       </Select>
 

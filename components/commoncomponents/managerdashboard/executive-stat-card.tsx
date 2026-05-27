@@ -1,30 +1,7 @@
-import type { ElementType } from "react";
-
 import { Card, CardContent, CardTitle } from "@/components/ui/card";
 import { Users, UserCheck, UserX } from "lucide-react";
+import { ExecutiveStatCardConfig, ExecutiveStatCardsProps } from "@/types/org-manager";
 
-export type ExecutiveStatKey =
-  | "totalExecutives"
-  | "activeExecutives"
-  | "inactiveExecutives";
-
-export interface ExecutiveStats {
-  totalExecutives: number;
-  activeExecutives: number;
-  inactiveExecutives: number;
-}
-
-export interface ExecutiveStatCardConfig {
-  key: ExecutiveStatKey;
-  label: string;
-  Icon: ElementType;
-  color: string;
-}
-
-export interface ExecutiveStatCardsProps {
-  stats: ExecutiveStats;
-  cards?: ExecutiveStatCardConfig[];
-}
 
 const DEFAULT_CARDS: ExecutiveStatCardConfig[] = [
   {

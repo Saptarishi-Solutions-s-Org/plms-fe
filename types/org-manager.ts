@@ -140,3 +140,31 @@ export type ExecutiveRow = {
   leadCount: number;
   offerCount: number;
 };
+
+export type ExecutiveStatKey =
+  | "totalExecutives"
+  | "activeExecutives"
+  | "inactiveExecutives";
+
+export interface ExecutiveStats {
+  totalExecutives: number;
+  activeExecutives: number;
+  inactiveExecutives: number;
+}
+
+export interface ExecutiveStatCardConfig {
+  key: ExecutiveStatKey;
+  label: string;
+  Icon: ElementType;
+  color: string;
+}
+
+export interface ExecutiveStatCardsProps {
+  stats: ExecutiveStats;
+  cards?: ExecutiveStatCardConfig[];
+}
+
+export const EXECUTIVE_STATUS_OPTIONS = [
+  { value: "Active", label: "Active" },
+  { value: "Inactive", label: "Inactive" },
+] as const;
