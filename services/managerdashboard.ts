@@ -21,3 +21,6 @@ export const assignOfferToExecutive = (payload: {
     body: JSON.stringify(payload),
   });
 
+export const getExecutiveOverview = () =>
+  api("/odata/v4/manager-dashboard/getExecutiveOverview()");  
+
