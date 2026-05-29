@@ -1,26 +1,19 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useParams } from "next/navigation";
-import type { DateRange } from "react-day-picker";
+import { usePathname, useParams, useRouter, useSearchParams } from "next/navigation";
 import { toast } from "sonner";
 
 import GlobalLoader from "@/components/commoncomponents/globalloader";
 import OverviewTab from "@/components/commoncomponents/reports/Overview/overview-tab";
 import ReportControls from "@/components/commoncomponents/reports/shared/report-controls";
 import TeamPerformanceTab from "@/components/commoncomponents/reports/team-performance/team-performance-tab";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
-} from "@/components/ui/tabs";
-import {
-  getLeadSourceDistribution,
+  getLeadSourceAnalytics,
   getReportStats,
-  getSourceVsConversionRate,
 } from "@/services/organizationreports";
-import { normalizeLeadSource } from "@/types/org-reports";
+import { getManagerDashboard } from "@/services/managerdashboard";
 import type {
   LeadSourceRow,
   OrganizationReportStats,
@@ -33,59 +26,72 @@ const toRecord = (value: unknown): ReportApiRecord =>
   value && typeof value === "object" ? (value as ReportApiRecord) : {};
 
 const numberValue = (value: unknown) => Number(value || 0);
-const stringValue = (value: unknown, fallback = "") =>
-  typeof value === "string" ? value : fallback;
 
-const mergeLeadSourceRows = (
-  rows: unknown[],
-): LeadSourceRow[] => {
+const sourceOrder = ["Referral", "Advertisement", "Social_Media"];
+
+const sourceRank = (source: string) => {
+  const normalized = source.trim().replace(/\s+/g, "_");
+  const index = sourceOrder.findIndex(
+    (orderedSource) => orderedSource.toLowerCase() === normalized.toLowerCase(),
+  );
+
+  return index === -1 ? sourceOrder.length : index;
+};
+
+const sortSourceRows = <T extends { source: string }>(rows: T[]) =>
+  [...rows].sort((first, second) => {
+    const rankDiff = sourceRank(first.source) - sourceRank(second.source);
+
+    if (rankDiff !== 0) {
+      return rankDiff;
+    }
+
+    return first.source.localeCompare(second.source);
+  });
+
+const mergeLeadSourceRows = (rows: unknown[]): LeadSourceRow[] => {
   const merged = new Map<string, number>();
 
   rows.forEach((row) => {
     const record = toRecord(row);
-    const source = normalizeLeadSource(stringValue(record.source));
+    const source = String(record.source ?? "");
     const leads = numberValue(record.leads);
 
     merged.set(source, (merged.get(source) ?? 0) + leads);
   });
 
-  return Array.from(merged, ([source, leads]) => ({ source, leads }));
+  return sortSourceRows(Array.from(merged, ([source, leads]) => ({ source, leads })));
 };
 
-const mergeConversionRows = (
-  rows: unknown[],
-): SourceConversionRateRow[] => {
-  const merged = new Map<string, { leads: number; converted: number }>();
-
-  rows.forEach((row) => {
+const mergeConversionRows = (rows: unknown[]): SourceConversionRateRow[] => {
+  return sortSourceRows(rows.map((row) => {
     const record = toRecord(row);
-    const source = normalizeLeadSource(stringValue(record.source));
-    const leads = numberValue(record.leads);
-    const converted = numberValue(record.converted);
-    const current = merged.get(source) ?? { leads: 0, converted: 0 };
 
-    merged.set(source, {
-      leads: current.leads + leads,
-      converted: current.converted + converted,
-    });
-  });
-
-  return Array.from(merged, ([source, row]) => ({
-    source,
-    leads: row.leads,
-    rate:
-      row.leads > 0
-        ? Number(((row.converted / row.leads) * 100).toFixed(1))
-        : 0,
+    return {
+      source: String(record.source ?? ""),
+      leads: numberValue(record.leads),
+      rate: numberValue(record.conversionRate),
+    };
   }));
 };
 
+type ReportTab = "overview" | "team-performance";
+
+const isReportTab = (value: string | null): value is ReportTab =>
+  value === "overview" || value === "team-performance";
+
 export default function OrgReports() {
   const params = useParams<{ orgCode: string }>();
+  const pathname = usePathname();
+  const router = useRouter();
+  const searchParams = useSearchParams();
   const orgCode = params.orgCode;
-  const [loading, setLoading] = useState(true);
+  const activeTab = isReportTab(searchParams.get("tab"))
+    ? searchParams.get("tab")
+    : "overview";
+  const [initialLoading, setInitialLoading] = useState(true);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const [period, setPeriod] = useState<ReportPeriod>("this-month");
-  const [dateRange, setDateRange] = useState<DateRange | undefined>();
 
   const [stats, setStats] = useState<OrganizationReportStats>({
     total_leads: 0,
@@ -105,33 +111,28 @@ export default function OrgReports() {
 
   useEffect(() => {
     const fetchReports = async () => {
-      setLoading(true);
+      setIsRefreshing(true);
 
       try {
-        const [statsData, leadSourceData, conversionRateData] =
-          await Promise.all([
-            getReportStats(),
-            getLeadSourceDistribution(),
-            getSourceVsConversionRate(),
-          ]);
+        const [statsData, analyticsData, managerData] = await Promise.all([
+          getReportStats(),
+          getLeadSourceAnalytics(),
+          getManagerDashboard(),
+        ]);
 
         setStats({
-          total_leads: statsData?.totalLeads ?? 0,
+          total_leads: managerData?.totalLeads ?? 0,
           leads_assigned: statsData?.leadsAssigned ?? 0,
           converted_leads: statsData?.convertedLeads ?? 0,
-          active_offers: statsData?.activeOffers ?? 0,
+          active_offers: managerData?.activeOffers ?? 0,
           offers_utilized: statsData?.offersUtilized ?? 0,
         });
 
-        setLeadSourceDistributionData(
-          mergeLeadSourceRows(Array.isArray(leadSourceData) ? leadSourceData : []),
-        );
+        const analyticsRows = Array.isArray(analyticsData) ? analyticsData : [];
 
-        setSourceConversionRateData(
-          mergeConversionRows(
-            Array.isArray(conversionRateData) ? conversionRateData : [],
-          ),
-        );
+        setLeadSourceDistributionData(mergeLeadSourceRows(analyticsRows));
+
+        setSourceConversionRateData(mergeConversionRows(analyticsRows));
       } catch {
         setStats({
           total_leads: 0,
@@ -144,31 +145,37 @@ export default function OrgReports() {
         setSourceConversionRateData([]);
         toast.error("Failed to load reports");
       } finally {
-        setLoading(false);
+        setInitialLoading(false);
+        setIsRefreshing(false);
       }
     };
 
     fetchReports();
-  }, [period, dateRange]);
+  }, [period]);
 
-  const handleExport = () => {
-    toast.success("Preparing report for PDF export");
-    window.print();
-  };
-
-  if (loading) {
+  if (initialLoading) {
     return <GlobalLoader />;
   }
 
+  const handleTabChange = (nextTab: string) => {
+    if (!isReportTab(nextTab)) {
+      return;
+    }
+
+    const nextParams = new URLSearchParams(searchParams.toString());
+    nextParams.set("tab", nextTab);
+    router.replace(`${pathname}?${nextParams.toString()}`, { scroll: false });
+  };
+
   return (
-    <div className="min-h-screen w-full bg-slate-50 px-4 py-5 sm:px-6">
-      <div className="flex w-full flex-col gap-7">
-        <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+    <div className="min-h-screen w-full bg-slate-50 px-4 py-4 sm:px-5 sm:py-5">
+      <div className="flex w-full flex-col gap-6">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h1 className="text-2xl font-extrabold text-slate-900 sm:text-3xl">
+            <h1 className="text-xl font-semibold sm:text-2xl lg:text-3xl">
               Reports
             </h1>
-            <p className="mt-1 text-sm font-medium text-slate-500">
+            <p className="text-xs sm:text-sm text-gray-600">
               Analyzing team performance for the current cycle
             </p>
           </div>
@@ -176,13 +183,14 @@ export default function OrgReports() {
           <ReportControls
             period={period}
             onPeriodChange={setPeriod}
-            dateRange={dateRange}
-            onDateRangeChange={setDateRange}
-            onExport={handleExport}
           />
         </div>
 
-        <Tabs defaultValue="overview" className="w-full items-stretch gap-6">
+        <Tabs
+          value={activeTab}
+          onValueChange={handleTabChange}
+          className="w-full items-stretch gap-6"
+        >
           <div className="w-full border-b border-slate-200">
             <TabsList
               variant="line"
@@ -212,13 +220,15 @@ export default function OrgReports() {
           </TabsContent>
 
           <TabsContent value="team-performance" className="w-full">
-            <TeamPerformanceTab
-              stats={[]}
-              rows={[]}
-              orgCode={orgCode}
-            />
+            <TeamPerformanceTab stats={[]} rows={[]} orgCode={orgCode} />
           </TabsContent>
         </Tabs>
+
+        {isRefreshing && (
+          <div className="pointer-events-none fixed bottom-4 right-4 rounded-full border border-slate-200 bg-white px-4 py-2 text-xs font-semibold text-slate-500 shadow-md">
+            Refreshing reports...
+          </div>
+        )}
       </div>
     </div>
   );

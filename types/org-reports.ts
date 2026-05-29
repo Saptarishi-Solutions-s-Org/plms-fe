@@ -1,8 +1,8 @@
 import type { ElementType } from "react";
-import type { DateRange } from "react-day-picker";
 import { LEAD_SOURCE_OPTIONS } from "./leadtypes";
 
 export type ReportApiRecord = Record<string, unknown>;
+
 
 export interface OrganizationReportStats {
   total_leads: number;
@@ -15,6 +15,7 @@ export interface OrganizationReportStats {
 export interface ReportStatsProps {
   stats: OrganizationReportStats;
 }
+
 
 export interface ReportCard {
   title: string;
@@ -43,10 +44,9 @@ export interface SourceConversionRateRow {
 export interface SourceVsConversionRateProps {
   title: string;
   data: SourceConversionRateRow[];
-  onViewAll?: () => void;
 }
 
-export type ReportPeriod = "this-month" | "last-month" | "custom";
+export type ReportPeriod = "this-month";
 
 export interface OverviewTabProps {
   stats: OrganizationReportStats;
@@ -57,9 +57,6 @@ export interface OverviewTabProps {
 export interface ReportControlsProps {
   period: ReportPeriod;
   onPeriodChange: (period: ReportPeriod) => void;
-  dateRange?: DateRange;
-  onDateRangeChange: (range: DateRange | undefined) => void;
-  onExport: () => void;
 }
 
 export interface TeamPerformanceStat {
@@ -95,35 +92,18 @@ export interface ExecutiveLeadSummary {
 
 export interface ExecutiveLeadRow {
   id: string;
-  date: string;
   leadName: string;
-  status: "New" | "Contacted" | "Converted" | "Qualified";
+  status: string;
   source: string;
   assignedBy: string;
-  offer: string;
-  converted: boolean;
 }
 
 export interface ExecutiveLeadsProps {
   orgCode: string;
+  executiveId: string;
   executiveName: string;
   summary: ExecutiveLeadSummary;
   leads: ExecutiveLeadRow[];
 }
 
 export type LeadSourceValue = (typeof LEAD_SOURCE_OPTIONS)[number]["value"];
-
-export const normalizeLeadSource = (source: string): LeadSourceValue | string => {
-  const normalizedSource = source.trim().toLowerCase().replace(/[\s-]+/g, "_");
-  const option = LEAD_SOURCE_OPTIONS.find(
-    ({ label, value }) =>
-      value.toLowerCase() === normalizedSource ||
-      label.toLowerCase().replace(/[\s-]+/g, "_") === normalizedSource,
-  );
-
-  return option?.value ?? source;
-};
-
-export const getLeadSourceLabel = (source: string) =>
-  LEAD_SOURCE_OPTIONS.find(({ value }) => value === normalizeLeadSource(source))
-    ?.label ?? source;

@@ -29,6 +29,7 @@ export default function ExecutiveReportDetails() {
   return (
     <ExecutiveLeadsPage
       orgCode={orgCode}
+      executiveId={executiveId}
       executiveName={executiveName}
       summary={emptySummary}
       leads={leads}

@@ -6,7 +6,6 @@ import {
   BriefcaseBusiness,
   CheckCircle,
   Percent,
-  Tag,
 } from "lucide-react";
 import { ReportCard, ReportStatsProps } from "@/types/org-reports";
 
@@ -41,37 +40,26 @@ export const ReportStats = ({ stats }: ReportStatsProps) => {
       Icon: BriefcaseBusiness,
       color: "bg-purple-500",
     },
-    {
-      title: "Offers Utilized",
-      value: stats.offers_utilized,
-      Icon: Tag,
-      color: "bg-orange-400",
-    },
   ];
 
   return (
-    <div className="grid w-full grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-5">
+    <div className="grid w-full grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
       {cards.map(({ title, value, Icon, color }) => (
-        <Card key={title} className="w-full rounded-2xl border-0 bg-white p-5 shadow-sm">
-          <div className="flex items-start justify-between gap-3">
-            <div>
-              <CardTitle className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-                {title}
-              </CardTitle>
-
-              <CardContent className="p-0 pt-4">
-                <p className="text-4xl font-bold text-slate-900">
-                  {typeof value === "number" ? value.toLocaleString() : value}
-                </p>
-              </CardContent>
-            </div>
-
+        <Card key={title} className="p-4">
+          <div className="flex items-center justify-between">
+            <CardTitle className="text-sm text-gray-500">{title}</CardTitle>
             <div
-              className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-white ${color}`}
+              className={`flex h-8 w-8 items-center justify-center rounded-full text-white ${color}`}
             >
               <Icon className="h-4 w-4" />
             </div>
           </div>
+
+          <CardContent className="p-0 mt-2">
+            <p className="text-5xl font-semibold text-gray-900">
+              {typeof value === "number" ? value.toLocaleString() : value}
+            </p>
+          </CardContent>
         </Card>
       ))}
     </div>
