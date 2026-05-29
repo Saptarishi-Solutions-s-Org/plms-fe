@@ -1,6 +1,3 @@
-// plms-fe/types/leadtypes.ts
-// Full file — replaces existing leadtypes.ts
-
 export interface LeadFormData {
   name: string;
   gender: string;
@@ -22,8 +19,6 @@ export interface Lead extends LeadFormData {
   leadCode: string;
   assignedToName?: string;
 }
-
-// ── NEW ──────────────────────────────────────────────────────────────────────
 
 export interface LeadActivity {
   id: string;
@@ -68,8 +63,6 @@ export interface AddActivityFormData {
   notes: string;
   type?: string;
 }
-
-// ── existing ─────────────────────────────────────────────────────────────────
 
 export interface ExecutiveOption {
   id: string;

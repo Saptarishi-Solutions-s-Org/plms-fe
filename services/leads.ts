@@ -1,6 +1,3 @@
-// plms-fe/services/leads.ts
-// Full file — replaces existing leads.ts
-
 import { api } from "@/lib/api";
 import type { AddActivityFormData, LeadFormData } from "@/types/leadtypes";
 
