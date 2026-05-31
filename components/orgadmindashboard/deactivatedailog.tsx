@@ -19,14 +19,23 @@ import {
 
 import { useEffect, useState } from "react";
 
-import { getReportingManagers } from "@/services/organizationAdmin";
+import {
+  getAllExecutives,
+  getReportingManagers,
+} from "@/services/organizationAdmin";
 
 interface DeactivateFormProps {
   isOpen: boolean;
   setIsOpen: (open: boolean) => void;
+
+  selectedUser: {
+    id: string;
+    name: string;
+    role: string;
+  };
 }
 
-interface Manager {
+interface UserOption {
   id: string;
   name: string;
 }
@@ -34,54 +43,87 @@ interface Manager {
 const DeactivateForm = ({
   isOpen,
   setIsOpen,
+  selectedUser,
 }: DeactivateFormProps) => {
-  const [managers, setManagers] = useState<Manager[]>([]);
+  const [managers, setManagers] = useState<UserOption[]>([]);
 
-  const [selectedManager, setSelectedManager] = useState("");
+  const [executives, setExecutives] = useState<UserOption[]>([]);
+
+  const [selectedValue, setSelectedValue] = useState("");
 
   useEffect(() => {
-    const fetchManagers = async () => {
+    const fetchData = async () => {
       try {
-        const response = await getReportingManagers();
+        const managersResponse =
+          await getReportingManagers();
 
-        setManagers(response);
+        const executivesResponse =
+          await getAllExecutives();
 
-        if (response.length > 0) {
-          setSelectedManager(response[0].id);
-        }
+        setManagers(managersResponse);
+
+        setExecutives(executivesResponse);
       } catch (error) {
-        console.error("Error fetching managers:", error);
+        console.error(error);
       }
     };
 
-    fetchManagers();
+    fetchData();
   }, []);
+
+  // Auto fill selected user name
+  useEffect(() => {
+    if (selectedUser?.name) {
+      setSelectedValue(selectedUser.name);
+    }
+  }, [selectedUser]);
+
+  const isExecutive =
+    selectedUser?.role?.toLowerCase() ===
+    "executive";
+
+  const dropdownData = isExecutive
+    ? executives
+    : managers;
+
+  const handleDeactivate = () => {// Implement deactivation logic here, using selectedValue to determine which user to deactivate
+  }
 
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogContent className="sm:max-w-lg">
         <DialogHeader>
-          <DialogTitle>Deactivate User</DialogTitle>
+          <DialogTitle>
+            Deactivate User
+          </DialogTitle>
 
           <DialogDescription className="flex flex-col gap-4 mt-2">
-            Select reporting manager
+            {isExecutive
+              ? "Select Executive"
+              : "Select Manager"}
           </DialogDescription>
 
           <Select
-            value={selectedManager}
-            onValueChange={setSelectedManager}
+            value={selectedValue}
+            onValueChange={setSelectedValue}
           >
             <SelectTrigger className="w-full">
-              <SelectValue placeholder="Select Manager" />
+              <SelectValue
+                placeholder={
+                  isExecutive
+                    ? "Select Executive"
+                    : "Select Manager"
+                }
+              />
             </SelectTrigger>
 
             <SelectContent>
-              {managers.map((manager) => (
+              {dropdownData.map((user) => (
                 <SelectItem
-                  key={manager.id}
-                  value={manager.id}
+                  key={user.id}
+                  value={user.name}
                 >
-                  {manager.name}
+                  {user.name}
                 </SelectItem>
               ))}
             </SelectContent>
@@ -96,7 +138,7 @@ const DeactivateForm = ({
             Cancel
           </Button>
 
-          <Button variant="destructive">
+          <Button variant="destructive" onClick={() => {handleDeactivate()}}>
             Deactivate
           </Button>
         </DialogFooter>

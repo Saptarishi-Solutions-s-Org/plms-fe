@@ -20,7 +20,12 @@ import { useState } from "react";
 
 const UserTable = ({ users, loading }: { users: UserDetails[]; loading: boolean }) => {
 
-const [isDeactivateOpen, setIsDeactivateOpen] = useState(false);
+    const [isDeactivateOpen, setIsDeactivateOpen] = useState(false);
+    const [selectedUser, setSelectedUser] = useState({
+        id: "",
+        name: "",
+        role: "",
+    });
     return (
         <div className="rounded-lg border border-gray-200 bg-white shadow-sm overflow-x-auto">
             <Table>
@@ -81,7 +86,14 @@ const [isDeactivateOpen, setIsDeactivateOpen] = useState(false);
 
                                         <DropdownMenuContent align="end">
                                             <DropdownMenuItem
-                                                onClick={() => setIsDeactivateOpen(true)}
+                                                onClick={() => {
+                                                    setSelectedUser({
+                                                        id: item.id,
+                                                        name: item.name,
+                                                        role: item.role_name,
+                                                    });
+                                                    setIsDeactivateOpen(true);
+                                                }}
                                             >
                                                 Deactivate
                                             </DropdownMenuItem>
@@ -97,6 +109,7 @@ const [isDeactivateOpen, setIsDeactivateOpen] = useState(false);
             <DeactivateForm
                 isOpen={isDeactivateOpen}
                 setIsOpen={setIsDeactivateOpen}
+                selectedUser={selectedUser}
             />
         </div>
 
