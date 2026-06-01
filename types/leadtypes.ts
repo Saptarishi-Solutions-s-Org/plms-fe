@@ -14,6 +14,16 @@ export interface LeadFormData {
   notes: string;
 }
 
+export type LeadImportRow = Partial<LeadFormData> & {
+  stateId?: string;
+  countryId?: string;
+};
+
+export type LeadImportResult = {
+  imported: number;
+  failed: number;
+};
+
 export interface Lead extends LeadFormData {
   uuid: string;
   leadCode: string;
@@ -85,6 +95,7 @@ export const GENDER_OPTIONS = [
 
 export type LeadHeaderProps = {
   onExport: () => void;
+  onImportComplete?: () => Promise<void> | void;
   onAddLead: () => void;
 };
 
