@@ -8,7 +8,7 @@ import {
   PopoverContent,
 } from "@/components/ui/popover";
 import { ReactDayPicker as Calendar } from "@/components/commoncomponents/react-day-picker";
-import { CalendarIcon, ChevronDown } from "lucide-react";
+import { CalendarIcon } from "lucide-react";
 import type { DateRange } from "@/components/commoncomponents/react-day-picker";
 import { format } from "date-fns";
 
@@ -57,7 +57,6 @@ export function DateRangeFilter({
                 : placeholder}
             </span>
           </div>
-          <ChevronDown className="h-4 w-4 shrink-0 text-gray-500 ml-1" />
         </Button>
       </PopoverTrigger>
 
