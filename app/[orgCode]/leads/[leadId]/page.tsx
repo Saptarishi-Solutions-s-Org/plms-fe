@@ -77,7 +77,7 @@ export default function LeadDetailPage() {
   const { lead, activities = [] } = data;
 
   return (
-    <div className="mx-auto h-full w-full max-w-5xl space-y-5 p-4 sm:p-6">
+    <div className="h-full w-full space-y-5 p-4 sm:p-5">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <h1 className="text-xl font-semibold text-gray-900 sm:text-2xl">
@@ -91,20 +91,23 @@ export default function LeadDetailPage() {
 
       <LeadHeroCard lead={lead} />
 
-      <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
-        <div className="flex min-h-[620px] flex-col gap-5">
+      <div className="grid grid-cols-1 items-start gap-5 lg:grid-cols-2">
+        <div className="flex flex-col gap-5">
           <LeadContactCard lead={lead} />
-          <OfferCard />
           <AddNoteForm leadId={lead.uuid} onAdded={fetchDetail} />
         </div>
 
-        <div className="flex max-h-[620px] min-h-[620px] flex-col overflow-hidden rounded-xl border border-gray-200 bg-white">
-          <div className="shrink-0 border-b border-gray-100 px-5 py-4">
-            <h2 className="text-sm font-semibold text-gray-800">Timeline</h2>
+        <div className="flex flex-col gap-5">
+          <div className="flex h-[300px] flex-col overflow-hidden rounded-xl border border-gray-200 bg-white">
+            <div className="shrink-0 border-b border-gray-100 px-5 py-4">
+              <h2 className="text-sm font-semibold text-gray-800">Timeline</h2>
+            </div>
+            <div className="min-h-0 flex-1 overflow-x-hidden overflow-y-auto">
+              <ActivityTimeline activities={activities} />
+            </div>
           </div>
-          <div className="min-h-0 flex-1 overflow-x-hidden overflow-y-auto">
-            <ActivityTimeline activities={activities} />
-          </div>
+
+          <OfferCard />
         </div>
       </div>
     </div>
