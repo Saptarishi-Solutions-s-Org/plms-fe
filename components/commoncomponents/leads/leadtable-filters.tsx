@@ -30,7 +30,7 @@ export default function LeadTableFilters({
   const [selectedPriorities, setSelectedPriorities] = useState<string[]>([]);
   const [selectedExecutives, setSelectedExecutives] = useState<string[]>([]);
 
-  const sourceOptions = LEAD_SOURCE_OPTIONS.map((option) => option.value);
+  const sourceOptions = LEAD_SOURCE_OPTIONS.map((option) => option.label);
   const statusOptions = LEAD_STATUS_OPTIONS.map((option) => option.value);
   const priorityOptions = LEAD_PRIORITY_OPTIONS.map((option) => option.value);
   const executiveOptions = executives.map((executive) => executive.name);

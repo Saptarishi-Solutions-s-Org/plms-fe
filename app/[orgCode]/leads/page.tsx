@@ -31,34 +31,17 @@ const allFilters = {
 export default function LeadsPage() {
   const { leads, stats, isLoading, refetch } = useLeads();
   const currentUser = getUser();
+  const currentUserId = currentUser?.id;
   const isExecutive = currentUser?.role?.toUpperCase().trim() === "EXECUTIVE";
 
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingLead, setEditingLead] = useState<Lead | null>(null);
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
   const [filters, setFilters] = useState<LeadFilters>(allFilters);
-  const [managerExecutives, setManagerExecutives] = useState<ExecutiveOption[]>(
-    [],
-  );
-
-  const currentExecutive = useMemo<ExecutiveOption | null>(() => {
-    return currentUser ? { id: currentUser.id, name: currentUser.name } : null;
-  }, [currentUser]);
-
-  const executives = useMemo(() => {
-    if (!isExecutive) return managerExecutives;
-
-    return currentExecutive ? [currentExecutive] : [];
-  }, [currentExecutive, isExecutive, managerExecutives]);
-
-  const visibleLeads = useMemo(() => {
-    if (!isExecutive || !currentUser?.id) return leads;
-
-    return leads.filter((lead) => lead.assignedTo === currentUser.id);
-  }, [currentUser?.id, isExecutive, leads]);
+  const [executives, setExecutives] = useState<ExecutiveOption[]>([]);
 
   const filteredLeads = useMemo(() => {
-    return visibleLeads.filter((lead) => {
+    return leads.filter((lead) => {
       const search = filters.search.trim().toLowerCase();
       const assignedExecutive = executives.find(
         (executive) => executive.id === lead.assignedTo,
@@ -95,29 +78,12 @@ export default function LeadsPage() {
         assignedToMatch
       );
     });
-  }, [executives, filters, isExecutive, visibleLeads]);
-
-  const visibleStats = useMemo(() => {
-    if (!isExecutive) return stats;
-
-    return visibleLeads.reduce(
-      (nextStats, lead) => {
-        nextStats.total += 1;
-
-        if (lead.status === "New") nextStats.new += 1;
-        if (lead.status === "Contacted") nextStats.contacted += 1;
-        if (lead.status === "Qualified") nextStats.qualified += 1;
-
-        return nextStats;
-      },
-      { total: 0, new: 0, contacted: 0, qualified: 0 },
-    );
-  }, [isExecutive, stats, visibleLeads]);
+  }, [executives, filters, isExecutive, leads]);
 
   useEffect(() => {
     if (isExecutive) return;
 
-    getExecutiveUsers().then(setManagerExecutives).catch(console.error);
+    getExecutiveUsers().then(setExecutives).catch(console.error);
   }, [isExecutive]);
 
   const openAddForm = () => {
@@ -156,7 +122,10 @@ export default function LeadsPage() {
     return {
       ...lead,
       assignedToName:
-        assignedExecutive?.name ?? lead.assignedToName ?? "Unassigned",
+        assignedExecutive?.name ??
+        lead.assignedToName ??
+        currentUser?.name ??
+        "Unassigned",
     };
   };
 
@@ -183,7 +152,7 @@ export default function LeadsPage() {
             <LeadHeader onExport={handleExport} onAddLead={openAddForm} />
           </div>
 
-          <LeadSummaryCards stats={visibleStats} />
+          <LeadSummaryCards stats={stats} />
 
           <LeadTableFilters
             executives={executives}
@@ -212,7 +181,7 @@ export default function LeadsPage() {
             onFormClose={closeForm}
             selectedLead={selectedLead}
             onDetailsClose={() => setSelectedLead(null)}
-            fixedAssignedToId={isExecutive ? currentUser?.id : undefined}
+            fixedAssignedToId={isExecutive ? currentUserId : undefined}
             hideAssignedTo={isExecutive}
           />
         </div>
