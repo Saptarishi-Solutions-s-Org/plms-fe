@@ -12,6 +12,7 @@ import type {
 import {
   Award,
   CheckCircle,
+  Download,
   FileText,
   Percent,
   Search,
@@ -31,6 +32,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { useExecutiveExport } from "@/hooks/export";
 import { getExecutiveUsers } from "@/services/leads";
 import { getExecutivePerformance } from "@/services/managerdashboard";
 
@@ -85,8 +87,9 @@ export default function TeamPerformanceTab({
 }: TeamPerformanceProps) {
   const [executives, setExecutives] = useState(rows);
   const [loading, setLoading] = useState(false);
-
   const [search, setSearch] = useState("");
+  const [appliedSearch, setAppliedSearch] = useState("");
+  const { handleExport } = useExecutiveExport();
 
   useEffect(() => {
     const fetchExecutives = async () => {
@@ -138,7 +141,7 @@ export default function TeamPerformanceTab({
   }, [rows]);
 
   const filteredRows = useMemo(() => {
-    const query = search.trim().toLowerCase();
+    const query = appliedSearch.trim().toLowerCase();
 
     if (!query) {
       return executives;
@@ -147,7 +150,12 @@ export default function TeamPerformanceTab({
     return executives.filter((row) =>
       `${row.executiveName} ${row.role}`.toLowerCase().includes(query),
     );
-  }, [executives, search]);
+  }, [appliedSearch, executives]);
+
+  const handleClearSearch = () => {
+    setSearch("");
+    setAppliedSearch("");
+  };
 
   const performanceRows = useMemo(() => {
     return [...filteredRows].sort(sortByPerformance);
@@ -271,14 +279,42 @@ export default function TeamPerformanceTab({
             </p>
           </div>
 
-          <div className="relative w-full sm:w-72">
-            <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-slate-400" />
-            <Input
-              value={search}
-              onChange={(event) => setSearch(event.target.value)}
-              placeholder="Search executive..."
-              className="h-10 rounded-xl border-slate-200 bg-white pl-9 text-sm"
-            />
+          <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:flex-wrap sm:justify-end">
+            <div className="relative w-full sm:w-72">
+              <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-slate-400" />
+              <Input
+                value={search}
+                onChange={(event) => setSearch(event.target.value)}
+                onKeyDown={(event) =>
+                  event.key === "Enter" && setAppliedSearch(search)
+                }
+                placeholder="Search executive..."
+                className="h-10 rounded-xl border-slate-200 bg-white pl-9 text-sm"
+              />
+            </div>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={handleClearSearch}
+              className="h-10 rounded-xl px-4"
+            >
+              Clear
+            </Button>
+            <Button
+              type="button"
+              onClick={() => setAppliedSearch(search)}
+              className="h-10 rounded-xl bg-blue-600 px-4 text-white hover:bg-blue-700"
+            >
+              Apply
+            </Button>
+            <Button
+              type="button"
+              onClick={handleExport}
+              className="h-10 rounded-xl bg-green-600 px-4 text-white hover:bg-green-700"
+            >
+              <Download className="size-4" />
+              Export
+            </Button>
           </div>
         </div>
 
