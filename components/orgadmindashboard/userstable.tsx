@@ -14,13 +14,29 @@ import DeactivateForm from "./deactivatedailog";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "../ui/dropdown-menu";
 import { useState } from "react";
 
+const actionModes = {
+  activate: "activate",
+  deactivate: "deactivate",
+} as const;
+
+type ActionMode = (typeof actionModes)[keyof typeof actionModes];
 
 
 
 
-const UserTable = ({ users, loading }: { users: UserDetails[]; loading: boolean }) => {
+
+const UserTable = ({ 
+  users, 
+  loading,
+  onRefresh 
+}: { 
+  users: UserDetails[]; 
+  loading: boolean;
+  onRefresh?: () => void;
+}) => {
 
     const [isDeactivateOpen, setIsDeactivateOpen] = useState(false);
+    const [selectedMode, setSelectedMode] = useState<ActionMode>(actionModes.deactivate);
     const [selectedUser, setSelectedUser] = useState({
         id: "",
         name: "",
@@ -56,13 +72,13 @@ const UserTable = ({ users, loading }: { users: UserDetails[]; loading: boolean 
 
                     {loading ? (
                         <TableRow>
-                            <TableCell colSpan={5} className="text-center py-6">
+                            <TableCell colSpan={6} className="text-center py-6">
                                 Loading...
                             </TableCell>
                         </TableRow>
                     ) : users.length === 0 ? (
                         <TableRow>
-                            <TableCell colSpan={5} className="text-center py-6 text-gray-500">
+                            <TableCell colSpan={6} className="text-center py-6 text-gray-500">
                                 No records found
                             </TableCell>
                         </TableRow>
@@ -92,10 +108,15 @@ const UserTable = ({ users, loading }: { users: UserDetails[]; loading: boolean 
                                                         name: item.name,
                                                         role: item.role_name,
                                                     });
+                                                    setSelectedMode(
+                                                        item.is_active
+                                                            ? actionModes.deactivate
+                                                            : actionModes.activate
+                                                    );
                                                     setIsDeactivateOpen(true);
                                                 }}
                                             >
-                                                Deactivate
+                                                {item.is_active ? "Deactivate" : "Activate"}
                                             </DropdownMenuItem>
                                         </DropdownMenuContent>
                                     </DropdownMenu>
@@ -109,7 +130,9 @@ const UserTable = ({ users, loading }: { users: UserDetails[]; loading: boolean 
             <DeactivateForm
                 isOpen={isDeactivateOpen}
                 setIsOpen={setIsDeactivateOpen}
+                mode={selectedMode}
                 selectedUser={selectedUser}
+                onSuccess={onRefresh}
             />
         </div>
 
