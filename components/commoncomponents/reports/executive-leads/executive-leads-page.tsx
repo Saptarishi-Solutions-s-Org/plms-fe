@@ -18,59 +18,23 @@ import type {
   ExecutiveLeadRow,
   ExecutiveLeadSummary,
   ExecutiveLeadsProps,
+  LeadWithStatsApiRow,
+  LeadsWithStatsResponse,
 } from "@/types/org-reports";
-import { LEAD_SOURCE_OPTIONS } from "@/types/leadtypes";
 import { getLeadsWithStats } from "@/services/leads";
 
-type LeadWithStatsApiRow = {
-  uuid?: string;
-  id?: string;
-  leadCode?: string;
-  name?: string;
-  status?: string;
-  leadSource?: string;
-  source?: string;
-  createdByName?: string;
-  assignedTo?: string;
-};
 
-type LeadsWithStatsResponse = {
-  leads?: LeadWithStatsApiRow[];
-  stats?: {
-    total?: number | string;
-  };
-};
-
-const sourceLabels = LEAD_SOURCE_OPTIONS.reduce<Record<string, string>>(
-  (labels, option) => {
-    labels[option.value.toLowerCase()] = option.label;
-    labels[option.label.toLowerCase()] = option.label;
-    labels[option.value.replace(/_/g, " ").toLowerCase()] = option.label;
-    return labels;
-  },
-  {
-    facebook: "Social Media",
-    instagram: "Social Media",
-    linkedin: "Social Media",
-    "google ads": "Advertisement",
-    website: "Manual Entry",
-    "cold call": "Manual Entry",
-  },
-);
 
 const formatSource = (source?: string) => {
   if (!source) {
     return "-";
   }
 
-  return sourceLabels[source.toLowerCase()] || source.replace(/_/g, " ");
+  return source.replace(/_/g, " ");
 };
 
-const mapApiLeadToRow = (
-  lead: LeadWithStatsApiRow,
-  index: number,
-): ExecutiveLeadRow => ({
-  id: lead.uuid || lead.id || lead.leadCode || `lead-${index}`,
+const mapApiLeadToRow = (lead: LeadWithStatsApiRow): ExecutiveLeadRow => ({
+  id: lead.id,
   leadName: lead.name || "-",
   status: lead.status || "-",
   source: formatSource(lead.leadSource || lead.source),
@@ -86,7 +50,6 @@ const buildSummary = (rows: ExecutiveLeadRow[]): ExecutiveLeadSummary => ({
 export default function ExecutiveLeadsPage({
   orgCode,
   executiveId,
-  executiveName,
   summary,
   leads,
 }: ExecutiveLeadsProps) {
@@ -152,7 +115,7 @@ export default function ExecutiveLeadsPage({
               variant="ghost"
               className="h-9 px-2 text-sm font-semibold text-slate-500"
             >
-              <Link href={`/${orgCode}/org-reports`}>
+              <Link href={`/${orgCode}/org-reports/?tab=team-performance`}>
                 <ArrowLeft className="size-4" />
                 Back
               </Link>
@@ -162,9 +125,6 @@ export default function ExecutiveLeadsPage({
               <h1 className="text-xl font-bold text-slate-900">
                 Report Details
               </h1>
-              <p className="text-xs font-medium text-slate-500">
-                Leads under {executiveName}
-              </p>
             </div>
           </div>
         </header>
@@ -196,7 +156,7 @@ export default function ExecutiveLeadsPage({
               Detailed Breakdown - Leads Created
             </h2>
             <p className="mt-1 text-sm text-slate-500">
-              Full list of leads generated during the selected period.
+              Full list of generated leads.
             </p>
           </div>
 

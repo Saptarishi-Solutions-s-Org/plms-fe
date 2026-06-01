@@ -6,7 +6,6 @@ import { toast } from "sonner";
 
 import GlobalLoader from "@/components/commoncomponents/globalloader";
 import OverviewTab from "@/components/commoncomponents/reports/Overview/overview-tab";
-import ReportControls from "@/components/commoncomponents/reports/shared/report-controls";
 import TeamPerformanceTab from "@/components/commoncomponents/reports/team-performance/team-performance-tab";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
@@ -18,7 +17,6 @@ import type {
   LeadSourceRow,
   OrganizationReportStats,
   ReportApiRecord,
-  ReportPeriod,
   SourceConversionRateRow,
 } from "@/types/org-reports";
 
@@ -86,13 +84,10 @@ export default function OrgReports() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const orgCode = params.orgCode;
-  const activeTab = isReportTab(searchParams.get("tab"))
-    ? searchParams.get("tab")
-    : "overview";
+  const tabParam = searchParams.get("tab");
+  const activeTab = isReportTab(tabParam) ? tabParam : "overview";
   const [initialLoading, setInitialLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
-  const [period, setPeriod] = useState<ReportPeriod>("this-month");
-
   const [stats, setStats] = useState<OrganizationReportStats>({
     total_leads: 0,
     leads_assigned: 0,
@@ -151,7 +146,7 @@ export default function OrgReports() {
     };
 
     fetchReports();
-  }, [period]);
+  }, []);
 
   if (initialLoading) {
     return <GlobalLoader />;
@@ -170,7 +165,7 @@ export default function OrgReports() {
   return (
     <div className="min-h-screen w-full bg-slate-50 px-4 py-4 sm:px-5 sm:py-5">
       <div className="flex w-full flex-col gap-6">
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div>
           <div>
             <h1 className="text-xl font-semibold sm:text-2xl lg:text-3xl">
               Reports
@@ -179,11 +174,6 @@ export default function OrgReports() {
               Analyzing team performance for the current cycle
             </p>
           </div>
-
-          <ReportControls
-            period={period}
-            onPeriodChange={setPeriod}
-          />
         </div>
 
         <Tabs

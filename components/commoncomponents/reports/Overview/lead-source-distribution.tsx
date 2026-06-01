@@ -3,15 +3,8 @@
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import type { LeadSourceDistributionProps } from "@/types/org-reports";
 import { Progress } from "@/components/ui/progress";
+import { sourceColors } from "@/types/org-reports";
 
-const sourceColors = [
-  "[&_[data-slot=progress-indicator]]:bg-blue-600",
-  "[&_[data-slot=progress-indicator]]:bg-blue-400",
-  "[&_[data-slot=progress-indicator]]:bg-slate-400",
-  "[&_[data-slot=progress-indicator]]:bg-pink-500",
-  "[&_[data-slot=progress-indicator]]:bg-emerald-500",
-  "[&_[data-slot=progress-indicator]]:bg-cyan-500",
-];
 
 const LeadSourceDistribution = ({
   title,

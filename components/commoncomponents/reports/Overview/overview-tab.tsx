@@ -2,7 +2,7 @@
 
 import ReportStats from "@/components/commoncomponents/reports/Overview/stats";
 import LeadSourceDistribution from "@/components/commoncomponents/reports/Overview/lead-source-distribution";
-import SourceVsConversionRate from "@/components/commoncomponents/reports/Overview/source-vs-conversion-rate";
+import { SourceVsConversionRate } from "@/components/commoncomponents/reports/Overview/source-vs-conversion-rate";
 import type { OverviewTabProps } from "@/types/org-reports";
 
 export default function OverviewTab({

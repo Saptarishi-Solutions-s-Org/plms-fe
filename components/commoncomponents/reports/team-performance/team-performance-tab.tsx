@@ -2,7 +2,13 @@
 
 import { useMemo, useState, useEffect } from "react";
 import Link from "next/link";
-import type { ElementType } from "react";
+import type {
+  ExecutivePerformanceRecord,
+  ExecutiveUserRecord,
+  TeamPerformanceProps,
+  TeamPerformanceRow,
+  TeamPerformanceStatCard,
+} from "@/types/org-reports";
 import {
   Award,
   CheckCircle,
@@ -25,31 +31,8 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import type { TeamPerformanceProps } from "@/types/org-reports";
 import { getExecutiveUsers } from "@/services/leads";
 import { getExecutivePerformance } from "@/services/managerdashboard";
-
-type ExecutiveUserRecord = {
-  id?: string;
-  name?: string;
-};
-
-type ExecutivePerformanceRecord = {
-  id?: string;
-  executiveId?: string;
-  executiveName?: string;
-  total?: number | string;
-  qualified?: number | string;
-  converted?: number | string;
-};
-
-type TeamPerformanceStatCard = {
-  label: string;
-  value: string;
-  helper: string;
-  Icon: ElementType;
-  color: string;
-};
 
 const fallbackStatIcons = [Users, Award, FileText, CheckCircle, Percent];
 const fallbackStatColors = [
@@ -60,22 +43,40 @@ const fallbackStatColors = [
   "bg-purple-500",
 ];
 
-const numberValue = (value: unknown) => Number(value || 0);
-
 const normalizeName = (value: unknown) =>
   String(value ?? "")
     .trim()
     .toLowerCase();
 
-const executivePathId = (id: string, name: string) => {
-  if (id) return id;
+const toPerformanceRow = (
+  executiveId: string,
+  executiveName: string,
+  performance?: ExecutivePerformanceRecord,
+): TeamPerformanceRow => {
+  const leadsAssigned = performance?.total || 0;
+  const converted = performance?.converted ?? performance?.qualified ?? 0;
 
-  return name
-    .trim()
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "");
+  return {
+    executiveId,
+    executiveName,
+    role: "Executive",
+    avatarUrl: "",
+    leadsAssigned,
+    offersAssigned: 0,
+    offersByManager: 0,
+    converted,
+    conversionRate:
+      leadsAssigned > 0 ? Math.round((converted / leadsAssigned) * 100) : 0,
+  };
 };
+
+const sortByPerformance = (
+  first: TeamPerformanceRow,
+  second: TeamPerformanceRow,
+) =>
+  second.conversionRate - first.conversionRate ||
+  second.converted - first.converted ||
+  second.leadsAssigned - first.leadsAssigned;
 
 export default function TeamPerformanceTab({
   stats,
@@ -108,42 +109,22 @@ export default function TeamPerformanceTab({
           performanceRows.map((row) => [normalizeName(row.executiveName), row]),
         );
 
-        const sourceRows =
+        const mappedRows =
           users.length > 0
-            ? users.map((user) => ({
-                executiveId: user.id ?? "",
-                executiveName: user.name ?? "Unnamed Executive",
-                performance: performanceByName.get(normalizeName(user.name)),
-              }))
-            : performanceRows.map((performance) => ({
-                executiveId: performance.executiveId ?? performance.id ?? "",
-                executiveName:
-                  performance.executiveName ?? "Unnamed Executive",
-                performance,
-              }));
-
-        const mappedRows = sourceRows.map((row) => {
-          const performance = row.performance;
-          const leadsAssigned = numberValue(performance?.total);
-          const converted = numberValue(
-            performance?.converted ?? performance?.qualified,
-          );
-
-          return {
-            executiveId: row.executiveId,
-            executiveName: row.executiveName,
-            role: "Executive",
-            avatarUrl: "",
-            leadsAssigned,
-            offersAssigned: 0,
-            offersByManager: 0,
-            converted,
-            conversionRate:
-              leadsAssigned > 0
-                ? Math.round((converted / leadsAssigned) * 100)
-                : 0,
-          };
-        });
+            ? users.map((user) =>
+                toPerformanceRow(
+                  user.id ?? "",
+                  user.name ?? "-",
+                  performanceByName.get(normalizeName(user.name)),
+                ),
+              )
+            : performanceRows.map((performance) =>
+                toPerformanceRow(
+                  performance.executiveId ?? performance.id ?? "",
+                  performance.executiveName ?? "-",
+                  performance,
+                ),
+              );
 
         setExecutives(mappedRows.length > 0 ? mappedRows : rows);
       } catch (error) {
@@ -169,17 +150,7 @@ export default function TeamPerformanceTab({
   }, [executives, search]);
 
   const performanceRows = useMemo(() => {
-    return [...filteredRows].sort((first, second) => {
-      if (second.conversionRate !== first.conversionRate) {
-        return second.conversionRate - first.conversionRate;
-      }
-
-      if (second.converted !== first.converted) {
-        return second.converted - first.converted;
-      }
-
-      return second.leadsAssigned - first.leadsAssigned;
-    });
+    return [...filteredRows].sort(sortByPerformance);
   }, [filteredRows]);
 
   const displayStats = useMemo(() => {
@@ -191,17 +162,11 @@ export default function TeamPerformanceTab({
       })) satisfies TeamPerformanceStatCard[];
     }
 
-    const topExecutive = [...executives].sort((first, second) => {
-      if (second.converted !== first.converted) {
-        return second.converted - first.converted;
-      }
-
-      if (second.conversionRate !== first.conversionRate) {
-        return second.conversionRate - first.conversionRate;
-      }
-
-      return second.leadsAssigned - first.leadsAssigned;
-    })[0];
+    const topExecutive = [...executives].sort(
+      (first, second) =>
+        second.converted - first.converted ||
+        sortByPerformance(first, second),
+    )[0];
     const totalExecutives = executives.length;
     const leadsAssigned = executives.reduce(
       (total, row) => total + row.leadsAssigned,
@@ -397,7 +362,7 @@ export default function TeamPerformanceTab({
                       </div>
                     </TableCell>
                     <TableCell className="w-[100px] text-center">
-                      {executivePathId(row.executiveId, row.executiveName) ? (
+                      {row.executiveId ? (
                         <Button
                           asChild
                           variant="secondary"
@@ -405,10 +370,7 @@ export default function TeamPerformanceTab({
                           className="rounded-md bg-blue-50 text-xs font-bold text-blue-600 hover:bg-blue-100"
                         >
                           <Link
-                            href={`/${orgCode}/org-reports/executive/${executivePathId(
-                              row.executiveId,
-                              row.executiveName,
-                            )}`}
+                            href={`/${orgCode}/org-reports/executive/${row.executiveId}`}
                           >
                             View
                           </Link>

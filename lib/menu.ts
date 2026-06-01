@@ -61,9 +61,6 @@ export const MENU_CONFIG: MenuGroup[] = [
         modules: ["lead"],
         permissions: [
           "view",
-          "create",
-          "update",
-          "delete",
         ],
         roles: [
           "Manager",

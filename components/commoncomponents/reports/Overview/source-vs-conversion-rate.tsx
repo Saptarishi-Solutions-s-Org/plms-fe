@@ -11,7 +11,7 @@ import {
 } from "@/components/ui/table";
 import type { SourceVsConversionRateProps } from "@/types/org-reports";
 
-const SourceVsConversionRate = ({
+export const SourceVsConversionRate = ({
   title,
   data,
 }: SourceVsConversionRateProps) => {
@@ -76,5 +76,3 @@ const SourceVsConversionRate = ({
   );
 };
 
-export { SourceVsConversionRate };
-export default SourceVsConversionRate;

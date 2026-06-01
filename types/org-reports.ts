@@ -1,5 +1,4 @@
 import type { ElementType } from "react";
-import { LEAD_SOURCE_OPTIONS } from "./leadtypes";
 
 export type ReportApiRecord = Record<string, unknown>;
 
@@ -12,10 +11,40 @@ export interface OrganizationReportStats {
   offers_utilized: number;
 }
 
+export const sourceColors = [
+  "[&_[data-slot=progress-indicator]]:bg-blue-600",
+  "[&_[data-slot=progress-indicator]]:bg-blue-400",
+  "[&_[data-slot=progress-indicator]]:bg-slate-400",
+  "[&_[data-slot=progress-indicator]]:bg-pink-500",
+  "[&_[data-slot=progress-indicator]]:bg-emerald-500",
+  "[&_[data-slot=progress-indicator]]:bg-cyan-500",
+];
+
 export interface ReportStatsProps {
   stats: OrganizationReportStats;
 }
 
+export interface ExecutiveUserRecord {
+  id?: string;
+  name?: string;
+}
+
+export interface ExecutivePerformanceRecord {
+  id?: string;
+  executiveId?: string;
+  executiveName?: string;
+  total?: number;
+  qualified?: number;
+  converted?: number;
+}
+
+export interface TeamPerformanceStatCard {
+  label: string;
+  value: string;
+  helper: string;
+  Icon: ElementType;
+  color: string;
+};
 
 export interface ReportCard {
   title: string;
@@ -46,7 +75,6 @@ export interface SourceVsConversionRateProps {
   data: SourceConversionRateRow[];
 }
 
-export type ReportPeriod = "this-month";
 
 export interface OverviewTabProps {
   stats: OrganizationReportStats;
@@ -54,10 +82,6 @@ export interface OverviewTabProps {
   sourceConversionRateData: SourceConversionRateRow[];
 }
 
-export interface ReportControlsProps {
-  period: ReportPeriod;
-  onPeriodChange: (period: ReportPeriod) => void;
-}
 
 export interface TeamPerformanceStat {
   label: string;
@@ -101,9 +125,23 @@ export interface ExecutiveLeadRow {
 export interface ExecutiveLeadsProps {
   orgCode: string;
   executiveId: string;
-  executiveName: string;
   summary: ExecutiveLeadSummary;
   leads: ExecutiveLeadRow[];
 }
 
-export type LeadSourceValue = (typeof LEAD_SOURCE_OPTIONS)[number]["value"];
+export interface LeadWithStatsApiRow{
+  id: string;
+  name?: string;
+  status?: string;
+  leadSource?: string;
+  source?: string;
+  createdByName?: string;
+  assignedTo?: string;
+};
+
+export interface LeadsWithStatsResponse{
+  leads?: LeadWithStatsApiRow[];
+  stats?: {
+    total?: number | string;
+  };
+};
