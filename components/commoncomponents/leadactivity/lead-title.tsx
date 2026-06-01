@@ -3,8 +3,7 @@ import { PRIORITY_COLORS, STATUS_COLORS } from "@/types/leadActivity";
 import {LeadTitleCardProps} from "@/types/leadActivity";
 
 export default function LeadTitleCard({ lead }: LeadTitleCardProps) {
-  const status = lead.status || "Unknown";
-  const priority = lead.priority || "Unknown";
+  const { status, priority } = lead;
 
   return (
     <div className="rounded-xl border border-gray-200 bg-white px-6 py-5">

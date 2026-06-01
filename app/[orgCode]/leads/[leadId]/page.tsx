@@ -21,12 +21,10 @@ export default function LeadDetailPage() {
 
   const [data, setData] = useState<LeadDetailData | null>(null);
   const [isLoading, setLoading] = useState(true);
-  const [error, setError] = useState("");
 
   const fetchDetail = useCallback(async () => {
     try {
       setLoading(true);
-      setError("");
 
       const [leadsRes, detailRes] = await Promise.all([
         getLeadsWithStats() as Promise<LeadsWithStatsResponse>,
@@ -37,7 +35,6 @@ export default function LeadDetailPage() {
 
       if (!lead) {
         setData(null);
-        setError("Lead not found");
         return;
       }
 
@@ -48,7 +45,7 @@ export default function LeadDetailPage() {
       });
     } catch (err) {
       console.error(err);
-      setError("Failed to load lead");
+      setData(null);
     } finally {
       setLoading(false);
     }
@@ -66,13 +63,7 @@ export default function LeadDetailPage() {
     );
   }
 
-  if (error || !data) {
-    return (
-      <div className="flex h-full items-center justify-center py-20">
-        <p className="text-sm text-gray-500">{error || "Lead not found"}</p>
-      </div>
-    );
-  }
+  if (!data) return null;
 
   const { lead, activities = [] } = data;
 
