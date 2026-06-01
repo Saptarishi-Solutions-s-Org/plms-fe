@@ -9,15 +9,6 @@ export interface OrganizationReportStats {
 }
 export type ReportTab = "overview" | "team-performance";
 
-export const sourceColors = [
-  "[&_[data-slot=progress-indicator]]:bg-blue-600",
-  "[&_[data-slot=progress-indicator]]:bg-blue-400",
-  "[&_[data-slot=progress-indicator]]:bg-slate-400",
-  "[&_[data-slot=progress-indicator]]:bg-pink-500",
-  "[&_[data-slot=progress-indicator]]:bg-emerald-500",
-  "[&_[data-slot=progress-indicator]]:bg-cyan-500",
-];
-
 export interface ReportStatsProps {
   stats: OrganizationReportStats;
 }

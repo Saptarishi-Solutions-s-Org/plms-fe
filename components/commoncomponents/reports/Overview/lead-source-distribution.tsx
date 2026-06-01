@@ -2,9 +2,15 @@
 
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import type { LeadSourceDistributionProps } from "@/types/org-reports";
-import { Progress } from "@/components/ui/progress";
-import { sourceColors } from "@/types/org-reports";
 
+const sourceColors = [
+  "bg-blue-600",
+  "bg-blue-400",
+  "bg-slate-400",
+  "bg-pink-500",
+  "bg-emerald-500",
+  "bg-cyan-500",
+];
 
 const LeadSourceDistribution = ({
   title,
@@ -45,12 +51,14 @@ const LeadSourceDistribution = ({
                 </p>
               </div>
 
-              <Progress
-                value={Math.min((row.leads / max) * 100, 100)}
-                className={`h-2 bg-slate-100 ${
-                  sourceColors[index % sourceColors.length]
-                }`}
-              />
+              <div className="h-2 overflow-hidden rounded-full bg-slate-100">
+                <div
+                  className={`h-full ${sourceColors[index % sourceColors.length]}`}
+                  style={{
+                    width: `${Math.min((row.leads / max) * 100, 100)}%`,
+                  }}
+                />
+              </div>
             </div>
           ))
         ) : (
