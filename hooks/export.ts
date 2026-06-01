@@ -1,6 +1,16 @@
 import { exportLeads } from "@/services/leads";
 import { exportExecutives } from "@/services/organizationreports";
 import type { ExecutiveLeadRow } from "@/types/org-reports";
+import { format } from "date-fns";
+
+const getReportFilename = (reportName: string) => {
+  const now = new Date();
+  const month = format(now, "MMMM");
+  const year = format(now, "yyyy");
+  const time = format(now, "HH-mm-ss");
+
+  return `${reportName}_${month}_${year}_${time}.csv`;
+};
 
 export function useLeadExport() {
   const handleExport = async () => {
@@ -34,7 +44,7 @@ export function useLeadExport() {
       const link = document.createElement("a");
 
       link.href = url;
-      link.download = "leads-export.csv";
+      link.download = getReportFilename("LeadsReport");
       link.click();
 
       URL.revokeObjectURL(url);
@@ -78,7 +88,7 @@ export function useExecutiveExport() {
       const link = document.createElement("a");
 
       link.href = url;
-      link.download = "executives-export.csv";
+      link.download = getReportFilename("ExecutivesReport");
       link.click();
 
       URL.revokeObjectURL(url);
@@ -119,7 +129,7 @@ export function useExecutiveLeadsExport(rows: ExecutiveLeadRow[]) {
     const link = document.createElement("a");
 
     link.href = url;
-    link.download = "executive-leads-export.csv";
+    link.download = getReportFilename("ExecutiveLeadsReport");
     link.click();
 
     URL.revokeObjectURL(url);
