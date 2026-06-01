@@ -1,8 +1,5 @@
 import type { ElementType } from "react";
 
-export type ReportApiRecord = Record<string, unknown>;
-
-
 export interface OrganizationReportStats {
   total_leads: number;
   leads_assigned: number;
@@ -10,6 +7,7 @@ export interface OrganizationReportStats {
   active_offers: number;
   offers_utilized: number;
 }
+export type ReportTab = "overview" | "team-performance";
 
 export const sourceColors = [
   "[&_[data-slot=progress-indicator]]:bg-blue-600",
@@ -56,6 +54,12 @@ export interface ReportCard {
 export interface LeadSourceRow {
   source: string;
   leads: number;
+}
+
+export interface LeadSourceAnalyticsRow {
+  source?: string;
+  leads?: number;
+  conversionRate?: number;
 }
 
 export interface LeadSourceDistributionProps {

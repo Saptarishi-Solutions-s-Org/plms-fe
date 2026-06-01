@@ -1,8 +1,14 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { usePathname, useParams, useRouter, useSearchParams } from "next/navigation";
+import {
+  usePathname,
+  useParams,
+  useRouter,
+  useSearchParams,
+} from "next/navigation";
 import { toast } from "sonner";
+import type { ReportTab } from "@/types/org-reports";
 
 import GlobalLoader from "@/components/commoncomponents/globalloader";
 import OverviewTab from "@/components/commoncomponents/reports/Overview/overview-tab";
@@ -14,16 +20,11 @@ import {
 } from "@/services/organizationreports";
 import { getManagerDashboard } from "@/services/managerdashboard";
 import type {
+  LeadSourceAnalyticsRow,
   LeadSourceRow,
   OrganizationReportStats,
-  ReportApiRecord,
   SourceConversionRateRow,
 } from "@/types/org-reports";
-
-const toRecord = (value: unknown): ReportApiRecord =>
-  value && typeof value === "object" ? (value as ReportApiRecord) : {};
-
-const numberValue = (value: unknown) => Number(value || 0);
 
 const sourceOrder = ["Referral", "Advertisement", "Social_Media"];
 
@@ -47,33 +48,34 @@ const sortSourceRows = <T extends { source: string }>(rows: T[]) =>
     return first.source.localeCompare(second.source);
   });
 
-const mergeLeadSourceRows = (rows: unknown[]): LeadSourceRow[] => {
+const mergeLeadSourceRows = (rows: LeadSourceAnalyticsRow[]): LeadSourceRow[] => {
   const merged = new Map<string, number>();
 
   rows.forEach((row) => {
-    const record = toRecord(row);
-    const source = String(record.source ?? "");
-    const leads = numberValue(record.leads);
+    const source = row.source ?? "";
+    const leads = row.leads ?? 0;
 
     merged.set(source, (merged.get(source) ?? 0) + leads);
   });
 
-  return sortSourceRows(Array.from(merged, ([source, leads]) => ({ source, leads })));
+  return sortSourceRows(
+    Array.from(merged, ([source, leads]) => ({ source, leads })),
+  );
 };
 
-const mergeConversionRows = (rows: unknown[]): SourceConversionRateRow[] => {
-  return sortSourceRows(rows.map((row) => {
-    const record = toRecord(row);
-
-    return {
-      source: String(record.source ?? ""),
-      leads: numberValue(record.leads),
-      rate: numberValue(record.conversionRate),
-    };
-  }));
+const mergeConversionRows = (
+  rows: LeadSourceAnalyticsRow[],
+): SourceConversionRateRow[] => {
+  return sortSourceRows(
+    rows.map((row) => {
+      return {
+        source: row.source ?? "",
+        leads: row.leads ?? 0,
+        rate: row.conversionRate ?? 0,
+      };
+    }),
+  );
 };
-
-type ReportTab = "overview" | "team-performance";
 
 const isReportTab = (value: string | null): value is ReportTab =>
   value === "overview" || value === "team-performance";
@@ -123,7 +125,9 @@ export default function OrgReports() {
           offers_utilized: statsData?.offersUtilized ?? 0,
         });
 
-        const analyticsRows = Array.isArray(analyticsData) ? analyticsData : [];
+        const analyticsRows = Array.isArray(analyticsData)
+          ? (analyticsData as LeadSourceAnalyticsRow[])
+          : [];
 
         setLeadSourceDistributionData(mergeLeadSourceRows(analyticsRows));
 
