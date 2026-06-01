@@ -20,6 +20,50 @@ export interface Lead extends LeadFormData {
   assignedToName?: string;
 }
 
+export interface LeadActivity {
+  id: string;
+  type?: string;
+  notes: string;
+  freeText?: string;
+  callStatus?: string;
+  nextFollowUpDate?: string;
+  createdAt: string;
+  createdByName: string;
+  createdByRole: string;
+}
+
+export interface AssignedOffer {
+  id: string;
+  title: string;
+  code: string;
+  description?: string;
+  discountType: string;
+  discountAmount?: number;
+  discountPercentage?: number;
+  validFrom: string;
+  validTo: string;
+  status: string;
+}
+
+export interface LeadDetailData {
+  lead: Lead & {
+    stateName: string;
+    countryName: string;
+    importType: string;
+    createdAt: string;
+    createdById: string;
+    createdByName: string;
+    createdByRole: string;
+  };
+  activities: LeadActivity[];
+  assignedOffer: AssignedOffer | null;
+}
+
+export interface AddActivityFormData {
+  notes: string;
+  type?: string;
+}
+
 export interface ExecutiveOption {
   id: string;
   name: string;
@@ -89,7 +133,6 @@ export type LeadHeaderProps = {
   onExport: () => void;
   onAddLead: () => void;
 };
-
 
 export type LeadActionsProps = {
   lead: Lead;
