@@ -19,6 +19,7 @@ import {
   getReportStats,
 } from "@/services/organizationreports";
 import { getManagerDashboard } from "@/services/managerdashboard";
+import { LEAD_SOURCE_OPTIONS } from "@/types/leadtypes";
 import type {
   LeadSourceAnalyticsRow,
   LeadSourceRow,
@@ -26,55 +27,32 @@ import type {
   SourceConversionRateRow,
 } from "@/types/org-reports";
 
-const sourceOrder = ["Referral", "Advertisement", "Social_Media"];
+const normalizeSource = (source: string) =>
+  source.trim().replace(/\s+/g, "_").toLowerCase();
 
-const sourceRank = (source: string) => {
-  const normalized = source.trim().replace(/\s+/g, "_");
-  const index = sourceOrder.findIndex(
-    (orderedSource) => orderedSource.toLowerCase() === normalized.toLowerCase(),
-  );
-
-  return index === -1 ? sourceOrder.length : index;
-};
-
-const sortSourceRows = <T extends { source: string }>(rows: T[]) =>
-  [...rows].sort((first, second) => {
-    const rankDiff = sourceRank(first.source) - sourceRank(second.source);
-
-    if (rankDiff !== 0) {
-      return rankDiff;
-    }
-
-    return first.source.localeCompare(second.source);
-  });
+const reportSources = LEAD_SOURCE_OPTIONS.map(({ value, label }) => ({
+  key: normalizeSource(value),
+  label,
+}));
 
 const mergeLeadSourceRows = (rows: LeadSourceAnalyticsRow[]): LeadSourceRow[] => {
-  const merged = new Map<string, number>();
+  const merged = new Map<string, number>(
+    reportSources.map(({ key }) => [key, 0]),
+  );
 
   rows.forEach((row) => {
-    const source = row.source ?? "";
+    const source = normalizeSource(row.source ?? "");
     const leads = row.leads ?? 0;
 
-    merged.set(source, (merged.get(source) ?? 0) + leads);
+    if (merged.has(source)) {
+      merged.set(source, (merged.get(source) ?? 0) + leads);
+    }
   });
 
-  return sortSourceRows(
-    Array.from(merged, ([source, leads]) => ({ source, leads })),
-  );
-};
-
-const mergeConversionRows = (
-  rows: LeadSourceAnalyticsRow[],
-): SourceConversionRateRow[] => {
-  return sortSourceRows(
-    rows.map((row) => {
-      return {
-        source: row.source ?? "",
-        leads: row.leads ?? 0,
-        rate: row.conversionRate ?? 0,
-      };
-    }),
-  );
+  return reportSources.map(({ key, label }) => ({
+    source: label,
+    leads: merged.get(key) ?? 0,
+  }));
 };
 
 const isReportTab = (value: string | null): value is ReportTab =>
@@ -131,7 +109,13 @@ export default function OrgReports() {
 
         setLeadSourceDistributionData(mergeLeadSourceRows(analyticsRows));
 
-        setSourceConversionRateData(mergeConversionRows(analyticsRows));
+        setSourceConversionRateData(
+          analyticsRows.map((row) => ({
+            source: row.source ?? "",
+            leads: row.leads ?? 0,
+            rate: row.conversionRate ?? 0,
+          })),
+        );
       } catch {
         setStats({
           total_leads: 0,
