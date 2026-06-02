@@ -8,11 +8,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import {
-  ExecutiveOption,
-  Lead,
-  LEAD_SOURCE_OPTIONS,
-} from "@/types/leadtypes";
+import { ExecutiveOption, Lead } from "@/types/leadtypes";
 
 export interface LeadTableProps {
   leads: Lead[];
@@ -101,9 +97,7 @@ export default function LeadTable({
                 <TableCell>{lead.status || "-"}</TableCell>
                 <TableCell>{lead.priority || "-"}</TableCell>
                 <TableCell className="text-gray-600">
-                  {LEAD_SOURCE_OPTIONS.find(
-                    (option) => option.value === lead.leadSource,
-                  )?.label || "-"}
+                  {lead.leadSource?.replace(/_/g, " ") || "-"}
                 </TableCell>
                 {showAssignedTo && (
                   <TableCell className="text-gray-600">
