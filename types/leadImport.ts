@@ -1,9 +1,9 @@
 export type LeadImportRow = {
-  name?: string;
-  gender?: string;
-  email?: string;
-  phone?: string;
-  leadSource?: string;
+  name: string;
+  gender: string;
+  email: string;
+  phone: string;
+  leadSource: string;
   status?: string;
   priority?: string;
   city?: string;
@@ -34,7 +34,7 @@ export const importSteps = [
 export const requiredColumns = [
   { csvKey: "name", apiKey: "name", label: "Lead Name" },
   { csvKey: "gender", apiKey: "gender", label: "Gender" },
-  { csvKey: "mail_id", apiKey: "email", label: "Mail ID" },
-  { csvKey: "phone_number", apiKey: "phone", label: "Phone" },
+  { csvKey: "email", apiKey: "email", label: "Email" },
+  { csvKey: "phone number", apiKey: "phone", label: "Phone Number" },
   { csvKey: "source", apiKey: "leadSource", label: "Source" },
 ] as const;

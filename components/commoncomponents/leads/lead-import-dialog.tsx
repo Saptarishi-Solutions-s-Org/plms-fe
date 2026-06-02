@@ -2,6 +2,7 @@
 
 import { Check, CheckCircle2, RefreshCw, UploadCloud, X } from "lucide-react";
 import { useState } from "react";
+import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -47,10 +48,13 @@ async function readLeadCsvFile(file: File) {
   const rows = dataLines
     .map((line) => line.split(",").map(cleanValue))
     .map((values) => {
-      return requiredColumns.reduce<LeadImportRow>((row, column) => {
-        row[column.apiKey] = values[headers.indexOf(column.csvKey)] ?? "";
-        return row;
-      }, {});
+      return {
+        name: values[headers.indexOf("name")] ?? "",
+        gender: values[headers.indexOf("gender")] ?? "",
+        email: values[headers.indexOf("email")] ?? "",
+        phone: values[headers.indexOf("phone number")] ?? "",
+        leadSource: values[headers.indexOf("source")] ?? "",
+      };
     })
     .filter((row) => Object.values(row).some(Boolean));
 
@@ -63,7 +67,7 @@ async function readLeadCsvFile(file: File) {
 
 function downloadSampleLeadCsv() {
   const sample = [
-    "name,gender,mail_id,phone_number,source",
+    "name,gender,email,phone number,source",
     "Ananya Rao,Female,ananya@example.com,9876543210,Social_Media",
   ].join("\n");
   const url = URL.createObjectURL(
@@ -131,7 +135,7 @@ export default function LeadImportDialog({
       setHeaders(result.headers);
       setRows(result.rows);
     } catch (error) {
-      window.alert(
+      toast.error(
         error instanceof Error
           ? error.message
           : "Could not read the CSV file. Please try another file.",
@@ -155,7 +159,7 @@ export default function LeadImportDialog({
           ? error.message
           : "Please check the file and try again.";
 
-      window.alert(`Import failed. ${message}`);
+      toast.error(`Import failed. ${message}`);
     } finally {
       setImporting(false);
     }
