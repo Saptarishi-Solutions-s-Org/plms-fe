@@ -29,12 +29,7 @@ const AdminFilters = ({ onApply }: Props) => {
   };
 
   return (
-    <div className="w-full flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-
-      <h1 className="text-xl sm:text-2xl font-semibold">
-        Filters
-      </h1>
-
+    <div className="w-full flex flex-col sm:flex-row sm:items-center sm:justify-end gap-4">
       <div className="flex flex-col sm:flex-row sm:items-center gap-4">
 
         <MultiSelectCombobox

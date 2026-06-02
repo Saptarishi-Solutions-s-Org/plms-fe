@@ -33,9 +33,6 @@ export function OfferCards({
       icon: LayersIcon,
       color: "bg-indigo-500",
     },
-
-
-    
     {
       title: "Active",
       value: activeCount,
