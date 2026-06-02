@@ -10,11 +10,48 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import type { SourceVsConversionRateProps } from "@/types/org-reports";
+import { LEAD_SOURCE_OPTIONS } from "@/types/leadtypes";
+
+const normalizeSource = (source: string) =>
+  source.trim().replace(/\s+/g, "_").toLowerCase();
+
+const reportSources = LEAD_SOURCE_OPTIONS.map(({ value, label }) => ({
+  key: normalizeSource(value),
+  label,
+}));
 
 export const SourceVsConversionRate = ({
   title,
   data,
 }: SourceVsConversionRateProps) => {
+  const merged = new Map<string, { leads: number; converted: number }>(
+    reportSources.map(({ key }) => [key, { leads: 0, converted: 0 }]),
+  );
+
+  data.forEach((row) => {
+    const summary = merged.get(normalizeSource(row.source));
+
+    if (!summary) {
+      return;
+    }
+
+    summary.leads += row.leads;
+    summary.converted += (row.leads * row.rate) / 100;
+  });
+
+  const mergedData = reportSources.map(({ key, label }) => {
+    const summary = merged.get(key) ?? { leads: 0, converted: 0 };
+
+    return {
+      source: label,
+      leads: summary.leads,
+      rate:
+        summary.leads > 0
+          ? Math.round((summary.converted / summary.leads) * 100)
+          : 0,
+    };
+  });
+
   return (
     <Card className="flex h-[420px] w-full flex-col rounded-[2rem] border border-gray-200 bg-white shadow-md">
       <CardHeader className="flex flex-row items-start justify-between gap-4 space-y-0 px-6 pt-6">
@@ -41,8 +78,8 @@ export const SourceVsConversionRate = ({
             </TableHeader>
 
             <TableBody>
-              {data.length > 0 ? (
-                data.map((row) => (
+              {mergedData.length > 0 ? (
+                mergedData.map((row) => (
                   <TableRow key={row.source} className="table w-full table-fixed">
                     <TableCell
                       title={row.source}
