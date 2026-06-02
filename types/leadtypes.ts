@@ -131,6 +131,7 @@ export const GENDER_OPTIONS = [
 
 export type LeadHeaderProps = {
   onExport: () => void;
+  onImportComplete?: () => Promise<void> | void;
   onAddLead: () => void;
 };
 

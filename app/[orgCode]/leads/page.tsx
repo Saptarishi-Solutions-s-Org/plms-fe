@@ -29,7 +29,7 @@ const allFilters = {
 };
 
 export default function LeadsPage() {
-  const { leads, stats, isLoading, refetch } = useLeads();
+  const { leads, stats, isInitialLoading, refetch } = useLeads();
   const currentUser = getUser();
   const currentUserId = currentUser?.id;
   const isExecutive = currentUser?.role?.toUpperCase().trim() === "EXECUTIVE";
@@ -135,7 +135,7 @@ export default function LeadsPage() {
 
   return (
     <>
-      {isLoading ? (
+      {isInitialLoading ? (
         <GlobalLoader />
       ) : (
         <div className="w-full h-full p-4 sm:p-5 space-y-5">
@@ -149,7 +149,11 @@ export default function LeadsPage() {
               </p>
             </div>
 
-            <LeadHeader onExport={handleExport} onAddLead={openAddForm} />
+            <LeadHeader
+              onExport={handleExport}
+              onImportComplete={refetch}
+              onAddLead={openAddForm}
+            />
           </div>
 
           <LeadSummaryCards stats={stats} />
