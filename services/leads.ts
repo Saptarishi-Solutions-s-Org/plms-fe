@@ -1,5 +1,6 @@
 import { api } from "@/lib/api";
-import type { AddActivityFormData, LeadFormData, LeadImportRow } from "@/types/leadtypes";
+import type { LeadImportRow } from "@/types/leadImport";
+import type { AddActivityFormData, LeadFormData } from "@/types/leadtypes";
 
 export const getLeadsWithStats = () =>
   api("/odata/v4/lead/getLeadsWithStats()");

@@ -1,5 +1,5 @@
 import { importLeads } from "@/services/leads";
-import type { LeadImportResult, LeadImportRow } from "@/types/leadtypes";
+import type { LeadImportResult, LeadImportRow } from "@/types/leadImport";
 
 export function useLeadImport() {
   const handleImport = async (
