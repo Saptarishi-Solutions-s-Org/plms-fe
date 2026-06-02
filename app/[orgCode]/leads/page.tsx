@@ -28,6 +28,10 @@ const allFilters = {
   assignedTo: [],
 };
 
+function normalizeFilterValue(value: string) {
+  return value.trim().toLowerCase().replace(/[\s_]+/g, "");
+}
+
 export default function LeadsPage() {
   const { leads, stats, isInitialLoading, refetch } = useLeads();
   const currentUser = getUser();
@@ -54,7 +58,11 @@ export default function LeadsPage() {
 
       const sourceMatch =
         filters.sources.length === 0 ||
-        filters.sources.includes(lead.leadSource);
+        filters.sources.some(
+          (source) =>
+            normalizeFilterValue(source) ===
+            normalizeFilterValue(lead.leadSource),
+        );
 
       const statusMatch =
         filters.statuses.length === 0 || filters.statuses.includes(lead.status);
