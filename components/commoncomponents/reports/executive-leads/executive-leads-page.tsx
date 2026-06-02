@@ -1,10 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowLeft, BriefcaseBusiness, Users } from "lucide-react";
+import { ArrowLeft, BriefcaseBusiness, Download, Users } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardTitle } from "@/components/ui/card";
+import { useExecutiveLeadsExport } from "@/hooks/export";
 
 import {
   Table,
@@ -54,6 +55,7 @@ export default function ExecutiveLeadsPage({
   leads,
 }: ExecutiveLeadsProps) {
   const [leadRows, setLeadRows] = useState(leads || []);
+  const { handleExport } = useExecutiveLeadsExport(leadRows);
 
   const [leadSummary, setLeadSummary] = useState(
     summary || {
@@ -151,13 +153,23 @@ export default function ExecutiveLeadsPage({
         </section>
 
         <section className="w-full">
-          <div className="mb-4">
-            <h2 className="text-[1.7rem] font-bold tracking-tight text-slate-900">
-              Detailed Breakdown - Leads Created
-            </h2>
-            <p className="mt-1 text-sm text-slate-500">
-              Full list of generated leads.
-            </p>
+          <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <h2 className="text-[1.7rem] font-bold tracking-tight text-slate-900">
+                Detailed Breakdown - Leads Created
+              </h2>
+              <p className="mt-1 text-sm text-slate-500">
+                Full list of generated leads.
+              </p>
+            </div>
+            <Button
+              type="button"
+              onClick={handleExport}
+              className="h-10 rounded-xl bg-green-600 px-4 text-white hover:bg-green-700"
+            >
+              <Download className="size-4" />
+              Export
+            </Button>
           </div>
 
           <div className="overflow-x-auto rounded-lg border border-gray-200 bg-white shadow-sm">
