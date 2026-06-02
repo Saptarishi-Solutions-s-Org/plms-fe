@@ -2,9 +2,12 @@
 
 import Link from "next/link";
 import { ArrowLeft, BriefcaseBusiness, Download, Users } from "lucide-react";
+import { endOfDay, startOfDay } from "date-fns";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardTitle } from "@/components/ui/card";
+import { DateRangeFilter } from "@/components/commoncomponents/daterange";
+import type { DateRange } from "@/components/commoncomponents/react-day-picker";
 import { useExecutiveLeadsExport } from "@/hooks/export";
 
 import {
@@ -34,6 +37,27 @@ const formatSource = (source?: string) => {
   return source.replace(/_/g, " ");
 };
 
+const isWithinDateRange = (createdAt: string | undefined, range?: DateRange) => {
+  if (!range?.from) {
+    return true;
+  }
+
+  if (!createdAt) {
+    return false;
+  }
+
+  const createdDate = new Date(createdAt);
+
+  if (Number.isNaN(createdDate.getTime())) {
+    return false;
+  }
+
+  return (
+    createdDate >= startOfDay(range.from) &&
+    createdDate <= endOfDay(range.to ?? range.from)
+  );
+};
+
 const mapApiLeadToRow = (lead: LeadWithStatsApiRow): ExecutiveLeadRow => ({
   id: lead.id,
   leadName: lead.name || "-",
@@ -55,6 +79,8 @@ export default function ExecutiveLeadsPage({
   leads,
 }: ExecutiveLeadsProps) {
   const [leadRows, setLeadRows] = useState(leads || []);
+  const [dateRange, setDateRange] = useState<DateRange>();
+  const [appliedDateRange, setAppliedDateRange] = useState<DateRange>();
   const { handleExport } = useExecutiveLeadsExport(leadRows);
 
   const [leadSummary, setLeadSummary] = useState(
@@ -69,9 +95,17 @@ export default function ExecutiveLeadsPage({
     const fetchLeadStats = async () => {
       try {
         const data = (await getLeadsWithStats()) as LeadsWithStatsResponse;
+        const leads = data?.leads;
 
-        const filteredLeads = Array.isArray(data?.leads)
-          ? data.leads.filter((lead) => lead.assignedTo === executiveId)
+        const filteredLeads = Array.isArray(leads)
+          ? leads.filter(
+              (lead) =>
+                lead.assignedTo === executiveId &&
+                isWithinDateRange(
+                  lead.createdAt ?? lead.createdat,
+                  appliedDateRange,
+                ),
+            )
           : [];
 
         const rows = filteredLeads.map(mapApiLeadToRow);
@@ -84,7 +118,7 @@ export default function ExecutiveLeadsPage({
     };
 
     fetchLeadStats();
-  }, [executiveId]);
+  }, [appliedDateRange, executiveId]);
 
   const summaryCards = [
     {
@@ -162,14 +196,41 @@ export default function ExecutiveLeadsPage({
                 Full list of generated leads.
               </p>
             </div>
-            <Button
-              type="button"
-              onClick={handleExport}
-              className="h-10 rounded-xl bg-green-600 px-4 text-white hover:bg-green-700"
-            >
-              <Download className="size-4" />
-              Export
-            </Button>
+            <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:flex-wrap sm:justify-end">
+              <DateRangeFilter
+                value={dateRange}
+                onChange={setDateRange}
+                placeholder="Select date range"
+                className="h-10 w-full justify-between rounded-xl bg-white px-3 font-normal sm:w-52"
+              />
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => {
+                  setDateRange(undefined);
+                  setAppliedDateRange(undefined);
+                }}
+                className="h-10 rounded-xl px-4"
+              >
+                Clear
+              </Button>
+              <Button
+                type="button"
+                onClick={() => setAppliedDateRange(dateRange)}
+                aria-pressed={appliedDateRange === dateRange}
+                className="h-10 rounded-xl bg-blue-600 px-4 text-white hover:bg-blue-700"
+              >
+                Apply
+              </Button>
+              <Button
+                type="button"
+                onClick={handleExport}
+                className="h-10 rounded-xl bg-green-600 px-4 text-white hover:bg-green-700"
+              >
+                <Download className="size-4" />
+                Export
+              </Button>
+            </div>
           </div>
 
           <div className="overflow-x-auto rounded-lg border border-gray-200 bg-white shadow-sm">
