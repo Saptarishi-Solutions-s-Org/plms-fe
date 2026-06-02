@@ -4,6 +4,7 @@ import {
   UserCheck,
   Gift,
   Users,
+  FilePen,
 } from "lucide-react";
 
 import { MenuGroup } from "@/types/menu";
@@ -57,7 +58,7 @@ export const MENU_CONFIG: MenuGroup[] = [
 
       {
         href: "/org-reports",
-        icon: UserCheck,
+        icon: FilePen,
         label: "Reports",
         modules: ["lead"],
         permissions: [
