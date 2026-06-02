@@ -132,6 +132,8 @@ export interface LeadWithStatsApiRow{
   source?: string;
   createdByName?: string;
   assignedTo?: string;
+  createdAt?: string;
+  createdat?: string;
 };
 
 export interface LeadsWithStatsResponse{
