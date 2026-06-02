@@ -89,7 +89,6 @@ export default function TeamPerformanceTab({
   const [loading, setLoading] = useState(false);
   const [search, setSearch] = useState("");
   const [appliedSearch, setAppliedSearch] = useState("");
-  const { handleExport } = useExecutiveExport();
 
   useEffect(() => {
     const fetchExecutives = async () => {
@@ -160,6 +159,7 @@ export default function TeamPerformanceTab({
   const performanceRows = useMemo(() => {
     return [...filteredRows].sort(sortByPerformance);
   }, [filteredRows]);
+  const { handleExport } = useExecutiveExport(performanceRows);
 
   const displayStats = useMemo(() => {
     if (stats.length > 0) {

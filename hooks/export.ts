@@ -1,6 +1,5 @@
 import { exportLeads } from "@/services/leads";
-import { exportExecutives } from "@/services/organizationreports";
-import type { ExecutiveLeadRow } from "@/types/org-reports";
+import type { ExecutiveLeadRow, TeamPerformanceRow } from "@/types/org-reports";
 import { format } from "date-fns";
 
 const getReportFilename = (reportName: string) => {
@@ -56,45 +55,52 @@ export function useLeadExport() {
   return { handleExport };
 }
 
-export function useExecutiveExport() {
-  const handleExport = async () => {
-    try {
-      const rows = await exportExecutives();
-
-      if (!rows?.length) {
-        window.alert("There are no executives to export.");
-        return;
-      }
-
-      const headers = Object.keys(rows[0]);
-
-      const csvLines = [
-        headers.join(","),
-        ...rows.map((row: Record<string, unknown>) =>
-          headers
-            .map((header) => {
-              const value = String(row[header] ?? "").replace(/"/g, '""');
-              return /[,"\n]/.test(value) ? `"${value}"` : value;
-            })
-            .join(","),
-        ),
-      ];
-
-      const blob = new Blob([csvLines.join("\n")], {
-        type: "text/csv;charset=utf-8;",
-      });
-
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement("a");
-
-      link.href = url;
-      link.download = getReportFilename("ExecutivesReport");
-      link.click();
-
-      URL.revokeObjectURL(url);
-    } catch {
-      window.alert("Export failed. Please try again.");
+export function useExecutiveExport(rows: TeamPerformanceRow[]) {
+  const handleExport = () => {
+    if (!rows.length) {
+      window.alert("There are no executives to export.");
+      return;
     }
+
+    const headers = [
+      "S.No",
+      "Executive",
+      "Leads Assigned",
+      "Converted",
+      "Conversion Rate",
+    ];
+    const csvLines = [
+      headers.join(","),
+      ...rows.map((row, index) =>
+        [
+          index + 1,
+          row.executiveName,
+          row.leadsAssigned,
+          row.converted,
+          `${row.conversionRate}%`,
+        ]
+          .map((value) => {
+            const formattedValue = String(value ?? "").replace(/"/g, '""');
+            return /[,"\n]/.test(formattedValue)
+              ? `"${formattedValue}"`
+              : formattedValue;
+          })
+          .join(","),
+      ),
+    ];
+
+    const blob = new Blob([csvLines.join("\n")], {
+      type: "text/csv;charset=utf-8;",
+    });
+
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+
+    link.href = url;
+    link.download = getReportFilename("ExecutivesReport");
+    link.click();
+
+    URL.revokeObjectURL(url);
   };
 
   return { handleExport };
