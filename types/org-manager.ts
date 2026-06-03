@@ -128,7 +128,7 @@ export type ExecutiveStatus =
 
 export interface ExecutiveFilters {
   search: string;
-  status: "all" | ExecutiveStatus;
+  status: ExecutiveStatus[];
 }
 
 export type ExecutiveRow = {

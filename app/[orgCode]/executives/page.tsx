@@ -22,7 +22,7 @@ import ExecutiveTableFilters from "@/components/commoncomponents/managerdashboar
 
 const DEFAULT_FILTERS: ExecutiveFilters = {
   search: "",
-  status: "all",
+  status: [],
 };
 
 const formatCount = (value: number) => value.toLocaleString("en-IN");
@@ -96,7 +96,7 @@ export default function ExecutivesPage() {
   }, [fetchExecutives]);
 
   const handleFilterChange = useCallback(
-    (key: keyof ExecutiveFilters, value: string) => {
+    <K extends keyof ExecutiveFilters>(key: K, value: ExecutiveFilters[K]) => {
       setDraftFilters((prev) => ({
         ...prev,
         [key]: value,
@@ -127,8 +127,8 @@ export default function ExecutivesPage() {
           executive.phone.toLowerCase().includes(query);
 
         const matchesStatus =
-          filters.status === "all" ||
-          executive.status.toLowerCase() === filters.status.toLowerCase();
+          filters.status.length === 0 ||
+          filters.status.some((s) => s.toLowerCase() === executive.status.toLowerCase());
 
         return matchesSearch && matchesStatus;
       }),

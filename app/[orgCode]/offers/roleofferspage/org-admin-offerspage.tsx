@@ -25,8 +25,8 @@ import type {
 
 const DEFAULT_FILTERS: OfferFiltersType = {
   search: "",
-  status: "all",
-  discountType: "all",
+  status: [],
+  discountType: [],
 };
 
 export default function OrgAdminOffersPage() {
@@ -324,10 +324,7 @@ export default function OrgAdminOffersPage() {
     [offers]
   );
   const handleFilterChange = useCallback(
-    (
-      key: keyof OfferFiltersType,
-      value: string
-    ) => {
+    <K extends keyof OfferFiltersType>(key: K, value: OfferFiltersType[K]) => {
       setDraftFilters((prev) => ({
         ...prev,
         [key]: value,
@@ -363,14 +360,12 @@ export default function OrgAdminOffersPage() {
             .includes(query);
 
         const matchStatus =
-          filters.status === "all" ||
-          offer.status === filters.status;
+          filters.status.length === 0 ||
+          filters.status.includes(offer.status);
 
         const matchDiscount =
-          filters.discountType ===
-            "all" ||
-          offer.discountType ===
-            filters.discountType;
+          filters.discountType.length === 0 ||
+          filters.discountType.includes(offer.discountType);
 
         return (
           matchSearch &&

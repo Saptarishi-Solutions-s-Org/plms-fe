@@ -154,7 +154,7 @@ export function MultiSelectCombobox({
     <div ref={containerRef} className={`relative ${width}`}>
       <Button
         variant="outline"
-        className="w-full justify-between bg-white border border-gray-300 h-auto py-2 px-3"
+        className="w-full justify-between bg-white border border-gray-300 h-auto py-2 px-3 rounded-lg"
         onClick={() => {
           setIsOpen(!isOpen);
           if (showSelectedList) {

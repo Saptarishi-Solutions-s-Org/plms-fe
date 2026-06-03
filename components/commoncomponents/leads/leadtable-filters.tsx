@@ -65,7 +65,7 @@ export default function LeadTableFilters({
             placeholder="Search leads..."
             value={search}
             onChange={(event) => setSearch(event.target.value)}
-            className="min-h-10 text-sm"
+            className="text-sm rounded-lg h-auto py-2 px-3"
           />
         </div>
 
