@@ -66,7 +66,7 @@ export function OfferCards({
               </CardTitle>
 
               <div
-                className={`flex h-8 w-8 items-center justify-center rounded-full text-white ${item.color}`}
+                className={`flex h-10 w-10 items-center justify-center rounded-full text-white ${item.color}`}
               >
                 <Icon className="h-6 w-6" />
               </div>
