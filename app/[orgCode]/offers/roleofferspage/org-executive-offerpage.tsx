@@ -27,9 +27,9 @@ import { DISCOUNT_OPTIONS } from "@/lib/validators/offervalidation";
 
 import {
   ExecutiveOfferItem,
+  ExecutiveOfferRow,
   formatDate,
   formatStatusLabel,
-  ManagerOffer,
 } from "@/types/org-manager";
 
 type ExecutiveOfferFilters = {
@@ -97,72 +97,35 @@ const getExecutiveOfferRows = (response: unknown): ExecutiveOfferItem[] => {
   return [];
 };
 
-const getExecutiveOfferId = (item: ExecutiveOfferItem) =>
-  item.offerId || item.offer_ID || item.id || item.assignmentId || item.ID || "";
-
 const normalizeStatus = (status?: string): Offer["status"] =>
   (status?.toLowerCase() || "inactive") as Offer["status"];
 
-const mapExecutiveOffer = (item: ExecutiveOfferItem): ManagerOffer => ({
-  id: getExecutiveOfferId(item),
+const mapExecutiveOffer = (
+  item: ExecutiveOfferItem,
+  index: number,
+): ExecutiveOfferRow => ({
+  id: `${item.title || "offer"}-${index}`,
   title: item.title || "",
-  code: item.code || "",
   description: item.description || "",
-  assignedUsers: "",
-  isGlobal: Boolean(item.isGlobal ?? item.is_global),
   status: normalizeStatus(item.status),
-  discountType: item.discountType || item.discount_type || "Fixed_Amount",
-  discountAmount: item.discountAmount ?? item.discount_amount,
-  discountPercentage: item.discountPercentage ?? item.discount_percentage,
-  maxDiscountAmount: item.maxDiscountAmount ?? item.max_discount_amount,
-  comboDescription: item.comboDescription ?? item.combo_description,
-  buyQuantity: item.buyQuantity ?? item.buy_quantity,
-  getQuantity: item.getQuantity ?? item.get_quantity,
-  minPurchaseAmount: item.minPurchaseAmount ?? item.min_purchase_amount,
-  conditionalDiscountValue: item.discountValue ?? item.discount_value,
-  flagDiscountAmount: item.flagDiscountAmount ?? item.flag_discount_amount,
-  assignStatus: "Assigned",
-  validFrom: item.validFrom || item.valid_from || "",
-  validTo: item.validTo || item.valid_to || "",
-  createdAt:
-    item.assignedAt || item.assigned_at || item.createdAt || item.createdat,
-  createdBy:
-    item.assignedByName ||
-    item.assigned_by_name ||
-    item.assignedBy ||
-    item.assigned_by ||
-    "",
-  organization: null,
-  managers: [],
+  discountType: item.discountType || "Fixed_Amount",
+  discountValue: item.discountValue,
+  validFrom: item.validFrom || "",
+  validTo: item.validTo || "",
 });
 
-const getDiscountValue = (offer: Offer) => {
-  switch (offer.discountType) {
-    case "Fixed_Amount":
-      return `₹${offer.discountAmount}`;
-
-    case "Percentage":
-      return `${offer.discountPercentage}%`;
-
-    case "Combo_Offer":
-      return offer.comboDescription || "—";
-
-    case "Buy_One_Get_One_Free":
-      return `Buy ${offer.buyQuantity} Get ${offer.getQuantity}`;
-
-    case "Conditional_Discount":
-      return `₹${offer.conditionalDiscountValue}`;
-
-    case "Flag_Discount":
-      return `₹${offer.flagDiscountAmount}`;
-
-    default:
-      return "—";
+const getDiscountValue = (offer: ExecutiveOfferRow) => {
+  if (offer.discountValue == null) {
+    return "—";
   }
+
+  return offer.discountType === "Percentage"
+    ? `${offer.discountValue}%`
+    : `₹${offer.discountValue}`;
 };
 
 export default function OrgExecutiveOffersPage() {
-  const [offers, setOffers] = useState<ManagerOffer[]>([]);
+  const [offers, setOffers] = useState<ExecutiveOfferRow[]>([]);
 
   const [isLoading, setIsLoading] = useState(true);
 
@@ -221,8 +184,7 @@ export default function OrgExecutiveOffersPage() {
 
         const matchSearch =
           !query ||
-          offer.title.toLowerCase().includes(query) ||
-          offer.code.toLowerCase().includes(query);
+          offer.title.toLowerCase().includes(query);
 
         const selectedStatuses = filters.statuses.map(
           (status) => STATUS_LABEL_TO_VALUE.get(status) ?? status,
@@ -351,8 +313,6 @@ export default function OrgExecutiveOffersPage() {
               <TableHead>Valid To</TableHead>
 
               <TableHead>Status</TableHead>
-
-              <TableHead>Assign Status</TableHead>
             </TableRow>
           </TableHeader>
 
@@ -360,7 +320,7 @@ export default function OrgExecutiveOffersPage() {
             {offers.length === 0 ? (
               <TableRow>
                 <TableCell
-                  colSpan={9}
+                  colSpan={8}
                   className="py-10 text-center text-gray-500"
                 >
                   No Offers Available
@@ -369,7 +329,7 @@ export default function OrgExecutiveOffersPage() {
             ) : filteredOffers.length === 0 ? (
               <TableRow>
                 <TableCell
-                  colSpan={9}
+                  colSpan={8}
                   className="py-10 text-center text-gray-500"
                 >
                   No Offers Match the Applied Filters
@@ -408,22 +368,6 @@ export default function OrgExecutiveOffersPage() {
                     >
                       {formatStatusLabel(offer.status)}
                     </Badge>
-                  </TableCell>
-
-                  <TableCell>
-                    {offer.assignStatus ? (
-                      <Badge
-                        className={
-                          offer.assignStatus.toLowerCase() === "assigned"
-                            ? "border-purple-200 bg-purple-100 text-purple-700"
-                            : "border-slate-200 bg-slate-100 text-slate-700"
-                        }
-                      >
-                        {offer.assignStatus}
-                      </Badge>
-                    ) : (
-                      "—"
-                    )}
                   </TableCell>
 
                 </TableRow>
