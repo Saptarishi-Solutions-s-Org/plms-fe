@@ -60,7 +60,11 @@ const EMPTY_FORM: OfferFormData = {
 async function fetchManagers(): Promise<Manager[]> {
   try {
     const res = await getManagers();
-    const rows: any[] = Array.isArray(res) ? res : Array.isArray(res?.value) ? res.value : [];
+    const rows: any[] = Array.isArray(res)
+      ? res
+      : Array.isArray(res?.value)
+        ? res.value
+        : [];
     return rows
       .map((m: any) => ({ id: String(m.id ?? ""), name: String(m.name ?? "") }))
       .filter((m) => m.id && m.name);
@@ -70,7 +74,12 @@ async function fetchManagers(): Promise<Manager[]> {
   }
 }
 
-function FieldWrapper({ label, required, error, children }: {
+function FieldWrapper({
+  label,
+  required,
+  error,
+  children,
+}: {
   label: string;
   required?: boolean;
   error?: string;
@@ -81,7 +90,13 @@ function FieldWrapper({ label, required, error, children }: {
       <Label required={required} className="text-sm font-normal text-gray-700">
         {label}
       </Label>
-      <div className={error ? "[&_input]:border-red-500 [&_textarea]:border-red-500 [&_[role=combobox]]:border-red-500" : ""}>
+      <div
+        className={
+          error
+            ? "[&_input]:border-red-500 [&_textarea]:border-red-500 [&_[role=combobox]]:border-red-500"
+            : ""
+        }
+      >
         {children}
       </div>
       {error && <p className="text-xs text-red-500">{error}</p>}
@@ -92,10 +107,16 @@ function FieldWrapper({ label, required, error, children }: {
 interface CreateOfferDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onSubmit: (data: OfferPayload) => Promise<{ success: boolean; error?: string }>;
+  onSubmit: (
+    data: OfferPayload,
+  ) => Promise<{ success: boolean; error?: string }>;
 }
 
-export function CreateOfferDialog({ open, onOpenChange, onSubmit }: CreateOfferDialogProps) {
+export function CreateOfferDialog({
+  open,
+  onOpenChange,
+  onSubmit,
+}: CreateOfferDialogProps) {
   const [managers, setManagers] = useState<Manager[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState("");
@@ -145,7 +166,10 @@ export function CreateOfferDialog({ open, onOpenChange, onSubmit }: CreateOfferD
     onOpenChange(next);
   };
 
-  const handleDiscountTypeChange = (value: string, onChange: (v: string) => void) => {
+  const handleDiscountTypeChange = (
+    value: string,
+    onChange: (v: string) => void,
+  ) => {
     onChange(value);
     setValue("discountAmount", "");
     setValue("discountPercentage", "");
@@ -167,7 +191,9 @@ export function CreateOfferDialog({ open, onOpenChange, onSubmit }: CreateOfferD
         toast.success("Offer created");
         handleOpenChange(false);
       } else {
-        setSubmitError(result.error || "Something went wrong. Please try again.");
+        setSubmitError(
+          result.error || "Something went wrong. Please try again.",
+        );
       }
     } finally {
       setIsSubmitting(false);
@@ -204,10 +230,13 @@ export function CreateOfferDialog({ open, onOpenChange, onSubmit }: CreateOfferD
         </div>
 
         {/* Body */}
-        <form onSubmit={handleSubmit(onValid)} noValidate className="flex flex-col">
+        <form
+          onSubmit={handleSubmit(onValid)}
+          noValidate
+          className="flex flex-col"
+        >
           <ScrollArea className="max-h-[75vh]">
             <div className="flex flex-col gap-5 px-6 py-5">
-
               {submitError && (
                 <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600">
                   {submitError}
@@ -216,17 +245,25 @@ export function CreateOfferDialog({ open, onOpenChange, onSubmit }: CreateOfferD
 
               {/* Offer Scope */}
               <div>
-                <h3 className="mb-3 text-sm font-semibold text-blue-600">Offer Scope</h3>
+                <h3 className="mb-3 text-sm font-semibold text-blue-600">
+                  Offer Details
+                </h3>
                 <Controller
                   name="isGlobal"
                   control={control}
                   render={({ field }) => (
-                    <div className={`flex items-center justify-between rounded-xl border p-3.5 transition-colors
-                      ${field.value ? "border-blue-200 bg-blue-50/60" : "border-input bg-muted/30"}`}>
+                    <div
+                      className={`flex items-center justify-between rounded-xl border p-3.5 transition-colors
+                      ${field.value ? "border-blue-200 bg-blue-50/60" : "border-input bg-muted/30"}`}
+                    >
                       <div className="flex items-center gap-2.5">
-                        <GlobeIcon className={`size-4 ${field.value ? "text-blue-600" : "text-muted-foreground"}`} />
+                        <GlobeIcon
+                          className={`size-4 ${field.value ? "text-blue-600" : "text-muted-foreground"}`}
+                        />
                         <span className="text-sm font-medium">
-                          {field.value ? "Global — visible to all users" : "Assign to specific managers"}
+                          {field.value
+                            ? "Global — visible to all users"
+                            : "Assign to specific managers"}
                         </span>
                       </div>
                       <Switch
@@ -245,21 +282,34 @@ export function CreateOfferDialog({ open, onOpenChange, onSubmit }: CreateOfferD
 
               {/* Offer Details */}
               <div>
-                <h3 className="mb-3 text-sm font-semibold text-blue-600">Offer Details</h3>
+                
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-
-                  <FieldWrapper label="Offer Name" required error={errors.offerName?.message}>
-                    <Input placeholder="Enter offer name" maxLength={100} {...register("offerName")} />
+                  <FieldWrapper
+                    label="Offer Name"
+                    required
+                    error={errors.offerName?.message}
+                  >
+                    <Input
+                      placeholder="Enter offer name"
+                      maxLength={100}
+                      {...register("offerName")}
+                    />
                   </FieldWrapper>
 
-                  <FieldWrapper label="Discount Type" required error={errors.discountType?.message}>
+                  <FieldWrapper
+                    label="Discount Type"
+                    required
+                    error={errors.discountType?.message}
+                  >
                     <Controller
                       name="discountType"
                       control={control}
                       render={({ field }) => (
                         <Select
                           value={field.value}
-                          onValueChange={(v) => handleDiscountTypeChange(v, field.onChange)}
+                          onValueChange={(v) =>
+                            handleDiscountTypeChange(v, field.onChange)
+                          }
                           disabled={isSubmitting}
                         >
                           <SelectTrigger className="w-full">
@@ -267,7 +317,9 @@ export function CreateOfferDialog({ open, onOpenChange, onSubmit }: CreateOfferD
                           </SelectTrigger>
                           <SelectContent>
                             {DISCOUNT_OPTIONS.map((opt) => (
-                              <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
+                              <SelectItem key={opt.value} value={opt.value}>
+                                {opt.label}
+                              </SelectItem>
                             ))}
                           </SelectContent>
                         </Select>
@@ -276,7 +328,11 @@ export function CreateOfferDialog({ open, onOpenChange, onSubmit }: CreateOfferD
                   </FieldWrapper>
 
                   {!isGlobal && (
-                    <FieldWrapper label="Manager" required error={errors.managerIds?.message}>
+                    <FieldWrapper
+                      label="Manager"
+                      required
+                      error={errors.managerIds?.message}
+                    >
                       <Controller
                         name="managerIds"
                         control={control}
@@ -291,7 +347,9 @@ export function CreateOfferDialog({ open, onOpenChange, onSubmit }: CreateOfferD
                             </SelectTrigger>
                             <SelectContent>
                               {managers.map((m) => (
-                                <SelectItem key={m.id} value={m.id}>{m.name}</SelectItem>
+                                <SelectItem key={m.id} value={m.id}>
+                                  {m.name}
+                                </SelectItem>
                               ))}
                             </SelectContent>
                           </Select>
@@ -300,7 +358,11 @@ export function CreateOfferDialog({ open, onOpenChange, onSubmit }: CreateOfferD
                     </FieldWrapper>
                   )}
 
-                  <FieldWrapper label="Valid Period" required error={errors.dateRange?.message}>
+                  <FieldWrapper
+                    label="Valid Period"
+                    required
+                    error={errors.dateRange?.message}
+                  >
                     <Controller
                       name="dateRange"
                       control={control}
@@ -315,61 +377,157 @@ export function CreateOfferDialog({ open, onOpenChange, onSubmit }: CreateOfferD
                       )}
                     />
                   </FieldWrapper>
-
                 </div>
               </div>
 
               {/* Discount Fields */}
               {discountType && (
                 <div>
-                  <h3 className="mb-3 text-sm font-semibold text-blue-600">Discount Details</h3>
+                  <h3 className="mb-3 text-sm font-semibold text-blue-600">
+                    Discount Details
+                  </h3>
                   <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-
                     {discountType === "Fixed_Amount" && (
-                      <FieldWrapper label="Discount Amount" required error={errors.discountAmount?.message}>
-                        <Input type="number" min="0" step="0.01" placeholder="e.g. 500" {...register("discountAmount")} />
+                      <FieldWrapper
+                        label="Discount Amount"
+                        required
+                        error={errors.discountAmount?.message}
+                      >
+                        <Input
+                          type="number"
+                          min="0"
+                          step="0.01"
+                          placeholder="e.g. 500"
+                          {...register("discountAmount")}
+                        />
                       </FieldWrapper>
                     )}
 
-                    {discountType === "Percentage" && (<>
-                      <FieldWrapper label="Discount (%)" required error={errors.discountPercentage?.message}>
-                        <Input type="number" min="0" max="100" step="0.01" placeholder="e.g. 20" {...register("discountPercentage")} />
-                      </FieldWrapper>
-                      <FieldWrapper label="Max Discount Amount" required error={errors.maxDiscountAmount?.message}>
-                        <Input type="number" min="0" step="0.01" placeholder="e.g. 1000" {...register("maxDiscountAmount")} />
-                      </FieldWrapper>
-                    </>)}
+                    {discountType === "Percentage" && (
+                      <>
+                        <FieldWrapper
+                          label="Discount (%)"
+                          required
+                          error={errors.discountPercentage?.message}
+                        >
+                          <Input
+                            type="number"
+                            min="0"
+                            max="100"
+                            step="0.01"
+                            placeholder="e.g. 20"
+                            {...register("discountPercentage")}
+                          />
+                        </FieldWrapper>
+                        <FieldWrapper
+                          label="Max Discount Amount"
+                          required
+                          error={errors.maxDiscountAmount?.message}
+                        >
+                          <Input
+                            type="number"
+                            min="0"
+                            step="0.01"
+                            placeholder="e.g. 1000"
+                            {...register("maxDiscountAmount")}
+                          />
+                        </FieldWrapper>
+                      </>
+                    )}
 
                     {discountType === "Combo_Offer" && (
-                      <FieldWrapper label="Combo Description" required error={errors.comboDescription?.message}>
-                        <Textarea placeholder="Describe the combo offer…" className="min-h-[90px] resize-none" {...register("comboDescription")} />
-                      </FieldWrapper>
+                      <div className="sm:col-span-2">
+                        <FieldWrapper
+                          label="Combo Description"
+                          required
+                          error={errors.comboDescription?.message}
+                        >
+                          <Textarea
+                            placeholder="Describe the combo offer…"
+                            className="min-h-[80px] field-sizing-fixed resize-y"
+                            {...register("comboDescription")}
+                          />
+                        </FieldWrapper>
+                      </div>
                     )}
 
-                    {discountType === "Buy_One_Get_One_Free" && (<>
-                      <FieldWrapper label="Buy Quantity" required error={errors.buyQuantity?.message}>
-                        <Input type="number" min="1" step="1" placeholder="e.g. 2" {...register("buyQuantity")} />
-                      </FieldWrapper>
-                      <FieldWrapper label="Get Quantity" required error={errors.getQuantity?.message}>
-                        <Input type="number" min="1" step="1" placeholder="e.g. 1" {...register("getQuantity")} />
-                      </FieldWrapper>
-                    </>)}
+                    {discountType === "Buy_One_Get_One_Free" && (
+                      <>
+                        <FieldWrapper
+                          label="Buy Quantity"
+                          required
+                          error={errors.buyQuantity?.message}
+                        >
+                          <Input
+                            type="number"
+                            min="1"
+                            step="1"
+                            placeholder="e.g. 2"
+                            {...register("buyQuantity")}
+                          />
+                        </FieldWrapper>
+                        <FieldWrapper
+                          label="Get Quantity"
+                          required
+                          error={errors.getQuantity?.message}
+                        >
+                          <Input
+                            type="number"
+                            min="1"
+                            step="1"
+                            placeholder="e.g. 1"
+                            {...register("getQuantity")}
+                          />
+                        </FieldWrapper>
+                      </>
+                    )}
 
-                    {discountType === "Conditional_Discount" && (<>
-                      <FieldWrapper label="Min Purchase Amount" required error={errors.minPurchaseAmount?.message}>
-                        <Input type="number" min="0" step="0.01" placeholder="e.g. 2000" {...register("minPurchaseAmount")} />
-                      </FieldWrapper>
-                      <FieldWrapper label="Discount Value" required error={errors.conditionalDiscountValue?.message}>
-                        <Input type="number" min="0" step="0.01" placeholder="e.g. 300" {...register("conditionalDiscountValue")} />
-                      </FieldWrapper>
-                    </>)}
+                    {discountType === "Conditional_Discount" && (
+                      <>
+                        <FieldWrapper
+                          label="Min Purchase Amount"
+                          required
+                          error={errors.minPurchaseAmount?.message}
+                        >
+                          <Input
+                            type="number"
+                            min="0"
+                            step="0.01"
+                            placeholder="e.g. 2000"
+                            {...register("minPurchaseAmount")}
+                          />
+                        </FieldWrapper>
+                        <FieldWrapper
+                          label="Discount Value"
+                          required
+                          error={errors.conditionalDiscountValue?.message}
+                        >
+                          <Input
+                            type="number"
+                            min="0"
+                            step="0.01"
+                            placeholder="e.g. 300"
+                            {...register("conditionalDiscountValue")}
+                          />
+                        </FieldWrapper>
+                      </>
+                    )}
 
                     {discountType === "Flag_Discount" && (
-                      <FieldWrapper label="Discount Amount" required error={errors.flagDiscountAmount?.message}>
-                        <Input type="number" min="0" step="0.01" placeholder="e.g. 150" {...register("flagDiscountAmount")} />
+                      <FieldWrapper
+                        label="Discount Amount"
+                        required
+                        error={errors.flagDiscountAmount?.message}
+                      >
+                        <Input
+                          type="number"
+                          min="0"
+                          step="0.01"
+                          placeholder="e.g. 150"
+                          {...register("flagDiscountAmount")}
+                        />
                       </FieldWrapper>
                     )}
-
                   </div>
                 </div>
               )}
@@ -377,25 +535,45 @@ export function CreateOfferDialog({ open, onOpenChange, onSubmit }: CreateOfferD
               {/* Description */}
               <div>
                 <h3 className="mb-3 text-sm font-semibold text-blue-600">Additional Information</h3>
-                <FieldWrapper label="Description" required error={errors.description?.message}>
-                  <Textarea placeholder="Describe what this offer includes…" className="min-h-[80px] resize-none" {...register("description")} />
+                <FieldWrapper
+                  required
+                  label="Description"
+                  error={errors.description?.message}
+                >
+                  <Textarea
+                    placeholder="Describe what this offer includes…"
+                    className="field-sizing-fixed resize-y min-h-[80px]"
+                    {...register("description")}
+                  />
                 </FieldWrapper>
               </div>
-
             </div>
           </ScrollArea>
 
           {/* Footer */}
           <div className="flex justify-end gap-3 border-t bg-background px-6 py-4">
-            <Button type="button" variant="outline" disabled={isSubmitting} className="min-w-[100px]"
-              onClick={() => handleOpenChange(false)}>
+            <Button
+              type="button"
+              variant="outline"
+              disabled={isSubmitting}
+              className="min-w-[100px]"
+              onClick={() => handleOpenChange(false)}
+            >
               Cancel
             </Button>
-            <Button type="submit" disabled={isSubmitting}
-              className="min-w-[140px] bg-blue-600 hover:bg-blue-700 text-white">
-              {isSubmitting
-                ? <span className="flex items-center gap-2"><Spinner className="size-4" />Saving…</span>
-                : "Save Offer"}
+            <Button
+              type="submit"
+              disabled={isSubmitting}
+              className="min-w-[140px] bg-blue-600 hover:bg-blue-700 text-white"
+            >
+              {isSubmitting ? (
+                <span className="flex items-center gap-2">
+                  <Spinner className="size-4" />
+                  Saving…
+                </span>
+              ) : (
+                "Save Offer"
+              )}
             </Button>
           </div>
         </form>
