@@ -140,10 +140,8 @@ export interface OfferPayload {
 }
 export interface OfferFilters {
   search: string;
-  status: "all" | OfferStatus;
-  discountType:
-    | "all"
-    | DiscountType;
+  status: OfferStatus[];
+  discountType: DiscountType[];
 }
 
 export const OFFER_STATUS_OPTIONS = [
