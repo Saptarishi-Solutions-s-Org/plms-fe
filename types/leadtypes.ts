@@ -94,7 +94,6 @@ export interface LeadDialogsProps {
 
 export type LeadFilters = {
   search: string;
-  sources: string[];
   statuses: string[];
   priorities: string[];
   assignedTo: string[];
