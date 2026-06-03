@@ -25,25 +25,21 @@ export default function LeadTableFilters({
   onApply,
 }: LeadTableFiltersProps) {
   const [search, setSearch] = useState("");
-  const [selectedSources, setSelectedSources] = useState<string[]>([]);
   const [selectedStatuses, setSelectedStatuses] = useState<string[]>([]);
   const [selectedPriorities, setSelectedPriorities] = useState<string[]>([]);
   const [selectedExecutives, setSelectedExecutives] = useState<string[]>([]);
 
-  const sourceOptions = LEAD_SOURCE_OPTIONS.map((option) => option.label);
   const statusOptions = LEAD_STATUS_OPTIONS.map((option) => option.value);
   const priorityOptions = LEAD_PRIORITY_OPTIONS.map((option) => option.value);
   const executiveOptions = executives.map((executive) => executive.name);
 
   const handleClear = () => {
     setSearch("");
-    setSelectedSources([]);
     setSelectedStatuses([]);
     setSelectedPriorities([]);
     setSelectedExecutives([]);
     onApply({
       search: "",
-      sources: [],
       statuses: [],
       priorities: [],
       assignedTo: [],
@@ -53,7 +49,6 @@ export default function LeadTableFilters({
   const handleApply = () => {
     onApply({
       search,
-      sources: selectedSources,
       statuses: selectedStatuses,
       priorities: selectedPriorities,
       assignedTo: selectedExecutives,
@@ -74,13 +69,6 @@ export default function LeadTableFilters({
           />
         </div>
 
-        <MultiSelectCombobox
-          options={sourceOptions}
-          selectedValues={selectedSources}
-          onSelectionChange={setSelectedSources}
-          placeholder="Filter by source"
-          width="w-full sm:w-50"
-        />
 
         <MultiSelectCombobox
           options={statusOptions}
