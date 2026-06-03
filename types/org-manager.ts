@@ -88,6 +88,54 @@ export interface ManagerOfferOverviewItem {
   assignStatus?: string;
 };
 
+export interface ExecutiveOfferItem {
+  assignmentId?: string;
+  assignment_ID?: string;
+  ID?: string;
+  offerId?: string;
+  offer_ID?: string;
+  id?: string;
+  title?: string;
+  code?: string;
+  description?: string;
+  isGlobal?: boolean;
+  is_global?: boolean;
+  status?: string;
+  discountType?: Offer["discountType"];
+  discount_type?: Offer["discountType"];
+  discountAmount?: number;
+  discount_amount?: number;
+  discountPercentage?: number;
+  discount_percentage?: number;
+  maxDiscountAmount?: number;
+  max_discount_amount?: number;
+  comboDescription?: string;
+  combo_description?: string;
+  buyQuantity?: number;
+  buy_quantity?: number;
+  getQuantity?: number;
+  get_quantity?: number;
+  minPurchaseAmount?: number;
+  min_purchase_amount?: number;
+  discountValue?: number;
+  discount_value?: number;
+  flagDiscountAmount?: number;
+  flag_discount_amount?: number;
+  validFrom?: string;
+  valid_from?: string;
+  validTo?: string;
+  valid_to?: string;
+  assignedAt?: string;
+  assigned_at?: string;
+  createdAt?: string;
+  createdat?: string;
+  assignedBy?: string;
+  assigned_by?: string;
+  assignedByName?: string;
+  assigned_by_name?: string;
+};
+  
+
 export interface ExecutiveUser {
   id: string;
   name: string;

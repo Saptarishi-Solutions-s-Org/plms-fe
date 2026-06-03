@@ -8,3 +8,6 @@ export const getRecentLeads = () =>
 
 export const getLeadStats = () =>
   api("/odata/v4/organization-executive/getExecutiveLeadStats()");
+
+export const getExecutiveOffers = () =>
+  api(`/odata/v4/organization-executive/getExecutiveOffers()`);

@@ -16,12 +16,20 @@ import { OFFER_STATUS_OPTIONS } from "@/types/Createoffer";
 
 interface OfferFiltersProps {
   filters: OfferFilters;
-  onFilterChange: <K extends keyof OfferFilters>(key: K, value: OfferFilters[K]) => void;
+  onFilterChange: <K extends keyof OfferFilters>(
+    key: K,
+    value: OfferFilters[K],
+  ) => void;
   onApply: () => void;
   onClear: () => void;
 }
 
-export function OfferFilters({ filters, onFilterChange, onApply, onClear }: OfferFiltersProps) {
+export function OfferFilters({
+  filters,
+  onFilterChange,
+  onApply,
+  onClear,
+}: OfferFiltersProps) {
   return (
     <div className="flex flex-col gap-2 rounded-t-xl border-b border-gray-100 bg-white px-5 py-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-end">
 
@@ -61,7 +69,9 @@ export function OfferFilters({ filters, onFilterChange, onApply, onClear }: Offe
       {/* Status Filter */}
       <Select
         value={filters.status}
-        onValueChange={(value) => onFilterChange("status", value as OfferFilters["status"])}
+        onValueChange={(value) =>
+          onFilterChange("status", value as OfferFilters["status"])
+        }
       >
         <SelectTrigger className="h-9 w-full border-gray-300 bg-white text-sm text-gray-700 sm:w-40">
           <SelectValue placeholder="All Status" />

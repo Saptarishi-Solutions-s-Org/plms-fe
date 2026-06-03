@@ -91,8 +91,9 @@ export const MENU_CONFIG: MenuGroup[] = [
         label: "Offers",
         modules: ["offers"],
         permissions: ["view"],
-        roles: ["Manager"],
+        roles: ["Manager","Executive"],
       },
+
 
       {
         href: "/executives",

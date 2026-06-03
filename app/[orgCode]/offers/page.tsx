@@ -11,7 +11,7 @@ import {
 
 import OrgAdminOffersPage from "./roleofferspage/org-admin-offerspage";
 import OrgManagerOffersPage from "./roleofferspage/org-manager-offerspage";
-
+import OrgExecutiveOffersPage from "./roleofferspage/org-executive-offerpage"
 function DefaultOffersPage() {
   return (
     <div className="p-6">
@@ -32,6 +32,7 @@ const ROLE_OFFERS_MAP: Record<
 > = {
   ADMIN: OrgAdminOffersPage,
   MANAGER: OrgManagerOffersPage,
+  EXECUTIVE: OrgExecutiveOffersPage,
 };
 
 export default function OffersPage() {
