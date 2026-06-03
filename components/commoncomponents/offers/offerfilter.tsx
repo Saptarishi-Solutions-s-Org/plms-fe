@@ -1,18 +1,28 @@
 "use client";
 
 import { Search } from "lucide-react";
-import { Button } from "@base-ui/react";
-import { Input } from "@base-ui/react";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { MultiSelectCombobox } from "@/components/ui/multi-select-combobox";
 import { DISCOUNT_OPTIONS } from "@/lib/validators/offervalidation";
 import type { OfferFilters } from "@/types/Createoffer";
 import { OFFER_STATUS_OPTIONS } from "@/types/Createoffer";
+
+const DISCOUNT_TYPE_LABEL_BY_VALUE = Object.fromEntries(
+  DISCOUNT_OPTIONS.map((option) => [option.value, option.label]),
+) as Record<string, string>;
+
+const DISCOUNT_TYPE_VALUE_BY_LABEL = Object.fromEntries(
+  DISCOUNT_OPTIONS.map((option) => [option.label, option.value]),
+) as Record<string, string>;
+
+const OFFER_STATUS_LABEL_BY_VALUE = Object.fromEntries(
+  OFFER_STATUS_OPTIONS.map((option) => [option.value, option.label]),
+) as Record<string, string>;
+
+const OFFER_STATUS_VALUE_BY_LABEL = Object.fromEntries(
+  OFFER_STATUS_OPTIONS.map((option) => [option.label, option.value]),
+) as Record<string, string>;
 
 interface OfferFiltersProps {
   filters: OfferFilters;
@@ -24,83 +34,72 @@ interface OfferFiltersProps {
   onClear: () => void;
 }
 
-export function OfferFilters({
-  filters,
-  onFilterChange,
-  onApply,
-  onClear,
-}: OfferFiltersProps) {
+export function OfferFilters({ filters, onFilterChange, onApply, onClear }: OfferFiltersProps) {
+  const discountTypeOptions = DISCOUNT_OPTIONS.map((option) => option.label);
+  const statusOptions = OFFER_STATUS_OPTIONS.map((option) => option.label);
+
+  const selectedDiscountTypeLabels = filters.discountType.map(
+    (value) => DISCOUNT_TYPE_LABEL_BY_VALUE[value] ?? value,
+  );
+  const selectedStatusLabels = filters.status.map(
+    (value) => OFFER_STATUS_LABEL_BY_VALUE[value] ?? value,
+  );
+
   return (
-    <div className="flex flex-col gap-2 rounded-t-xl border-b border-gray-100 bg-white px-5 py-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-end">
+    <div className="w-full flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+      <div className="flex flex-col sm:flex-row sm:flex-1 sm:flex-wrap sm:items-center sm:justify-end gap-4">
+        <div className="relative w-full sm:w-72">
+          <Input
+            search
+            type="text"
+            placeholder="Search by Offer Name..."
+            value={filters.search}
+            onChange={(e) => onFilterChange("search", e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && onApply()}
+            className="text-sm rounded-lg h-auto py-2 px-3"
+          />
+        </div>
 
-      {/* Search by Offer Name */}
-      <div className="relative w-full sm:w-72">
-        <Search className="absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-gray-400" />
-        <Input
-          type="text"
-          placeholder="Search by Offer Name..."
-          value={filters.search}
-          onChange={(e) => onFilterChange("search", e.target.value)}
-          onKeyDown={(e) => e.key === "Enter" && onApply()}
-          className="h-9 w-full rounded-lg border border-gray-300 bg-white pl-8 pr-3 text-sm text-gray-700 placeholder:text-gray-400"
+        <MultiSelectCombobox
+          options={discountTypeOptions}
+          selectedValues={selectedDiscountTypeLabels}
+          onSelectionChange={(selected) =>
+            onFilterChange(
+              "discountType",
+              selected
+                .map((label) => DISCOUNT_TYPE_VALUE_BY_LABEL[label])
+                .filter(Boolean) as OfferFilters["discountType"],
+            )
+          }
+          placeholder="Filter by offer type"
+          width="w-full sm:w-56"
         />
+
+        <MultiSelectCombobox
+          options={statusOptions}
+          selectedValues={selectedStatusLabels}
+          onSelectionChange={(selected) =>
+            onFilterChange(
+              "status",
+              selected
+                .map((label) => OFFER_STATUS_VALUE_BY_LABEL[label])
+                .filter(Boolean) as OfferFilters["status"],
+            )
+          }
+          placeholder="Filter by status"
+          width="w-full sm:w-44"
+        />
+
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={onClear}>
+            Clear
+          </Button>
+
+          <Button onClick={onApply} className="bg-blue-600 text-white hover:bg-blue-700">
+            Apply
+          </Button>
+        </div>
       </div>
-
-      {/* Offer Type Filter */}
-      <Select
-        value={filters.discountType ?? "all"}
-        onValueChange={(value) =>
-          onFilterChange("discountType", value as OfferFilters["discountType"])
-        }
-      >
-        <SelectTrigger className="h-9 w-full border-gray-300 bg-white text-sm text-gray-700 sm:w-48">
-          <SelectValue placeholder="All Offer Types" />
-        </SelectTrigger>
-        <SelectContent>
-          <SelectItem value="all">All Offer Types</SelectItem>
-          {DISCOUNT_OPTIONS.map((opt) => (
-            <SelectItem key={opt.value} value={opt.value}>
-              {opt.label}
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
-
-      {/* Status Filter */}
-      <Select
-        value={filters.status}
-        onValueChange={(value) =>
-          onFilterChange("status", value as OfferFilters["status"])
-        }
-      >
-        <SelectTrigger className="h-9 w-full border-gray-300 bg-white text-sm text-gray-700 sm:w-40">
-          <SelectValue placeholder="All Status" />
-        </SelectTrigger>
-        <SelectContent>
-          <SelectItem value="all">All Status</SelectItem>
-          {OFFER_STATUS_OPTIONS.map((option) => (
-            <SelectItem key={option.value} value={option.value}>
-              {option.label}
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
-
-      {/* Clear */}
-      <Button
-        onClick={onClear}
-        className="h-9 w-full rounded-lg border border-gray-300 bg-white px-5 text-sm font-semibold text-gray-700 hover:bg-gray-50 sm:w-auto"
-      >
-        Clear All
-      </Button>
-
-      {/* Apply */}
-      <Button
-        onClick={onApply}
-        className="h-9 w-full rounded-lg bg-blue-600 px-5 text-sm font-semibold text-white hover:bg-blue-700 sm:w-auto"
-      >
-        Apply
-      </Button>
     </div>
   );
 }
