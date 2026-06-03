@@ -57,8 +57,8 @@ export default function LeadsPage() {
         lead.email.toLowerCase().includes(search);
 
       const sourceMatch =
-        filters.sources.length === 0 ||
-        filters.sources.some(
+        (filters.sources?.length ?? 0) === 0 ||
+        filters.sources?.some(
           (source) =>
             normalizeFilterValue(source) ===
             normalizeFilterValue(lead.leadSource),
