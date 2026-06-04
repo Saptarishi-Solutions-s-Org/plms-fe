@@ -49,7 +49,6 @@ export const MENU_CONFIG: MenuGroup[] = [
           "delete",
         ],
         roles: [
-          "Admin",
           "Executive",
           "Manager",
         ],
