@@ -19,11 +19,7 @@ const actionModes = {
   deactivate: "deactivate",
 } as const;
 
-type ActionMode = (typeof actionModes)[keyof typeof actionModes];
-
-
-
-
+type ActionMode = (typeof actionModes)[keyof typeof actionModes]
 
 const UserTable = ({ 
   users, 
