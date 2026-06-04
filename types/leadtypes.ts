@@ -20,6 +20,50 @@ export interface Lead extends LeadFormData {
   assignedToName?: string;
 }
 
+export interface LeadActivity {
+  id: string;
+  type?: string;
+  notes: string;
+  freeText?: string;
+  callStatus?: string;
+  nextFollowUpDate?: string;
+  createdAt: string;
+  createdByName: string;
+  createdByRole: string;
+}
+
+export interface AssignedOffer {
+  id: string;
+  title: string;
+  code: string;
+  description?: string;
+  discountType: string;
+  discountAmount?: number;
+  discountPercentage?: number;
+  validFrom: string;
+  validTo: string;
+  status: string;
+}
+
+export interface LeadDetailData {
+  lead: Lead & {
+    stateName: string;
+    countryName: string;
+    importType: string;
+    createdAt: string;
+    createdById: string;
+    createdByName: string;
+    createdByRole: string;
+  };
+  activities: LeadActivity[];
+  assignedOffer: AssignedOffer | null;
+}
+
+export interface AddActivityFormData {
+  notes: string;
+  type?: string;
+}
+
 export interface ExecutiveOption {
   id: string;
   name: string;
@@ -50,18 +94,20 @@ export interface LeadDialogsProps {
 
 export type LeadFilters = {
   search: string;
-  sources: string[];
+  sources?: string[];
   statuses: string[];
   priorities: string[];
   assignedTo: string[];
 };
 
 export const LEAD_SOURCE_OPTIONS = [
-  { value: "Social_Media", label: "Social Media" },
+  { value: "Socil_Media", label: "Social Media" },
   { value: "Advertisement", label: "Advertisement" },
   { value: "Referral", label: "Referral" },
   { value: "Manual_Entry", label: "Manual Entry" },
 ] as const;
+
+
 
 export const LEAD_STATUS_OPTIONS = [
   { value: "New", label: "New" },
@@ -85,9 +131,9 @@ export const GENDER_OPTIONS = [
 
 export type LeadHeaderProps = {
   onExport: () => void;
+  onImportComplete?: () => Promise<void> | void;
   onAddLead: () => void;
 };
-
 
 export type LeadActionsProps = {
   lead: Lead;

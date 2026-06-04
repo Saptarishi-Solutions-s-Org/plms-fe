@@ -11,6 +11,7 @@ export function useLeads() {
     qualified: 0,
   });
   const [isLoading, setIsLoading] = useState(false);
+  const [hasLoaded, setHasLoaded] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const fetchLeads = useCallback(async () => {
@@ -24,6 +25,7 @@ export function useLeads() {
       setError("Failed to load leads. Please try again.");
     } finally {
       setIsLoading(false);
+      setHasLoaded(true);
     }
   }, []);
 
@@ -31,5 +33,12 @@ export function useLeads() {
     fetchLeads();
   }, [fetchLeads]);
 
-  return { leads, stats, isLoading, error, refetch: fetchLeads };
+  return {
+    leads,
+    stats,
+    isLoading,
+    isInitialLoading: isLoading && !hasLoaded,
+    error,
+    refetch: fetchLeads,
+  };
 }

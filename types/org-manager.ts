@@ -88,6 +88,28 @@ export interface ManagerOfferOverviewItem {
   assignStatus?: string;
 };
 
+export interface ExecutiveOfferItem {
+  title?: string;
+  description?: string;
+  status?: string;
+  discountType?: Offer["discountType"];
+  discountValue?: number;
+  validFrom?: string;
+  validTo?: string;
+};
+
+export type ExecutiveOfferRow = {
+  id: string;
+  title: string;
+  description: string;
+  status: Offer["status"];
+  discountType: Offer["discountType"];
+  discountValue?: number;
+  validFrom: string;
+  validTo: string;
+};
+  
+
 export interface ExecutiveUser {
   id: string;
   name: string;
@@ -121,3 +143,50 @@ export const formatStatusLabel = (status?: string) => {
   if (!status) return "—";
   return status.charAt(0).toUpperCase() + status.slice(1).toLowerCase();
 };
+
+export type ExecutiveStatus =
+  | "Active"
+  | "Inactive";
+
+export interface ExecutiveFilters {
+  search: string;
+  status: ExecutiveStatus[];
+}
+
+export type ExecutiveRow = {
+  id: string;
+  name: string;
+  email: string;
+  phone: string;
+  status: ExecutiveStatus;
+  leadCount: number;
+  offerCount: number;
+};
+
+export type ExecutiveStatKey =
+  | "totalExecutives"
+  | "activeExecutives"
+  | "inactiveExecutives";
+
+export interface ExecutiveStats {
+  totalExecutives: number;
+  activeExecutives: number;
+  inactiveExecutives: number;
+}
+
+export interface ExecutiveStatCardConfig {
+  key: ExecutiveStatKey;
+  label: string;
+  Icon: ElementType;
+  color: string;
+}
+
+export interface ExecutiveStatCardsProps {
+  stats: ExecutiveStats;
+  cards?: ExecutiveStatCardConfig[];
+}
+
+export const EXECUTIVE_STATUS_OPTIONS = [
+  { value: "Active", label: "Active" },
+  { value: "Inactive", label: "Inactive" },
+] as const;

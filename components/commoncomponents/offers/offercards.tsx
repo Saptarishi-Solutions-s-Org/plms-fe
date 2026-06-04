@@ -18,6 +18,7 @@ type OfferCardsProps = {
   activeCount: number;
   inactiveCount: number;
   globalCount: number;
+  showGlobal?: boolean;
 };
 
 export function OfferCards({
@@ -25,6 +26,7 @@ export function OfferCards({
   activeCount,
   inactiveCount,
   globalCount,
+  showGlobal = true,
 }: OfferCardsProps) {
   const cards = [
     {
@@ -33,9 +35,6 @@ export function OfferCards({
       icon: LayersIcon,
       color: "bg-indigo-500",
     },
-
-
-    
     {
       title: "Active",
       value: activeCount,
@@ -55,10 +54,15 @@ export function OfferCards({
       color: "bg-amber-500",
     },
   ];
+  const visibleCards = showGlobal ? cards : cards.slice(0, 3);
 
   return (
-    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-      {cards.map((item, index) => {
+    <div
+      className={`grid grid-cols-1 gap-4 sm:grid-cols-2 ${
+        showGlobal ? "lg:grid-cols-4" : "lg:grid-cols-3"
+      }`}
+    >
+      {visibleCards.map((item, index) => {
         const Icon = item.icon;
 
         return (

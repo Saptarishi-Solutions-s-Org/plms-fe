@@ -13,7 +13,7 @@ import {
   DialogTrigger,
   DialogDescription,
 } from "@/components/ui/dialog";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import AddLeadForm from "@/components/orgadmindashboard/userform";
 import { getOrganizationAdminDashboard } from "@/services/organizationAdmin";
 import { AdminCardsProps, UserDetails } from "@/types/organizationadmindashboard/dashboardtypes";
@@ -39,29 +39,30 @@ export default function OrganizationAdminDashboard() {
     status: [],
     role: [],
   });
-  useEffect(() => {
-    const fetchUsers = async () => {
-      try {
-        setLoading(true);
 
-        const data = await getOrganizationAdminDashboard();
+  const fetchUsers = useCallback(async () => {
+    try {
+      setLoading(true);
 
-        setuserdata(data.users);
-        setStats({
-          total_users: data.stats.total_users,
-          active_users: data.stats.active_users,
-          inactive_users: data.stats.inactive_users,
-        });
+      const data = await getOrganizationAdminDashboard();
 
-      } catch (error) {
-        console.error("Error fetching users:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
+      setuserdata(data.users);
+      setStats({
+        total_users: data.stats.total_users,
+        active_users: data.stats.active_users,
+        inactive_users: data.stats.inactive_users,
+      });
 
-    fetchUsers();
+    } catch (error) {
+      console.error("Error fetching users:", error);
+    } finally {
+      setLoading(false);
+    }
   }, []);
+
+  useEffect(() => {
+    fetchUsers();
+  }, [fetchUsers]);
   const filteredUsers = userdata.filter((user) => {
 
     const userStatus = user.is_active ? "Active" : "Inactive";
@@ -139,7 +140,7 @@ export default function OrganizationAdminDashboard() {
 
 
         <div className="mt-10">
-          <UserTable users={filteredUsers} loading={loading} />
+          <UserTable users={filteredUsers} loading={loading} onRefresh={fetchUsers} />
         </div>
       </div>
 

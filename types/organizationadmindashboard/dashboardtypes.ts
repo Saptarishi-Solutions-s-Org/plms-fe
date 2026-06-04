@@ -14,6 +14,7 @@ export interface LeadFormData {
 
 
 export interface UserDetails {
+    id: string;
     name: string;
     email: string;
     role_name: string;

@@ -3,6 +3,8 @@ import {
   Building2,
   UserCheck,
   Gift,
+  Users,
+  FilePen,
 } from "lucide-react";
 
 import { MenuGroup } from "@/types/menu";
@@ -35,7 +37,6 @@ export const MENU_CONFIG: MenuGroup[] = [
         permissions: ["view"],
         roles: ["System Admin"],
       },
-
       {
         href: "/leads",
         icon: UserCheck,
@@ -53,6 +54,20 @@ export const MENU_CONFIG: MenuGroup[] = [
           "Manager",
         ],
       },
+
+      {
+        href: "/org-reports",
+        icon: FilePen,
+        label: "Reports",
+        modules: ["lead"],
+        permissions: [
+          "view",
+        ],
+        roles: [
+          "Manager",
+        ],
+      },
+
 
       // Admin → Full access
       {
@@ -78,6 +93,28 @@ export const MENU_CONFIG: MenuGroup[] = [
         permissions: ["view"],
         roles: ["Manager"],
       },
+
+      {
+        href: "/offers",
+        icon: Gift,
+        label: "My Offers",
+        modules: ["offers"],
+        permissions: ["view"],
+        roles: ["Executive"],
+      },
+
+      {
+        href: "/executives",
+        icon: Users,
+        label: "Executives",
+        modules: ["lead"],
+        permissions: ["view"],
+        roles: [
+          "Manager",
+        ],
+      },
+
     ],
   },
 ];
+

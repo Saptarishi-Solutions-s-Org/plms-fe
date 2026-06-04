@@ -36,6 +36,21 @@ const PRIORITY_ACTIVE_CLASS: Record<string, string> = {
   Urgent: "bg-red-500 border-red-500 text-white",
 };
 
+function normalizeOptionValue(value: string) {
+  return value.trim().toLowerCase().replace(/[\s_]+/g, "");
+}
+
+function getLeadSourceValue(source?: string) {
+  if (!source) return "";
+
+  return (
+    LEAD_SOURCE_OPTIONS.find(
+      (option) =>
+        normalizeOptionValue(option.value) === normalizeOptionValue(source),
+    )?.value ?? source
+  );
+}
+
 function FieldWrapper({
   label,
   required,
@@ -107,7 +122,7 @@ export default function LeadForm({
       country: initialData?.country ?? "",
       postalCode: initialData?.postalCode ?? "",
       status: initialData?.status ?? "",
-      leadSource: initialData?.leadSource ?? "",
+      leadSource: getLeadSourceValue(initialData?.leadSource),
       assignedTo: initialData?.assignedTo ?? fixedAssignedToId ?? "",
       priority: initialData?.priority ?? "",
       notes: initialData?.notes ?? "",
@@ -145,7 +160,7 @@ export default function LeadForm({
       country: initialData?.country ?? "",
       postalCode: initialData?.postalCode ?? "",
       status: initialData?.status ?? "",
-      leadSource: initialData?.leadSource ?? "",
+      leadSource: getLeadSourceValue(initialData?.leadSource),
       assignedTo,
       priority: initialData?.priority ?? "",
       notes: initialData?.notes ?? "",

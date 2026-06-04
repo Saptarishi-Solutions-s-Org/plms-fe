@@ -1,5 +1,6 @@
 import { api } from "@/lib/api";
-import type { LeadFormData } from "@/types/leadtypes";
+import type { LeadImportRow } from "@/types/leadImport";
+import type { AddActivityFormData, LeadFormData } from "@/types/leadtypes";
 
 export const getLeadsWithStats = () =>
   api("/odata/v4/lead/getLeadsWithStats()");
@@ -20,6 +21,19 @@ export const updateLead = (payload: { id: string } & LeadFormData) =>
   });
 
 export const exportLeads = () =>
-  api("/odata/v4/lead/exportLeads", {
+  api("/odata/v4/lead/exportLeads", { method: "POST" });
+
+export const getLeadDetail = (id: string) =>
+  api(`/odata/v4/lead/getLeadDetail(id='${id}')`);
+
+export const addLeadActivity = (leadId: string, data: AddActivityFormData) =>
+  api("/odata/v4/lead/addLeadActivity", {
     method: "POST",
+    body: JSON.stringify({ leadId, ...data }),
+  });
+
+export const importLeads = (rows: LeadImportRow[]) =>
+  api("/odata/v4/lead/importLeads", {
+    method: "POST",
+    body: JSON.stringify({ rows }),
   });

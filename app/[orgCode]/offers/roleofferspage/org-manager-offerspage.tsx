@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 
 import GlobalLoader from "@/components/commoncomponents/globalloader";
+import { BulkActionsDrawer } from "@/components/commoncomponents/bulk-actions/BulkActionsDrawer";
 import { OfferCards } from "@/components/commoncomponents/offers/offercards";
 import { OfferFilters } from "@/components/commoncomponents/offers/offerfilter";
 
@@ -28,26 +29,29 @@ import { Plus, MoreHorizontal } from "lucide-react";
 
 import {
   assignOfferToExecutive,
+  getExecutiveOverview,
   getManagerOfferOverview,
 } from "@/services/managerdashboard";
-import { getExecutiveUsers } from "@/services/leads";
 
 import type {
   Offer,
   OfferFilters as OfferFiltersType,
 } from "@/types/Createoffer";
+import type { Offer as BulkOffer } from "@/types/offerbulk";
+import type { BulkAssignResult } from "@/types/offerbulk";
+
 import {
-  ExecutiveUser,
   formatDate,
   formatStatusLabel,
+  ExecutiveRow,
   ManagerOffer,
   ManagerOfferOverviewItem,
 } from "@/types/org-manager";
 
 const DEFAULT_FILTERS: OfferFiltersType = {
   search: "",
-  status: "all",
-  discountType: "all",
+  status: [],
+  discountType: [],
 };
 
 const DISCOUNT_TYPE_LABELS: Record<string, string> = {
@@ -62,7 +66,9 @@ const DISCOUNT_TYPE_LABELS: Record<string, string> = {
 export default function OrgManagerOffersPage() {
   const [offers, setOffers] = useState<ManagerOffer[]>([]);
 
-  const [executives, setExecutives] = useState<ExecutiveUser[]>([]);
+  const [executives, setExecutives] = useState<ExecutiveRow[]>([]);
+
+  const [isBulkActionsOpen, setIsBulkActionsOpen] = useState(false);
 
   const [totalCount, setTotalCount] = useState(0);
 
@@ -80,6 +86,29 @@ export default function OrgManagerOffersPage() {
 
   const [draftFilters, setDraftFilters] = useState(DEFAULT_FILTERS);
 
+  const bulkActionExecutives = useMemo(
+    () =>
+      executives.map((executive) => ({
+        id: executive.id,
+        name: executive.name,
+        leadCount: executive.leadCount,
+        activeOfferCount: executive.offerCount,
+      })),
+    [executives]
+  );
+
+  const bulkActionOffers = useMemo(
+    (): BulkOffer[] =>
+      offers.map((offer) => ({
+        id: offer.id,
+        title: offer.title,
+        description: offer.description,
+        validTo: offer.validTo,
+        status: (offer.status === "active" ? "ACTIVE" : "INACTIVE") as BulkOffer["status"],
+      })),
+    [offers]
+  );
+
   const fetchOffers = useCallback(async () => {
     try {
       setIsLoading(true);
@@ -87,14 +116,20 @@ export default function OrgManagerOffersPage() {
 
       const [response, executivesResponse] = await Promise.all([
         getManagerOfferOverview(),
-        getExecutiveUsers(),
+        getExecutiveOverview(),
       ]);
 
       const data = response?.value || response;
 
       const stats = data?.stats || {};
 
-      setExecutives(executivesResponse?.value || executivesResponse || []);
+      setExecutives(
+        executivesResponse?.value?.executives ||
+          executivesResponse?.executives ||
+          executivesResponse?.value ||
+          executivesResponse ||
+          []
+      );
 
       setTotalCount(stats.totalOffers || 0);
 
@@ -168,7 +203,7 @@ export default function OrgManagerOffersPage() {
   }, [fetchOffers]);
 
   const handleFilterChange = useCallback(
-    (key: keyof OfferFiltersType, value: string) => {
+    <K extends keyof OfferFiltersType>(key: K, value: OfferFiltersType[K]) => {
       setDraftFilters((prev) => ({
         ...prev,
         [key]: value,
@@ -198,11 +233,11 @@ export default function OrgManagerOffersPage() {
           offer.code.toLowerCase().includes(query);
 
         const matchStatus =
-          filters.status === "all" || offer.status === filters.status;
+          filters.status.length === 0 || filters.status.includes(offer.status);
 
         const matchDiscount =
-          filters.discountType === "all" ||
-          offer.discountType === filters.discountType;
+          filters.discountType.length === 0 ||
+          filters.discountType.includes(offer.discountType);
 
         return matchSearch && matchStatus && matchDiscount;
       }),
@@ -253,6 +288,39 @@ export default function OrgManagerOffersPage() {
     }
   };
 
+  const handleBulkAssignOffer = async ({
+    offerId,
+    executiveIds,
+  }: {
+    offerId: string;
+    executiveIds: string[];
+  }): Promise<BulkAssignResult> => {
+    const failures: BulkAssignResult["failures"] = [];
+    let successCount = 0;
+
+    for (const executiveId of executiveIds) {
+      try {
+        await assignOfferToExecutive({ offerId, executiveId });
+        successCount += 1;
+      } catch (error) {
+        failures.push({
+          executiveId,
+          message:
+            error instanceof Error
+              ? error.message
+              : "Failed to assign offer to executive",
+        });
+      }
+    }
+
+    return {
+      offerId,
+      successCount,
+      failureCount: failures.length,
+      failures,
+    };
+  };
+
   if (isLoading) {
     return <GlobalLoader />;
   }
@@ -273,12 +341,21 @@ export default function OrgManagerOffersPage() {
         <Button
           variant="outline"
           size="lg"
-          className="w-full sm:w-auto rounded-full bg-blue-500 text-white hover:bg-blue-600 hover:text-white font-medium"
+          className="w-full sm:w-auto rounded-full bg-blue-600 text-white hover:bg-blue-600 hover:text-white font-medium"
+          onClick={() => setIsBulkActionsOpen(true)}
         >
           <Plus className="mr-2 h-4 w-4" />
           Bulk Action
         </Button>
       </div>
+
+      <BulkActionsDrawer
+        open={isBulkActionsOpen}
+        executives={bulkActionExecutives}
+        offers={bulkActionOffers}
+        onClose={() => setIsBulkActionsOpen(false)}
+        onAssignOffer={handleBulkAssignOffer}
+      />
 
       {/* Cards */}
       <OfferCards
