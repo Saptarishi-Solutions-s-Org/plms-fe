@@ -161,6 +161,7 @@ export default function LeadsPage() {
               onExport={handleExport}
               onImportComplete={refetch}
               onAddLead={openAddForm}
+              showImportExport={!isExecutive}
             />
           </div>
 

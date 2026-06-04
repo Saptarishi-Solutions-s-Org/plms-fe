@@ -185,7 +185,7 @@ const AddLeadForm = ({ onClose }: { onClose?: () => void }) => {
                         <div className="flex  w-full gap-4">
                             <div className="flex flex-col gap-1 w-full">
                                 <Label htmlFor="date" required>
-                                    Date
+                                    Date Of Birth
                                 </Label>
                                 <Controller
                                     control={control}
@@ -272,8 +272,9 @@ const AddLeadForm = ({ onClose }: { onClose?: () => void }) => {
                                 <Label htmlFor="phone" required>
                                     Phone Number
                                 </Label>
-                                <Input id="phone" type="text" placeholder="Enter phone number" {...register("phone")} className={`border-2 ${errors.phone ? "border-red-500" : "border-gray-300"
-                                    }`} />
+                                <Input id="phone" type="text" 
+                                    placeholder="Enter phone number" {...register("phone")} className={`border-2 ${errors.phone ? "border-red-500" : "border-gray-300"
+                                        }`} />
                                 <span className="text-sm text-red-500 ">{errors.phone?.message}</span>
                             </div>
                         </div>
