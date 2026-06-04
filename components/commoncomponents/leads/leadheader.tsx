@@ -11,31 +11,36 @@ export default function LeadHeader({
   onExport,
   onImportComplete,
   onAddLead,
+  showImportExport = true,
 }: LeadHeaderProps) {
   const [isImportOpen, setImportOpen] = useState(false);
 
   return (
     <>
       <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
-        <Button
-          type="button"
-          variant="outline"
-          onClick={onExport}
-          className="flex h-9 w-full items-center justify-center gap-1.5 rounded-full px-4 sm:w-auto"
-        >
-          <Download className="h-4 w-4" />
-          Export
-        </Button>
+        {showImportExport && (
+          <>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={onExport}
+              className="flex h-9 w-full items-center justify-center gap-1.5 rounded-full px-4 sm:w-auto"
+            >
+              <Download className="h-4 w-4" />
+              Export
+            </Button>
 
-        <Button
-          type="button"
-          variant="outline"
-          onClick={() => setImportOpen(true)}
-          className="flex h-9 w-full items-center justify-center gap-1.5 rounded-full px-4 sm:w-auto"
-        >
-          <Upload className="h-4 w-4" />
-          Import
-        </Button>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setImportOpen(true)}
+              className="flex h-9 w-full items-center justify-center gap-1.5 rounded-full px-4 sm:w-auto"
+            >
+              <Upload className="h-4 w-4" />
+              Import
+            </Button>
+          </>
+        )}
 
         <Button
           onClick={onAddLead}
@@ -46,11 +51,13 @@ export default function LeadHeader({
         </Button>
       </div>
 
-      <LeadImportDialog
-        open={isImportOpen}
-        onOpenChange={setImportOpen}
-        onImportComplete={onImportComplete}
-      />
+      {showImportExport && (
+        <LeadImportDialog
+          open={isImportOpen}
+          onOpenChange={setImportOpen}
+          onImportComplete={onImportComplete}
+        />
+      )}
     </>
   );
 }

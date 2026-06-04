@@ -30,7 +30,6 @@ export interface ExecutivePerformanceRecord {
 export interface TeamPerformanceStatCard {
   label: string;
   value: string;
-  helper: string;
   Icon: ElementType;
   color: string;
 };

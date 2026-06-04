@@ -19,7 +19,6 @@ import {
   Users,
 } from "lucide-react";
 
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -188,37 +187,30 @@ export default function TeamPerformanceTab({
       {
         label: "Executive",
         value: String(totalExecutives),
-        helper: "Total active executives",
         Icon: Users,
         color: "bg-indigo-500",
       },
       {
         label: "Top Performer",
         value: topExecutive?.executiveName ?? "No data",
-        helper: topExecutive
-          ? `${topExecutive.converted} converted - ${topExecutive.conversionRate}%`
-          : "No executive performance yet",
         Icon: Award,
         color: "bg-green-500",
       },
       {
         label: "Leads Assigned",
         value: String(leadsAssigned),
-        helper: "Total assigned leads",
         Icon: FileText,
         color: "bg-blue-500",
       },
       {
         label: "Converted",
         value: String(converted),
-        helper: `${totalExecutives} active executives`,
         Icon: CheckCircle,
         color: "bg-orange-400",
       },
       {
         label: "Conversion Rate",
         value: `${conversionRate}%`,
-        helper: "Qualified over assigned",
         Icon: Percent,
         color: "bg-purple-500",
       },
@@ -228,7 +220,7 @@ export default function TeamPerformanceTab({
   return (
     <div className="w-full space-y-6">
       <section className="grid w-full grid-cols-[repeat(auto-fit,minmax(240px,1fr))] gap-4">
-        {displayStats.map(({ label, value, helper, Icon, color }) => {
+        {displayStats.map(({ label, value, Icon, color }) => {
           const isTextValue = label === "Top Performer";
 
           return (
@@ -255,12 +247,6 @@ export default function TeamPerformanceTab({
                   title={value}
                 >
                   {value}
-                </p>
-                <p
-                  className="mt-2 whitespace-normal break-words text-xs font-semibold text-slate-500"
-                  title={helper}
-                >
-                  {helper}
                 </p>
               </CardContent>
             </Card>
@@ -356,29 +342,12 @@ export default function TeamPerformanceTab({
                 performanceRows.map((row) => (
                   <TableRow key={row.executiveId || row.executiveName}>
                     <TableCell className="w-[180px]">
-                      <div className="flex min-w-0 items-center gap-3">
-                        <Avatar className="size-10">
-                          <AvatarImage
-                            src={row.avatarUrl}
-                            alt={row.executiveName}
-                          />
-                          <AvatarFallback>
-                            {row.executiveName
-                              .split(" ")
-                              .map((part) => part[0])
-                              .join("")
-                              .slice(0, 2)}
-                          </AvatarFallback>
-                        </Avatar>
-                        <div className="min-w-0">
-                          <p
-                            className="max-w-[180px] truncate font-medium text-gray-800 sm:max-w-[220px]"
-                            title={row.executiveName}
-                          >
-                            {row.executiveName}
-                          </p>
-                        </div>
-                      </div>
+                      <p
+                        className="max-w-[180px] truncate font-medium text-gray-800 sm:max-w-[220px]"
+                        title={row.executiveName}
+                      >
+                        {row.executiveName}
+                      </p>
                     </TableCell>
                     <TableCell className="w-[160px] text-gray-600">
                       {row.leadsAssigned}

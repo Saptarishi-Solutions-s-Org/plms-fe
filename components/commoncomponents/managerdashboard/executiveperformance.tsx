@@ -35,12 +35,6 @@ const ExecutivePerformance = ({
               key={executive.executiveName}
               className="flex items-start gap-3"
             >
-              {/* Avatar */}
-              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-indigo-500 text-sm font-bold text-white">
-                {executive.executiveName?.charAt(0)}
-              </div>
-
-              {/* Content */}
               <div className="flex-1 space-y-1.5">
                 <div className="flex items-center justify-between gap-4">
                   <p className="text-lg font-semibold text-slate-800">
