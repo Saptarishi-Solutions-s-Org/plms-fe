@@ -226,7 +226,7 @@ export default function OrgExecutiveOffersPage() {
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-lg font-semibold text-gray-900 sm:text-2xl">
-            Offers
+            My Offers
           </h1>
           <p className="text-xs text-gray-500 sm:text-sm">
             Manage offers and assign them to leads easily.
