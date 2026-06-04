@@ -26,7 +26,10 @@ const OFFER_STATUS_VALUE_BY_LABEL = Object.fromEntries(
 
 interface OfferFiltersProps {
   filters: OfferFilters;
-  onFilterChange: <K extends keyof OfferFilters>(key: K, value: OfferFilters[K]) => void;
+  onFilterChange: <K extends keyof OfferFilters>(
+    key: K,
+    value: OfferFilters[K],
+  ) => void;
   onApply: () => void;
   onClear: () => void;
 }

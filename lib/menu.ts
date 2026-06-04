@@ -37,7 +37,6 @@ export const MENU_CONFIG: MenuGroup[] = [
         permissions: ["view"],
         roles: ["System Admin"],
       },
-
       {
         href: "/leads",
         icon: UserCheck,
@@ -96,6 +95,15 @@ export const MENU_CONFIG: MenuGroup[] = [
       },
 
       {
+        href: "/offers",
+        icon: Gift,
+        label: "My Offers",
+        modules: ["offers"],
+        permissions: ["view"],
+        roles: ["Executive"],
+      },
+
+      {
         href: "/executives",
         icon: Users,
         label: "Executives",
@@ -109,3 +117,4 @@ export const MENU_CONFIG: MenuGroup[] = [
     ],
   },
 ];
+

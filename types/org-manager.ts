@@ -88,6 +88,28 @@ export interface ManagerOfferOverviewItem {
   assignStatus?: string;
 };
 
+export interface ExecutiveOfferItem {
+  title?: string;
+  description?: string;
+  status?: string;
+  discountType?: Offer["discountType"];
+  discountValue?: number;
+  validFrom?: string;
+  validTo?: string;
+};
+
+export type ExecutiveOfferRow = {
+  id: string;
+  title: string;
+  description: string;
+  status: Offer["status"];
+  discountType: Offer["discountType"];
+  discountValue?: number;
+  validFrom: string;
+  validTo: string;
+};
+  
+
 export interface ExecutiveUser {
   id: string;
   name: string;
