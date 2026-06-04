@@ -107,78 +107,7 @@ export const LEAD_SOURCE_OPTIONS = [
   { value: "Manual_Entry", label: "Manual Entry" },
 ] as const;
 
-type LeadSourceValue = (typeof LEAD_SOURCE_OPTIONS)[number]["value"];
 
-const normalizeAliasKey = (source: string) =>
-  source.trim().toLowerCase().replace(/[_-]+/g, " ").replace(/\s+/g, " ");
-
-const leadSourceAliases: Record<string, LeadSourceValue> = {
-  "socil media": "Socil_Media",
-  "social media": "Socil_Media",
-  facebook: "Socil_Media",
-  instagram: "Socil_Media",
-  linkedin: "Socil_Media",
-  whatsapp: "Socil_Media",
-  x: "Socil_Media",
-  twitter: "Socil_Media",
-  youtube: "Socil_Media",
-
-  advertisement: "Advertisement",
-  advertisements: "Advertisement",
-  ad: "Advertisement",
-  ads: "Advertisement",
-  "google ads": "Advertisement",
-  website: "Advertisement",
-  seo: "Advertisement",
-  campaign: "Advertisement",
-
-  referral: "Referral",
-  referrals: "Referral",
-
-  "manual entry": "Manual_Entry",
-  manual: "Manual_Entry",
-  "cold call": "Manual_Entry",
-  "direct sales": "Manual_Entry",
-  "in person": "Manual_Entry",
-};
-
-export const normalizeLeadSource = (source: string) =>
-  {
-    const key = normalizeAliasKey(source);
-    const exactMatch = leadSourceAliases[key];
-
-    if (exactMatch) {
-      return exactMatch;
-    }
-
-    if (
-      /\b(socil|social|facebook|instagram|linkedin|whatsapp|twitter|youtube|x)\b/.test(
-        key,
-      )
-    ) {
-      return "Socil_Media";
-    }
-
-    if (/\b(ad|ads|advertisement|advertisements|google|website|seo|campaign)\b/.test(key)) {
-      return "Advertisement";
-    }
-
-    if (/\b(referral|referrals|refer|referred)\b/.test(key)) {
-      return "Referral";
-    }
-
-    if (/\b(manual|cold call|direct sales|in person|import)\b/.test(key)) {
-      return "Manual_Entry";
-    }
-
-    return source;
-  };
-
-export const getLeadSourceLabel = (source: string) =>
-  LEAD_SOURCE_OPTIONS.find(
-    (option) => option.value === normalizeLeadSource(source),
-  )
-    ?.label ?? source.replace(/_/g, " ");
 
 export const LEAD_STATUS_OPTIONS = [
   { value: "New", label: "New" },
