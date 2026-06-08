@@ -39,6 +39,29 @@ const RoleOptions = [
     { value: "Executive", label: "Executive" },
 ];
 
+const months = [
+    "January",
+    "February",
+    "March",
+    "April",
+    "May",
+    "June",
+    "July",
+    "August",
+    "September",
+    "October",
+    "November",
+    "December",
+];
+
+const currentYear = new Date().getFullYear();
+
+const years = Array.from(
+  { length: currentYear - 1900 + 1 },
+  (_, i) => currentYear - i
+);
+
+
 const AddLeadForm = ({ onClose }: { onClose?: () => void }) => {
 
     const [countries, setCountries] = useState<any[]>([]);
@@ -47,17 +70,17 @@ const AddLeadForm = ({ onClose }: { onClose?: () => void }) => {
     const [calendarMonthsToShow, setCalendarMonthsToShow] = useState(1);
 
 
-     useEffect(() => {
-    const media = window.matchMedia("(max-width: 639px)");  
-    const updateCalendarMonths = () => {
-      setCalendarMonthsToShow(media.matches ? 2 : 1);
-    };
+    useEffect(() => {
+        const media = window.matchMedia("(max-width: 639px)");
+        const updateCalendarMonths = () => {
+            setCalendarMonthsToShow(media.matches ? 2 : 1);
+        };
 
-    updateCalendarMonths();
-    media.addEventListener("change", updateCalendarMonths);
+        updateCalendarMonths();
+        media.addEventListener("change", updateCalendarMonths);
 
-    return () => media.removeEventListener("change", updateCalendarMonths);
-  }, []);
+        return () => media.removeEventListener("change", updateCalendarMonths);
+    }, []);
     const [isSubmitting, setIsSubmitting] = useState(false);
 
     const {
@@ -171,57 +194,149 @@ const AddLeadForm = ({ onClose }: { onClose?: () => void }) => {
                         Personal Details
                     </h2>
 
-                    <div className="flex flex-col gap-2">
-                        <div className="flex gap-4">
+                    <div className="flex flex-col gap-2 ">
+                        <div className="flex gap-4 w-full">
                             <div className="flex flex-col gap-1 w-full">
                                 <Label htmlFor="firstName" required>
                                     First Name
                                 </Label>
-                                <Input id="firstName" type="text" {...register("name")} placeholder="Enter Name" className={`border-2 ${errors.name ? "border-red-500" : "border-gray-300"}`} />
+                                <Input id="firstName" type="text" {...register("name")} placeholder="Enter Name" className={`border-2 w-full ${errors.name ? "border-red-500" : "border-gray-300"}`} />
                                 <span className="text-sm text-red-500 ">{errors.name?.message}</span>
                             </div>
                         </div>
-
-                        <div className="flex  w-full gap-4">
+                        <div className="flex gap-4  w-full">
                             <div className="flex flex-col gap-1 w-full">
                                 <Label htmlFor="date" required>
                                     Date Of Birth
                                 </Label>
+
                                 <Controller
                                     control={control}
                                     name="dob"
-                                    render={({ field }) => (
-                                        <Popover>
-                                            <PopoverTrigger asChild>
-                                                <Button
-                                                    variant="outline"
-                                                    className={`w-full justify-start text-left font-normal border-2 ${errors.dob ? "border-red-500" : "border-gray-300"
-                                                        }`}
-                                                >
-                                                    <CalendarIcon className="mr-2 h-4 w-4" />
-                                                    {field.value ? (
-                                                        format(new Date(field.value), "dd MMM yyyy")
-                                                    ) : (
-                                                        <span className="text-gray-400">Select Date</span>
-                                                    )}
-                                                </Button>
-                                            </PopoverTrigger>
+                                    render={({ field }) => {
+                                        return (
+                                            <Popover>
+                                                <PopoverTrigger asChild>
+                                                    <Button
+                                                        variant="outline"
+                                                        className={`w-full justify-start text-left font-normal border-2 ${errors.dob ? "border-red-500" : "border-gray-300"
+                                                            }`}
+                                                    >
+                                                        <CalendarIcon className="mr-2 h-4 w-4" />
 
-                                            <PopoverContent className="w-auto p-0">
-                                                <Calendar
-                                                    mode="single"
-                                                    selected={field.value ? new Date(field.value) : undefined}
-                                                    numberOfMonths={calendarMonthsToShow}
-                                                    showOutsideDays={false}
-                                                    onSelect={(date) => field.onChange(date?.toISOString())}
+                                                        {field.value ? (
+                                                            format(new Date(field.value), "dd MMM yyyy")
+                                                        ) : (
+                                                            <span className="text-gray-400">Select Date</span>
+                                                        )}
+                                                    </Button>
+                                                </PopoverTrigger>
 
-                                                />
-                                            </PopoverContent>
-                                        </Popover>
-                                    )}
+                                                <PopoverContent className="w-auto p-3 rounded-lg shadow-lg border border-gray-200 space-y-3">
+                                                    <div className="flex gap-2">
+
+                                                        {/* Month */}
+                                                        <Select
+                                                            value={
+                                                                field.value
+                                                                    ? String(new Date(field.value).getMonth())
+                                                                    : ""
+                                                            }
+                                                            onValueChange={(month) => {
+                                                                const current = field.value
+                                                                    ? new Date(field.value)
+                                                                    : new Date();
+
+                                                                const updated = new Date(
+                                                                    current.getFullYear(),
+                                                                    Number(month),
+                                                                    current.getDate()
+                                                                );
+                                                                field.onChange(updated.toISOString());
+                                                            }}
+                                                        >
+                                                            <SelectTrigger className="w-35">
+                                                                <SelectValue placeholder="Month" />
+                                                            </SelectTrigger>
+
+                                                            <SelectContent className="max-h-60 overflow-y-auto">
+                                                                {months.map((month, index) => (
+                                                                    <SelectItem
+                                                                        key={index}
+                                                                        value={String(index)}
+                                                                    >
+                                                                        {month}
+                                                                    </SelectItem>
+                                                                ))}
+                                                            </SelectContent>
+                                                        </Select>
+
+                                                        {/* Year */}
+                                                        <Select
+                                                            value={
+                                                                field.value
+                                                                    ? new Date(field.value).getFullYear().toString()
+                                                                    : ""
+                                                            }
+                                                            onValueChange={(year) => {
+                                                                const current = field.value
+                                                                    ? new Date(field.value)
+                                                                    : new Date();
+
+                                                                const updated = new Date(
+                                                                    Number(year),
+                                                                    current.getMonth(),
+                                                                    current.getDate()
+                                                                );
+
+                                                                field.onChange(updated.toISOString());
+                                                            }}
+                                                        >
+                                                            <SelectTrigger className="w-25">
+                                                                <SelectValue placeholder="Year" />
+                                                            </SelectTrigger>
+
+                                                            <SelectContent className="max-h-60 overflow-y-auto">
+                                                                {years.map((year) => (
+                                                                    <SelectItem key={year} value={year.toString()}>
+                                                                        {year}
+                                                                    </SelectItem>
+                                                                ))}
+                                                            </SelectContent>
+                                                        </Select>
+                                                    </div>
+
+                                                    <Calendar
+                                                        mode="single"
+                                                        month={
+                                                            field.value
+                                                                ? new Date(field.value)
+                                                                : undefined
+                                                        }
+                                                        selected={
+                                                            field.value
+                                                                ? new Date(field.value)
+                                                                : undefined
+                                                        }
+                                                        numberOfMonths={calendarMonthsToShow}
+                                                        showOutsideDays={false}
+                                                        onSelect={(date) => {
+                                                            if (!date) return;
+                                                            const localDate = new Date(
+                                                                date.getFullYear(),
+                                                                date.getMonth(),
+                                                                date.getDate()
+                                                            );
+                                                            field.onChange(localDate.toISOString());
+                                                        }}
+                                                    />
+                                                </PopoverContent>
+                                            </Popover>
+                                        );
+                                    }}
                                 />
-
                                 <span className="text-sm text-red-500 ">{errors.dob?.message}</span>
+
                             </div>
 
                             <div className="flex flex-col gap-1 w-full">
@@ -272,7 +387,7 @@ const AddLeadForm = ({ onClose }: { onClose?: () => void }) => {
                                 <Label htmlFor="phone" required>
                                     Phone Number
                                 </Label>
-                                <Input id="phone" type="text" 
+                                <Input id="phone" type="text"
                                     placeholder="Enter phone number" {...register("phone")} className={`border-2 ${errors.phone ? "border-red-500" : "border-gray-300"
                                         }`} />
                                 <span className="text-sm text-red-500 ">{errors.phone?.message}</span>
