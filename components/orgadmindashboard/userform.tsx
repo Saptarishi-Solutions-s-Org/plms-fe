@@ -57,8 +57,8 @@ const months = [
 const currentYear = new Date().getFullYear();
 
 const years = Array.from(
-  { length: currentYear - 1900 + 1 },
-  (_, i) => currentYear - i
+    { length: currentYear - 1900 + 1 },
+    (_, i) => currentYear - i
 );
 
 
