@@ -13,14 +13,16 @@ export const userFormSchema = z.object({
     .min(1, "Email is required")
     .email("Invalid email format"),
 
-  dob: z.date({
+  dob: z.coerce.date({
     message: "Date is required",
   }),
 
   phone: z
     .string()
     .trim()
-    .regex(/^\d{10}$/, "Phone number must be exactly 10 digits"),
+    .min(1, "Phone number is required")
+    .length(10, "Phone number must be exactly 10 digits")
+    .regex(/^\d+$/, "Phone number must contain only digits"),
 
   gender: z
     .string()
