@@ -17,6 +17,8 @@ import {
   ExecutivePerformanceApiRow,
 } from "@/types/org-manager";
 import GlobalLoader from "@/components/commoncomponents/globalloader";
+import { LEAD_LIST_CHANGED, type LeadListChangedPayload } from "@/types/realtime";
+import { subscribeRealtime } from "@/lib/socket";
 
 export default function ManagerDashboard() {
   const [loading, setLoading] = useState(true);
@@ -33,51 +35,48 @@ export default function ManagerDashboard() {
     ExecutivePerformanceApiRow[]
   >([]);
 
+  const fetchDashboard = async () => {
+    try {
+      const [dashboardData, executivePerformanceData, overviewData] =
+        await Promise.all([
+          getManagerDashboard(),
+          getExecutivePerformance(),
+          getLeadStatusOverview()
+        ]);
+
+      setExecutivePerformance(executivePerformanceData || []);
+
+      const data = dashboardData as DashboardData;
+
+      setStats({
+        total_leads: data?.totalLeads ?? 0,
+        converted_leads: data?.convertedLeads ?? 0,
+        new_leads_this_week: data?.thisWeekLeads ?? 0,
+        active_offers: data?.activeOffers ?? 0,
+      });
+
+      const order = ["New", "Contacted", "Qualified", "Lost"];
+
+      const formattedOverview = order.map((status) => ({
+        status,
+        count: Number(overviewData?.[status] || 0),
+      }));
+
+      setOverview(formattedOverview);
+    } catch (error) {
+      toast.error("Failed to load manager dashboard");
+    } finally {
+      setLoading(false);
+    }
+  };
   useEffect(() => {
-    const fetchDashboard = async () => {
-      try {
-        const [dashboardData, executivePerformanceData, overviewData] =
-          await Promise.all([
-            getManagerDashboard().catch((error) => {
-              return null;
-            }),
-
-            getExecutivePerformance().catch((error) => {
-              return [];
-            }),
-
-            getLeadStatusOverview().catch((error) => {
-              return {};
-            }),
-          ]);
-
-        setExecutivePerformance(executivePerformanceData || []);
-
-        const data = dashboardData as DashboardData;
-
-        setStats({
-          total_leads: data?.totalLeads ?? 0,
-          converted_leads: data?.convertedLeads ?? 0,
-          new_leads_this_week: data?.thisWeekLeads ?? 0,
-          active_offers: data?.activeOffers ?? 0,
-        });
-
-        const order = ["New", "Contacted", "Qualified", "Lost"];
-
-        const formattedOverview = order.map((status) => ({
-          status,
-          count: Number(overviewData?.[status] || 0),
-        }));
-
-        setOverview(formattedOverview);
-      } catch (error) {
-        toast.error("Failed to load manager dashboard");
-      } finally {
-        setLoading(false);
-      }
-    };
-
     fetchDashboard();
+  }, []);
+
+  useEffect(() => {
+    return subscribeRealtime<LeadListChangedPayload>(LEAD_LIST_CHANGED, () => {
+      fetchDashboard();
+    });
   }, []);
 
   const overviewData = overview.map((row) => ({
