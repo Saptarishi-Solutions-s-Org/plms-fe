@@ -39,17 +39,9 @@ export default function ManagerDashboard() {
     try {
       const [dashboardData, executivePerformanceData, overviewData] =
         await Promise.all([
-          getManagerDashboard().catch((error) => {
-            return null;
-          }),
-
-          getExecutivePerformance().catch((error) => {
-            return [];
-          }),
-
-          getLeadStatusOverview().catch((error) => {
-            return {};
-          }),
+          getManagerDashboard(),
+          getExecutivePerformance(),
+          getLeadStatusOverview()
         ]);
 
       setExecutivePerformance(executivePerformanceData || []);
