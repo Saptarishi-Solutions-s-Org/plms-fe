@@ -28,7 +28,7 @@ import type {
   OrganizationReportStats,
   SourceConversionRateRow,
 } from "@/types/org-reports";
-import {LEAD_LIST_CHANGED, type LeadListChangedPayload} from "@/types/realtime";
+import { LEAD_LIST_CHANGED, type LeadListChangedPayload } from "@/types/realtime";
 
 const normalizeSource = (source: string) =>
   source.trim().replace(/\s+/g, "_").toLowerCase();
@@ -54,7 +54,7 @@ const getManagerAssignedLeads = (
         (lead) =>
           Boolean(lead.assignedTo) &&
           (executiveIds.has(lead.assignedTo ?? "") ||
-            getCreatedById(lead) === managerId),
+            lead.createdById === managerId),
       )
     : [];
 
@@ -100,13 +100,6 @@ const getManagerSourceConversionRows = (
 
 const isReportTab = (value: string | null): value is ReportTab =>
   value === "overview" || value === "team-performance";
-
-const getCreatedById = (lead: LeadWithStatsApiRow) =>
-  lead?.createdById ||
-  lead?.created_by_id ||
-  lead?.createdBy ||
-  lead?.createdby ||
-  lead?.created_by;
 
 export default function OrgReports() {
   const params = useParams<{ orgCode: string }>();
@@ -155,64 +148,65 @@ export default function OrgReports() {
     }
   }, []);
 
-    const fetchReports = async () => {
-      setIsRefreshing(true);
+  const fetchReports = async () => {
+    setIsRefreshing(true);
 
-      try {
-        const [statsData, managerData, leadsData, executivesData] =
-          await Promise.all([
+    try {
+      const [statsData, managerData, leadsData, executivesData] =
+        await Promise.all([
           getReportStats(),
           getManagerDashboard(),
           getLeadsWithStats(),
           getExecutiveUsers().catch(() => []),
         ]);
 
-        const currentUser = getUser();
-        const managerExecutiveIds = new Set(
-          (Array.isArray(executivesData)
-            ? (executivesData as ExecutiveUserRecord[])
-            : []
-          )
-            .map((executive) => executive.id)
-            .filter((id): id is string => Boolean(id)),
-        );
-        const managerAssignedLeads = getManagerAssignedLeads(
-          leadsData?.leads,
-          currentUser?.id,
-          managerExecutiveIds,
-        );
-        const managerAssignedLeadCount = managerAssignedLeads.length;
+      const currentUser = getUser();
+      const managerExecutiveIds = new Set(
+        (Array.isArray(executivesData)
+          ? (executivesData as ExecutiveUserRecord[])
+          : []
+        )
+          .map((executive) => executive.id)
+          .filter((id): id is string => Boolean(id)),
+      );
+      const managerAssignedLeads = getManagerAssignedLeads(
+        leadsData?.leads,
+        currentUser?.id,
+        managerExecutiveIds,
+      );
+      const managerAssignedLeadCount = managerAssignedLeads.length;
 
-        setStats({
-          total_leads: managerAssignedLeadCount,
-          leads_assigned: managerAssignedLeadCount,
-          converted_leads: statsData?.convertedLeads ?? 0,
-          active_offers: managerData?.activeOffers ?? 0,
-          offers_utilized: statsData?.offersUtilized ?? 0,
-        });
+      setStats({
+        total_leads: managerAssignedLeadCount,
+        leads_assigned: managerAssignedLeadCount,
+        converted_leads: statsData?.convertedLeads ?? 0,
+        active_offers: managerData?.activeOffers ?? 0,
+        offers_utilized: statsData?.offersUtilized ?? 0,
+      });
 
-        setLeadSourceDistributionData(
-          getManagerLeadSourceRows(managerAssignedLeads),
-        );
-        setSourceConversionRateData(
-          getManagerSourceConversionRows(managerAssignedLeads),
-        );
-      } catch {
-        setStats({
-          total_leads: 0,
-          leads_assigned: 0,
-          converted_leads: 0,
-          active_offers: 0,
-          offers_utilized: 0,
-        });
-        setLeadSourceDistributionData([]);
-        setSourceConversionRateData([]);
-        toast.error("Failed to load reports");
-      } finally {
-        setInitialLoading(false);
-        setIsRefreshing(false);
-      }
-    };
+      setLeadSourceDistributionData(
+        getManagerLeadSourceRows(managerAssignedLeads),
+      );
+      setSourceConversionRateData(
+        getManagerSourceConversionRows(managerAssignedLeads),
+      );
+    } catch {
+      setStats({
+        total_leads: 0,
+        leads_assigned: 0,
+        converted_leads: 0,
+        active_offers: 0,
+        offers_utilized: 0,
+      });
+      setLeadSourceDistributionData([]);
+      setSourceConversionRateData([]);
+      toast.error("Failed to load reports");
+    } finally {
+      setInitialLoading(false);
+      setIsRefreshing(false);
+    }
+  };
+
   useEffect(() => {
     fetchReports();
   }, []);

@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 
 import ManagerCards from "@/components/commoncomponents/managerdashboard/card";
@@ -9,69 +9,35 @@ import ExecutivePerformance from "@/components/commoncomponents/managerdashboard
 import {
   getManagerDashboard,
   getExecutivePerformance,
-  getExecutiveOverview,
-  getManagerOfferOverview,
 } from "@/services/managerdashboard";
-import { getExecutiveUsers, getLeadsWithStats } from "@/services/leads";
+import { getLeadsWithStats } from "@/services/leads";
 import { subscribeRealtime } from "@/lib/socket";
 import {
   LEAD_LIST_CHANGED,
   LeadListChangedPayload,
   OFFER_LIST_CHANGED,
 } from "@/types/realtime";
-import { getUser } from "@/lib/auth";
 import {
   DashboardData,
-  LeadStatusRow,
   ExecutivePerformanceApiRow,
 } from "@/types/org-manager";
-import type {
-  ExecutiveUserRecord,
-  LeadWithStatsApiRow,
-} from "@/types/org-reports";
+import type { LeadWithStatsApiRow } from "@/types/org-reports";
 import GlobalLoader from "@/components/commoncomponents/globalloader";
 
-const getCreatedById = (lead: LeadWithStatsApiRow) =>
-  lead?.createdById ||
-  lead?.created_by_id ||
-  lead?.createdBy ||
-  lead?.createdby ||
-  lead?.created_by;
-
-const getManagerAssignedLeads = (
-  leads: LeadWithStatsApiRow[] = [],
-  managerId?: string,
-  executiveIds = new Set<string>(),
-) =>
-  managerId || executiveIds.size > 0
-    ? leads.filter(
-        (lead) =>
-          Boolean(lead.assignedTo) &&
-          (executiveIds.has(lead.assignedTo ?? "") ||
-            getCreatedById(lead) === managerId),
-      )
-    : [];
+const STATUS_ORDER = ["New", "Contacted", "Qualified", "Lost"];
 
 const getManagerLeadStatusOverview = (leads: LeadWithStatsApiRow[]) => {
-  const order = ["New", "Contacted", "Qualified", "Lost"];
+  const statusCounts = leads.reduce<Record<string, number>>((acc, lead) => {
+    const status = String(lead.status || "");
+    acc[status] = (acc[status] || 0) + 1;
+    return acc;
+  }, {});
 
-  return order.map((status) => ({
-    status,
-    count: leads.filter(
-      (lead) =>
-        String(lead.status || "").toLowerCase() === status.toLowerCase(),
-    ).length,
+  return STATUS_ORDER.map((status) => ({
+    label: status,
+    value: statusCounts[status] || 0,
   }));
 };
-
-const normalizeName = (value?: string) => value?.trim().toLowerCase() || "";
-
-const getExecutiveRows = (response: any) =>
-  response?.value?.executives ||
-  response?.executives ||
-  response?.value ||
-  response ||
-  [];
 
 export default function ManagerDashboard() {
   const [loading, setLoading] = useState(true);
@@ -83,95 +49,66 @@ export default function ManagerDashboard() {
     active_offers: 0,
   });
 
-  const [overview, setOverview] = useState<LeadStatusRow[]>([]);
+  const [overviewData, setOverviewData] = useState<
+  { label: string; value: number }[]
+  >([]);
+
+
   const [executivePerformance, setExecutivePerformance] = useState<
     ExecutivePerformanceApiRow[]
   >([]);
 
   const refreshActiveOffers = useCallback(async () => {
     try {
-      const offerOverviewData = await getManagerOfferOverview();
+      const dashboardData = (await getManagerDashboard()) as DashboardData;
 
       setStats((currentStats) => ({
         ...currentStats,
-        active_offers: offerOverviewData?.stats?.activeOffers ?? 0,
+        active_offers: dashboardData?.activeOffers ?? 0,
       }));
     } catch {
       toast.error("Failed to refresh active offers");
     }
   }, []);
 
-  const fetchDashboard = async () => {
+  const fetchDashboard = useCallback(async () => {
     try {
-      const [
-        dashboardData,
-        executivePerformanceData,
-        executivesData,
-        leadsData,
-        offerOverviewData,
-        managerExecutivesData,
-      ] = await Promise.all([
-        getManagerDashboard(),
-        getExecutivePerformance(),
-        getExecutiveOverview(),
-        getLeadsWithStats(),
-        getManagerOfferOverview(),
-        getExecutiveUsers().catch(() => []),
-      ]);
-
-      const managerExecutiveNames = new Set(
-        getExecutiveRows(executivesData).map((executive: any) =>
-          normalizeName(executive.name),
-        ),
-      );
-
-      setExecutivePerformance(
-        (executivePerformanceData || []).filter(
-          (row: ExecutivePerformanceApiRow) =>
-            managerExecutiveNames.has(normalizeName(row.executiveName)),
-        ),
-      );
+      const [dashboardData, executivePerformanceData, leadsData] =
+        await Promise.all([
+          getManagerDashboard(),
+          getExecutivePerformance(),
+          getLeadsWithStats(),
+        ]);
 
       const data = dashboardData as DashboardData;
-      const currentUser = getUser();
-      const managerExecutiveIds = new Set(
-        (Array.isArray(managerExecutivesData)
-          ? (managerExecutivesData as ExecutiveUserRecord[])
-          : []
-        )
-          .map((executive) => executive.id)
-          .filter((id): id is string => Boolean(id)),
-      );
-      const managerAssignedLeads = getManagerAssignedLeads(
-        leadsData?.leads,
-        currentUser?.id,
-        managerExecutiveIds,
-      );
+      const leads = leadsData?.leads ?? [];
+
+      setExecutivePerformance(executivePerformanceData || []);
 
       setStats({
-        total_leads: managerAssignedLeads.length,
+        total_leads: leads.length,
         converted_leads: data?.convertedLeads ?? 0,
         new_leads_this_week: data?.thisWeekLeads ?? 0,
-        active_offers: offerOverviewData?.stats?.activeOffers ?? 0,
+        active_offers: data?.activeOffers ?? 0,
       });
 
-      setOverview(getManagerLeadStatusOverview(managerAssignedLeads));
-    } catch (error) {
+      setOverviewData(getManagerLeadStatusOverview(leads));
+    } catch {
       toast.error("Failed to load manager dashboard");
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
     fetchDashboard();
-  }, []);
+  }, [fetchDashboard]);
 
   useEffect(() => {
     return subscribeRealtime<LeadListChangedPayload>(LEAD_LIST_CHANGED, () => {
       fetchDashboard();
     });
-  }, []);
+  }, [fetchDashboard]);
 
   useEffect(() => {
     return subscribeRealtime(OFFER_LIST_CHANGED, () => {
@@ -179,18 +116,15 @@ export default function ManagerDashboard() {
     });
   }, [refreshActiveOffers]);
 
-  const overviewData = overview.map((row) => ({
-    label: row.status,
-    value: row.count,
-  }));
-
-  const formattedExecutivePerformance = executivePerformance.map(
-    (row: ExecutivePerformanceApiRow) => ({
+  const formattedExecutivePerformance = useMemo(
+  () =>
+    executivePerformance.map((row) => ({
       executiveName: row.executiveName,
       achievement:
         row.total > 0 ? Math.round((row.qualified / row.total) * 100) : 0,
-    }),
-  );
+    })),
+  [executivePerformance],
+);
   return (
     <>
       {loading ? (
