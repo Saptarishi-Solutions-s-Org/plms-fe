@@ -1,40 +1,16 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 
 import ExecutiveCards from "@/components/commoncomponents/executivedashboard/stats";
 import RecentLeadsCard from "@/components/commoncomponents/executivedashboard/executiverecentleads";
 import CommonOverview from "@/components/commoncomponents/managerdashboard/leadstatusoverview";
-import {
-  getExecutiveOffers,
-  getExecutiveStats,
-  getLeadStats,
-  getRecentLeads,
-} from "@/services/executivestats";
+import { getExecutiveStats, getRecentLeads } from "@/services/executivestats";
+import { getLeadStats } from "@/services/executivestats";
+import { RecentLead } from "@/types/executivestats";
 import { useRouter, useParams } from "next/navigation";
+import {LEAD_LIST_CHANGED, type LeadListChangedPayload} from "@/types/realtime";
 import { subscribeRealtime } from "@/lib/socket";
-import { OFFER_LIST_CHANGED } from "@/types/realtime";
-
-const LEAD_STATUS_ORDER = ["New", "Contacted", "Qualified", "Lost"];
-
-const getExecutiveOfferRows = (response: any)=> {
-  if (Array.isArray(response)) {
-    return response;
-  }
-
-  if (!response || typeof response !== "object") {
-    return [];
-  }
-
-  const envelope = response;
-
-  return envelope.offers ?? envelope.value ?? envelope.value?.value ?? [];
-};
-
-const getActiveOfferCount = (response: unknown) =>
-  getExecutiveOfferRows(response).filter(
-    (offer: any) => offer.status?.toLowerCase() === "active",
-  ).length;
 
 export default function ExecutiveDashboard() {
   const [stats, setStats] = useState({
@@ -44,7 +20,7 @@ export default function ExecutiveDashboard() {
     activeOffers: 0,
   });
 
-  const [recentLeads, setRecentLeads] = useState([]);
+  const [recentLeads, setRecentLeads] = useState<RecentLead[]>([]);
   const [overview, setOverview] = useState<{ label: string; value: number }[]>(
     [],
   );
@@ -52,28 +28,10 @@ export default function ExecutiveDashboard() {
   const params = useParams<{ orgCode: string }>();
   const orgCode = params.orgCode;
 
-  const refreshActiveOffers = useCallback(async () => {
-    try {
-      const offersRes = await getExecutiveOffers();
-
-      setStats((currentStats) => ({
-        ...currentStats,
-        activeOffers: getActiveOfferCount(offersRes),
-      }));
-    } catch (err) {
-      console.error("Failed to refresh active offers", err);
-    }
-  }, []);
-
-  useEffect(() => {
     const fetchDashboardData = async () => {
       try {
-        const [statsRes, offersRes, leadsRes, overviewRes] = await Promise.all([
+        const [statsRes, leadsRes, overviewRes] = await Promise.all([
           getExecutiveStats(),
-          getExecutiveOffers().catch((err) => {
-            console.error("Executive offers API failed", err);
-            return [];
-          }),
 
           getRecentLeads().catch((err) => {
             console.error("Recent leads API failed", err);
@@ -93,20 +51,25 @@ export default function ExecutiveDashboard() {
           myLeads: statsData?.totalLeads ?? 0,
           convertedLeads: statsData?.convertedLeads ?? 0,
           thisWeekLeads: statsData?.thisWeekLeads ?? 0,
-          activeOffers: getActiveOfferCount(offersRes),
+          activeOffers: statsData?.activeOffers ?? 0,
         });
 
         // Recent Leads
-        const leadsEnvelope = leadsRes as any;
-        const leadsData = Array.isArray(leadsEnvelope)
-          ? leadsEnvelope
-          : leadsEnvelope?.value || [];
+        const leadsData = leadsRes?.value || leadsRes;
 
-        setRecentLeads(leadsData);
+        setRecentLeads(
+          (leadsData || []).map((lead: any) => ({
+            leadId: lead.leadId,
+            leadName: lead.leadName,
+            status: lead.status,
+            createdAt: lead.createdAt,
+          })),
+        );
 
         // Overview
-        
-        const formattedOverview = LEAD_STATUS_ORDER.map((status) => ({
+        const order = ["New", "Contacted", "Qualified", "Lost"];
+
+        const formattedOverview = order.map((status) => ({
           label: status,
           value: Number(overviewRes?.[status] || 0),
         }));
@@ -116,15 +79,15 @@ export default function ExecutiveDashboard() {
         console.error("Failed to load executive dashboard", err);
       }
     };
+    useEffect(() => {
+      fetchDashboardData();
+    }, []);
 
-    fetchDashboardData();
-  }, []);
-
-  useEffect(() => {
-
-    
-    return subscribeRealtime(OFFER_LIST_CHANGED, refreshActiveOffers);
-  }, [refreshActiveOffers]);
+    useEffect(() => {
+      return subscribeRealtime<LeadListChangedPayload>(LEAD_LIST_CHANGED, () => {
+        fetchDashboardData();
+      });
+    }, []);
 
   return (
     <div className="w-full space-y-4 px-3 py-4 sm:px-5 sm:py-6 lg:px-6">
@@ -145,7 +108,9 @@ export default function ExecutiveDashboard() {
           <RecentLeadsCard
             title="Recent Leads"
             leads={recentLeads}
-            onViewAll={() => router.push(`/${orgCode}/leads`)}
+            onViewAll={() => {
+              router.push(`/${orgCode}/leads`);
+            }}
           />
         </div>
         <div className="min-w-0 overflow-hidden lg:col-span-7">
@@ -159,3 +124,4 @@ export default function ExecutiveDashboard() {
     </div>
   );
 }
+ 

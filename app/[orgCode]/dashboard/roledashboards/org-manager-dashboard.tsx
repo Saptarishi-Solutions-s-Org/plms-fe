@@ -14,14 +14,21 @@ import {
 } from "@/services/managerdashboard";
 import { getExecutiveUsers, getLeadsWithStats } from "@/services/leads";
 import { subscribeRealtime } from "@/lib/socket";
-import { OFFER_LIST_CHANGED } from "@/types/realtime";
+import {
+  LEAD_LIST_CHANGED,
+  LeadListChangedPayload,
+  OFFER_LIST_CHANGED,
+} from "@/types/realtime";
 import { getUser } from "@/lib/auth";
 import {
   DashboardData,
   LeadStatusRow,
   ExecutivePerformanceApiRow,
 } from "@/types/org-manager";
-import type { ExecutiveUserRecord, LeadWithStatsApiRow } from "@/types/org-reports";
+import type {
+  ExecutiveUserRecord,
+  LeadWithStatsApiRow,
+} from "@/types/org-reports";
 import GlobalLoader from "@/components/commoncomponents/globalloader";
 
 const getCreatedById = (lead: LeadWithStatsApiRow) =>
@@ -51,7 +58,8 @@ const getManagerLeadStatusOverview = (leads: LeadWithStatsApiRow[]) => {
   return order.map((status) => ({
     status,
     count: leads.filter(
-      (lead) => String(lead.status || "").toLowerCase() === status.toLowerCase(),
+      (lead) =>
+        String(lead.status || "").toLowerCase() === status.toLowerCase(),
     ).length,
   }));
 };
@@ -93,70 +101,76 @@ export default function ManagerDashboard() {
     }
   }, []);
 
+  const fetchDashboard = async () => {
+    try {
+      const [
+        dashboardData,
+        executivePerformanceData,
+        executivesData,
+        leadsData,
+        offerOverviewData,
+        managerExecutivesData,
+      ] = await Promise.all([
+        getManagerDashboard(),
+        getExecutivePerformance(),
+        getExecutiveOverview(),
+        getLeadsWithStats(),
+        getManagerOfferOverview(),
+        getExecutiveUsers().catch(() => []),
+      ]);
+
+      const managerExecutiveNames = new Set(
+        getExecutiveRows(executivesData).map((executive: any) =>
+          normalizeName(executive.name),
+        ),
+      );
+
+      setExecutivePerformance(
+        (executivePerformanceData || []).filter(
+          (row: ExecutivePerformanceApiRow) =>
+            managerExecutiveNames.has(normalizeName(row.executiveName)),
+        ),
+      );
+
+      const data = dashboardData as DashboardData;
+      const currentUser = getUser();
+      const managerExecutiveIds = new Set(
+        (Array.isArray(managerExecutivesData)
+          ? (managerExecutivesData as ExecutiveUserRecord[])
+          : []
+        )
+          .map((executive) => executive.id)
+          .filter((id): id is string => Boolean(id)),
+      );
+      const managerAssignedLeads = getManagerAssignedLeads(
+        leadsData?.leads,
+        currentUser?.id,
+        managerExecutiveIds,
+      );
+
+      setStats({
+        total_leads: managerAssignedLeads.length,
+        converted_leads: data?.convertedLeads ?? 0,
+        new_leads_this_week: data?.thisWeekLeads ?? 0,
+        active_offers: offerOverviewData?.stats?.activeOffers ?? 0,
+      });
+
+      setOverview(getManagerLeadStatusOverview(managerAssignedLeads));
+    } catch (error) {
+      toast.error("Failed to load manager dashboard");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
-    const fetchDashboard = async () => {
-      try {
-        const [
-          dashboardData,
-          executivePerformanceData,
-          executivesData,
-          leadsData,
-          offerOverviewData,
-          managerExecutivesData,
-        ] = await Promise.all([
-          getManagerDashboard(),
-          getExecutivePerformance(),
-          getExecutiveOverview(),
-          getLeadsWithStats(),
-          getManagerOfferOverview(),
-          getExecutiveUsers().catch(() => []),
-        ]);
-
-        const managerExecutiveNames = new Set(
-          getExecutiveRows(executivesData).map((executive: any) =>
-            normalizeName(executive.name),
-          ),
-        );
-
-        setExecutivePerformance(
-          (executivePerformanceData || []).filter(
-            (row: ExecutivePerformanceApiRow) =>
-              managerExecutiveNames.has(normalizeName(row.executiveName)),
-          ),
-        );
-
-        const data = dashboardData as DashboardData;
-        const currentUser = getUser();
-        const managerExecutiveIds = new Set(
-          (Array.isArray(managerExecutivesData)
-            ? (managerExecutivesData as ExecutiveUserRecord[])
-            : []
-          )
-            .map((executive) => executive.id)
-            .filter((id): id is string => Boolean(id)),
-        );
-        const managerAssignedLeads = getManagerAssignedLeads(
-          leadsData?.leads,
-          currentUser?.id,
-          managerExecutiveIds,
-        );
-
-        setStats({
-          total_leads: managerAssignedLeads.length,
-          converted_leads: data?.convertedLeads ?? 0,
-          new_leads_this_week: data?.thisWeekLeads ?? 0,
-          active_offers: offerOverviewData?.stats?.activeOffers ?? 0,
-        });
-
-        setOverview(getManagerLeadStatusOverview(managerAssignedLeads));
-      } catch (error) {
-        toast.error("Failed to load manager dashboard");
-      } finally {
-        setLoading(false);
-      }
-    };
-
     fetchDashboard();
+  }, []);
+
+  useEffect(() => {
+    return subscribeRealtime<LeadListChangedPayload>(LEAD_LIST_CHANGED, () => {
+      fetchDashboard();
+    });
   }, []);
 
   useEffect(() => {
