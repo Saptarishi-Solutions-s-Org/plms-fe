@@ -10,6 +10,7 @@ import { getLeadStats } from "@/services/executivestats";
 import { RecentLead } from "@/types/executivestats";
 import { useRouter, useParams } from "next/navigation";
 import {LEAD_LIST_CHANGED, type LeadListChangedPayload} from "@/types/realtime";
+import { OFFER_LIST_CHANGED, type OfferListChangedPayload } from "@/types/realtime";
 import { subscribeRealtime } from "@/lib/socket";
 
 export default function ExecutiveDashboard() {
@@ -85,6 +86,12 @@ export default function ExecutiveDashboard() {
 
     useEffect(() => {
       return subscribeRealtime<LeadListChangedPayload>(LEAD_LIST_CHANGED, () => {
+        fetchDashboardData();
+      });
+    }, []);
+
+    useEffect(() => {
+      return subscribeRealtime<OfferListChangedPayload>(OFFER_LIST_CHANGED, () => {
         fetchDashboardData();
       });
     }, []);
