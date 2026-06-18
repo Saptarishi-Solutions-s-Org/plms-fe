@@ -11,41 +11,29 @@ import {
   getLeadStats,
   getRecentLeads,
 } from "@/services/executivestats";
-import { RecentLead } from "@/types/executivestats";
 import { useRouter, useParams } from "next/navigation";
 import { subscribeRealtime } from "@/lib/socket";
 import { OFFER_LIST_CHANGED } from "@/types/realtime";
-import type { ExecutiveOfferItem } from "@/types/org-manager";
 
-type ExecutiveOffersEnvelope = {
-  value?: ExecutiveOfferItem[] | { value?: ExecutiveOfferItem[] };
-  offers?: ExecutiveOfferItem[];
-};
+const LEAD_STATUS_ORDER = ["New", "Contacted", "Qualified", "Lost"];
 
-type RecentLeadsEnvelope = {
-  value?: RecentLead[];
-};
-
-const getExecutiveOfferRows = (response: unknown): ExecutiveOfferItem[] => {
+const getExecutiveOfferRows = (response: any)=> {
   if (Array.isArray(response)) {
-    return response as ExecutiveOfferItem[];
+    return response;
   }
 
   if (!response || typeof response !== "object") {
     return [];
   }
 
-  const envelope = response as ExecutiveOffersEnvelope;
+  const envelope = response;
 
-  if (Array.isArray(envelope.offers)) return envelope.offers;
-  if (Array.isArray(envelope.value)) return envelope.value;
-
-  return envelope.value?.value ?? [];
+  return envelope.offers ?? envelope.value ?? envelope.value?.value ?? [];
 };
 
 const getActiveOfferCount = (response: unknown) =>
   getExecutiveOfferRows(response).filter(
-    (offer) => offer.status?.toLowerCase() === "active",
+    (offer: any) => offer.status?.toLowerCase() === "active",
   ).length;
 
 export default function ExecutiveDashboard() {
@@ -56,7 +44,7 @@ export default function ExecutiveDashboard() {
     activeOffers: 0,
   });
 
-  const [recentLeads, setRecentLeads] = useState<RecentLead[]>([]);
+  const [recentLeads, setRecentLeads] = useState([]);
   const [overview, setOverview] = useState<{ label: string; value: number }[]>(
     [],
   );
@@ -109,24 +97,16 @@ export default function ExecutiveDashboard() {
         });
 
         // Recent Leads
-        const leadsEnvelope = leadsRes as RecentLeadsEnvelope | RecentLead[];
+        const leadsEnvelope = leadsRes as any;
         const leadsData = Array.isArray(leadsEnvelope)
           ? leadsEnvelope
           : leadsEnvelope?.value || [];
 
-        setRecentLeads(
-          leadsData.map((lead) => ({
-            leadId: lead.leadId,
-            leadName: lead.leadName,
-            status: lead.status,
-            createdAt: lead.createdAt,
-          })),
-        );
+        setRecentLeads(leadsData);
 
         // Overview
-        const order = ["New", "Contacted", "Qualified", "Lost"];
-
-        const formattedOverview = order.map((status) => ({
+        
+        const formattedOverview = LEAD_STATUS_ORDER.map((status) => ({
           label: status,
           value: Number(overviewRes?.[status] || 0),
         }));
@@ -141,9 +121,9 @@ export default function ExecutiveDashboard() {
   }, []);
 
   useEffect(() => {
-    return subscribeRealtime(OFFER_LIST_CHANGED, () => {
-      refreshActiveOffers();
-    });
+
+    
+    return subscribeRealtime(OFFER_LIST_CHANGED, refreshActiveOffers);
   }, [refreshActiveOffers]);
 
   return (
@@ -165,9 +145,7 @@ export default function ExecutiveDashboard() {
           <RecentLeadsCard
             title="Recent Leads"
             leads={recentLeads}
-            onViewAll={() => {
-              router.push(`/${orgCode}/leads`);
-            }}
+            onViewAll={() => router.push(`/${orgCode}/leads`)}
           />
         </div>
         <div className="min-w-0 overflow-hidden lg:col-span-7">
