@@ -1,204 +1,44 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
+import type { ComponentType } from "react";
 
-import GlobalLoader from "@/components/commoncomponents/globalloader";
-import LeadSummaryCards from "@/components/commoncomponents/leads/lead-cards";
-import LeadDialogs from "@/components/commoncomponents/leads/lead-dialogs";
-import LeadActions from "@/components/commoncomponents/leads/leadactions";
-import LeadHeader from "@/components/commoncomponents/leads/leadheader";
-import LeadTableFilters from "@/components/commoncomponents/leads/leadtable-filters";
-import LeadTable from "@/components/commoncomponents/leads/leadtable";
-import { useLeads } from "@/hooks/use-leads";
-import { useLeadExport } from "@/hooks/export";
-import { getUser } from "@/lib/auth";
-import { createLead, getExecutiveUsers, updateLead } from "@/services/leads";
-import type {
-  ExecutiveOption,
-  Lead,
-  LeadFilters,
-  LeadFormData,
-} from "@/types/leadtypes";
+import { AuthUser, getUser, refreshSession } from "@/lib/auth";
 
-const allFilters = {
-  search: "",
-  sources: [],
-  statuses: [],
-  priorities: [],
-  assignedTo: [],
-};
+import OrgAdminManagerLeadsPage from "./roleleadspage/manager-leads-page";
+import OrgExecutiveLeadsPage from "./roleleadspage/executive-leads-page";
 
-function normalizeFilterValue(value: string) {
-  return value.trim().toLowerCase().replace(/[\s_]+/g, "");
-}
-
-export default function LeadsPage() {
-  const { leads, stats, isInitialLoading, refetch } = useLeads();
-  const currentUser = getUser();
-  const currentUserId = currentUser?.id;
-  const isExecutive = currentUser?.role?.toUpperCase().trim() === "EXECUTIVE";
-
-  const [isFormOpen, setIsFormOpen] = useState(false);
-  const [editingLead, setEditingLead] = useState<Lead | null>(null);
-  const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
-  const [filters, setFilters] = useState<LeadFilters>(allFilters);
-  const [executives, setExecutives] = useState<ExecutiveOption[]>([]);
-
-  const filteredLeads = useMemo(() => {
-    return leads.filter((lead) => {
-      const search = filters.search.trim().toLowerCase();
-      const assignedExecutive = executives.find(
-        (executive) => executive.id === lead.assignedTo,
-      );
-
-      const searchMatch =
-        !search ||
-        lead.name.toLowerCase().includes(search) ||
-        lead.email.toLowerCase().includes(search);
-
-      const sourceMatch =
-        (filters.sources?.length ?? 0) === 0 ||
-        filters.sources?.some(
-          (source) =>
-            normalizeFilterValue(source) ===
-            normalizeFilterValue(lead.leadSource),
-        );
-
-      const statusMatch =
-        filters.statuses.length === 0 || filters.statuses.includes(lead.status);
-
-      const priorityMatch =
-        filters.priorities.length === 0 ||
-        filters.priorities.includes(lead.priority);
-
-      const assignedToMatch =
-        isExecutive ||
-        filters.assignedTo.length === 0 ||
-        filters.assignedTo.includes(
-          assignedExecutive?.name ?? lead.assignedToName ?? "",
-        );
-
-      return (
-        searchMatch &&
-        sourceMatch &&
-        statusMatch &&
-        priorityMatch &&
-        assignedToMatch
-      );
-    });
-  }, [executives, filters, isExecutive, leads]);
-
-  useEffect(() => {
-    if (isExecutive) return;
-
-    getExecutiveUsers().then(setExecutives).catch(console.error);
-  }, [isExecutive]);
-
-  const openAddForm = () => {
-    setEditingLead(null);
-    setIsFormOpen(true);
-  };
-
-  const openEditForm = (lead: Lead) => {
-    setEditingLead(lead);
-    setIsFormOpen(true);
-  };
-
-  const closeForm = () => {
-    setIsFormOpen(false);
-    setEditingLead(null);
-  };
-
-  const handleFormSubmit = async (data: LeadFormData) => {
-    if (editingLead) {
-      await updateLead({ id: editingLead.uuid, ...data });
-    } else {
-      await createLead(data);
-    }
-
-    await refetch();
-    closeForm();
-  };
-
-  const { handleExport } = useLeadExport();
-
-  const mapLead = (lead: Lead): Lead => {
-    const assignedExecutive = executives.find(
-      (executive) => executive.id === lead.assignedTo,
-    );
-
-    return {
-      ...lead,
-      assignedToName:
-        assignedExecutive?.name ??
-        lead.assignedToName ??
-        currentUser?.name ??
-        "Unassigned",
-    };
-  };
-
-  const handleViewDetails = (lead: Lead) => {
-    setSelectedLead(mapLead(lead));
-  };
-
+function DefaultLeadsPage() {
   return (
-    <>
-      {isInitialLoading ? (
-        <GlobalLoader />
-      ) : (
-        <div className="w-full h-full p-4 sm:p-5 space-y-5">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-            <div>
-              <h1 className="text-lg sm:text-2xl font-semibold text-gray-900">
-                Leads
-              </h1>
-              <p className="text-xs sm:text-sm text-gray-500">
-                Manage and track your lead pipeline
-              </p>
-            </div>
-
-            <LeadHeader
-              onExport={handleExport}
-              onImportComplete={refetch}
-              onAddLead={openAddForm}
-              showImportExport={!isExecutive}
-            />
-          </div>
-
-          <LeadSummaryCards stats={stats} />
-
-          <LeadTableFilters
-            executives={executives}
-            showAssignedToFilter={!isExecutive}
-            onApply={setFilters}
-          />
-
-          <LeadTable
-            leads={filteredLeads}
-            executives={executives}
-            showAssignedTo={!isExecutive}
-            emptyMessage="No leads found"
-            renderActions={(lead) => (
-              <LeadActions
-                lead={lead}
-                onEdit={openEditForm}
-                onViewDetails={handleViewDetails}
-              />
-            )}
-          />
-
-          <LeadDialogs
-            isFormOpen={isFormOpen}
-            editingLead={editingLead}
-            onFormSubmit={handleFormSubmit}
-            onFormClose={closeForm}
-            selectedLead={selectedLead}
-            onDetailsClose={() => setSelectedLead(null)}
-            fixedAssignedToId={isExecutive ? currentUserId : undefined}
-            hideAssignedTo={isExecutive}
-          />
-        </div>
-      )}
-    </>
+    <div className="p-6">
+      <h1 className="text-xl font-semibold">Leads</h1>
+      <p className="text-gray-500">You do not have access to this page.</p>
+    </div>
   );
 }
+
+const ROLE_LEADS_MAP: Record<string, ComponentType> = {
+  ADMIN: OrgAdminManagerLeadsPage,
+  MANAGER: OrgAdminManagerLeadsPage,
+  EXECUTIVE: OrgExecutiveLeadsPage,
+};
+
+export default function LeadsPage() {
+  const [user, setUser] = useState<AuthUser | null>(() => getUser());
+
+  useEffect(() => {
+    if (user) return;
+
+    refreshSession().then((session) => {
+      if (session) setUser(session.user);
+    });
+  }, [user]);
+
+  if (!user) return null;
+
+  const role = user.role?.toUpperCase().trim();
+  const LeadsComponent = ROLE_LEADS_MAP[role] || DefaultLeadsPage;
+
+  return <LeadsComponent />;
+}
+ 
