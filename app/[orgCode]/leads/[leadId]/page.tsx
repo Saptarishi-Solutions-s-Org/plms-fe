@@ -15,6 +15,8 @@ import type {
   LeadDetailResponse,
   LeadsWithStatsResponse,
 } from "@/types/leadActivity";
+import {LEAD_DETAIL_CHANGED, LeadDetailChangedPayload} from "@/types/realtime";
+import { subscribeRealtime } from "@/lib/socket";
 
 export default function LeadDetailPage() {
   const { leadId } = useParams<{ orgCode: string; leadId: string }>();
@@ -53,6 +55,12 @@ export default function LeadDetailPage() {
 
   useEffect(() => {
     fetchDetail();
+  }, [fetchDetail]);
+
+  useEffect(() => {
+    return subscribeRealtime<LeadDetailChangedPayload>(LEAD_DETAIL_CHANGED, (payload) => {
+      fetchDetail();
+    });
   }, [fetchDetail]);
 
   if (isLoading) {

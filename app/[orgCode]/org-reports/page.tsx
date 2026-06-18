@@ -28,6 +28,7 @@ import type {
   OrganizationReportStats,
   SourceConversionRateRow,
 } from "@/types/org-reports";
+import {LEAD_LIST_CHANGED, type LeadListChangedPayload} from "@/types/realtime";
 
 const normalizeSource = (source: string) =>
   source.trim().replace(/\s+/g, "_").toLowerCase();
@@ -154,7 +155,6 @@ export default function OrgReports() {
     }
   }, []);
 
-  useEffect(() => {
     const fetchReports = async () => {
       setIsRefreshing(true);
 
@@ -213,8 +213,14 @@ export default function OrgReports() {
         setIsRefreshing(false);
       }
     };
-
+  useEffect(() => {
     fetchReports();
+  }, []);
+
+  useEffect(() => {
+    return subscribeRealtime<LeadListChangedPayload>(LEAD_LIST_CHANGED, () => {
+      fetchReports();
+    });
   }, []);
 
   useEffect(() => {

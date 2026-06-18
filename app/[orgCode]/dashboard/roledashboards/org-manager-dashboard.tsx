@@ -12,7 +12,7 @@ import {
   getExecutiveOverview,
   getManagerOfferOverview,
 } from "@/services/managerdashboard";
-import { getLeadsWithStats } from "@/services/leads";
+import { getExecutiveUsers, getLeadsWithStats } from "@/services/leads";
 import { subscribeRealtime } from "@/lib/socket";
 import { OFFER_LIST_CHANGED } from "@/types/realtime";
 import { getUser } from "@/lib/auth";
@@ -21,23 +21,31 @@ import {
   LeadStatusRow,
   ExecutivePerformanceApiRow,
 } from "@/types/org-manager";
+import type { ExecutiveUserRecord, LeadWithStatsApiRow } from "@/types/org-reports";
 import GlobalLoader from "@/components/commoncomponents/globalloader";
 
-const getCreatedById = (lead: any) =>
+const getCreatedById = (lead: LeadWithStatsApiRow) =>
   lead?.createdById ||
   lead?.created_by_id ||
   lead?.createdBy ||
   lead?.createdby ||
   lead?.created_by;
 
-const getManagerAssignedLeads = (leads: any[] = [], managerId?: string) =>
-  managerId
+const getManagerAssignedLeads = (
+  leads: LeadWithStatsApiRow[] = [],
+  managerId?: string,
+  executiveIds = new Set<string>(),
+) =>
+  managerId || executiveIds.size > 0
     ? leads.filter(
-        (lead) => getCreatedById(lead) === managerId && Boolean(lead.assignedTo),
+        (lead) =>
+          Boolean(lead.assignedTo) &&
+          (executiveIds.has(lead.assignedTo ?? "") ||
+            getCreatedById(lead) === managerId),
       )
     : [];
 
-const getManagerLeadStatusOverview = (leads: any[]) => {
+const getManagerLeadStatusOverview = (leads: LeadWithStatsApiRow[]) => {
   const order = ["New", "Contacted", "Qualified", "Lost"];
 
   return order.map((status) => ({
@@ -94,12 +102,14 @@ export default function ManagerDashboard() {
           executivesData,
           leadsData,
           offerOverviewData,
+          managerExecutivesData,
         ] = await Promise.all([
           getManagerDashboard(),
           getExecutivePerformance(),
           getExecutiveOverview(),
           getLeadsWithStats(),
           getManagerOfferOverview(),
+          getExecutiveUsers().catch(() => []),
         ]);
 
         const managerExecutiveNames = new Set(
@@ -117,9 +127,18 @@ export default function ManagerDashboard() {
 
         const data = dashboardData as DashboardData;
         const currentUser = getUser();
+        const managerExecutiveIds = new Set(
+          (Array.isArray(managerExecutivesData)
+            ? (managerExecutivesData as ExecutiveUserRecord[])
+            : []
+          )
+            .map((executive) => executive.id)
+            .filter((id): id is string => Boolean(id)),
+        );
         const managerAssignedLeads = getManagerAssignedLeads(
           leadsData?.leads,
           currentUser?.id,
+          managerExecutiveIds,
         );
 
         setStats({
