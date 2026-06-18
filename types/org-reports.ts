@@ -130,6 +130,11 @@ export interface LeadWithStatsApiRow{
   leadSource?: string;
   source?: string;
   createdByName?: string;
+  createdById?: string;
+  created_by_id?: string;
+  createdBy?: string;
+  createdby?: string;
+  created_by?: string;
   assignedTo?: string;
   createdAt?: string;
   createdat?: string;

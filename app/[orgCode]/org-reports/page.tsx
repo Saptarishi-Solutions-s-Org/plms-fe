@@ -14,19 +14,17 @@ import GlobalLoader from "@/components/commoncomponents/globalloader";
 import OverviewTab from "@/components/commoncomponents/reports/Overview/overview-tab";
 import TeamPerformanceTab from "@/components/commoncomponents/reports/team-performance/team-performance-tab";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import {
-  getLeadSourceAnalytics,
-  getReportStats,
-} from "@/services/organizationreports";
+import { getReportStats } from "@/services/organizationreports";
 import { getManagerDashboard } from "@/services/managerdashboard";
-import { getLeadsWithStats } from "@/services/leads";
+import { getExecutiveUsers, getLeadsWithStats } from "@/services/leads";
 import { subscribeRealtime } from "@/lib/socket";
 import { OFFER_LIST_CHANGED } from "@/types/realtime";
 import { getUser } from "@/lib/auth";
 import { LEAD_SOURCE_OPTIONS } from "@/types/leadtypes";
 import type {
-  LeadSourceAnalyticsRow,
+  ExecutiveUserRecord,
   LeadSourceRow,
+  LeadWithStatsApiRow,
   OrganizationReportStats,
   SourceConversionRateRow,
 } from "@/types/org-reports";
@@ -39,17 +37,38 @@ const reportSources = LEAD_SOURCE_OPTIONS.map(({ value, label }) => ({
   label,
 }));
 
-const mergeLeadSourceRows = (rows: LeadSourceAnalyticsRow[]): LeadSourceRow[] => {
+const getLeadSource = (lead: LeadWithStatsApiRow) =>
+  lead.leadSource || lead.source || "";
+
+const isConvertedLead = (lead: LeadWithStatsApiRow) =>
+  String(lead.status || "").toLowerCase() === "qualified";
+
+const getManagerAssignedLeads = (
+  leads: LeadWithStatsApiRow[] = [],
+  managerId?: string,
+  executiveIds = new Set<string>(),
+) =>
+  managerId || executiveIds.size > 0
+    ? leads.filter(
+        (lead) =>
+          Boolean(lead.assignedTo) &&
+          (executiveIds.has(lead.assignedTo ?? "") ||
+            getCreatedById(lead) === managerId),
+      )
+    : [];
+
+const getManagerLeadSourceRows = (
+  leads: LeadWithStatsApiRow[],
+): LeadSourceRow[] => {
   const merged = new Map<string, number>(
     reportSources.map(({ key }) => [key, 0]),
   );
 
-  rows.forEach((row) => {
-    const source = normalizeSource(row.source ?? "");
-    const leads = row.leads ?? 0;
+  leads.forEach((lead) => {
+    const source = normalizeSource(getLeadSource(lead));
 
     if (merged.has(source)) {
-      merged.set(source, (merged.get(source) ?? 0) + leads);
+      merged.set(source, (merged.get(source) ?? 0) + 1);
     }
   });
 
@@ -59,22 +78,34 @@ const mergeLeadSourceRows = (rows: LeadSourceAnalyticsRow[]): LeadSourceRow[] =>
   }));
 };
 
+const getManagerSourceConversionRows = (
+  leads: LeadWithStatsApiRow[],
+): SourceConversionRateRow[] =>
+  reportSources.map(({ key, label }) => {
+    const sourceLeads = leads.filter(
+      (lead) => normalizeSource(getLeadSource(lead)) === key,
+    );
+    const converted = sourceLeads.filter(isConvertedLead).length;
+
+    return {
+      source: label,
+      leads: sourceLeads.length,
+      rate:
+        sourceLeads.length > 0
+          ? Math.round((converted / sourceLeads.length) * 100)
+          : 0,
+    };
+  });
+
 const isReportTab = (value: string | null): value is ReportTab =>
   value === "overview" || value === "team-performance";
 
-const getCreatedById = (lead: any) =>
+const getCreatedById = (lead: LeadWithStatsApiRow) =>
   lead?.createdById ||
   lead?.created_by_id ||
   lead?.createdBy ||
   lead?.createdby ||
   lead?.created_by;
-
-const getManagerAssignedLeadCount = (leads: any[] = [], managerId?: string) =>
-  managerId
-    ? leads.filter(
-        (lead) => getCreatedById(lead) === managerId && Boolean(lead.assignedTo),
-      ).length
-    : 0;
 
 export default function OrgReports() {
   const params = useParams<{ orgCode: string }>();
@@ -128,18 +159,29 @@ export default function OrgReports() {
       setIsRefreshing(true);
 
       try {
-        const [statsData, analyticsData, managerData, leadsData] = await Promise.all([
+        const [statsData, managerData, leadsData, executivesData] =
+          await Promise.all([
           getReportStats(),
-          getLeadSourceAnalytics(),
           getManagerDashboard(),
           getLeadsWithStats(),
+          getExecutiveUsers().catch(() => []),
         ]);
 
         const currentUser = getUser();
-        const managerAssignedLeadCount = getManagerAssignedLeadCount(
+        const managerExecutiveIds = new Set(
+          (Array.isArray(executivesData)
+            ? (executivesData as ExecutiveUserRecord[])
+            : []
+          )
+            .map((executive) => executive.id)
+            .filter((id): id is string => Boolean(id)),
+        );
+        const managerAssignedLeads = getManagerAssignedLeads(
           leadsData?.leads,
           currentUser?.id,
+          managerExecutiveIds,
         );
+        const managerAssignedLeadCount = managerAssignedLeads.length;
 
         setStats({
           total_leads: managerAssignedLeadCount,
@@ -149,18 +191,11 @@ export default function OrgReports() {
           offers_utilized: statsData?.offersUtilized ?? 0,
         });
 
-        const analyticsRows = Array.isArray(analyticsData)
-          ? (analyticsData as LeadSourceAnalyticsRow[])
-          : [];
-
-        setLeadSourceDistributionData(mergeLeadSourceRows(analyticsRows));
-
+        setLeadSourceDistributionData(
+          getManagerLeadSourceRows(managerAssignedLeads),
+        );
         setSourceConversionRateData(
-          analyticsRows.map((row) => ({
-            source: row.source ?? "",
-            leads: row.leads ?? 0,
-            rate: row.conversionRate ?? 0,
-          })),
+          getManagerSourceConversionRows(managerAssignedLeads),
         );
       } catch {
         setStats({
