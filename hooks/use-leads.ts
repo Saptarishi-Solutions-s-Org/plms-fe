@@ -1,7 +1,8 @@
 import { useState, useEffect, useCallback } from "react";
 import type { Lead, LeadStats } from "@/types/leadtypes";
 import { getLeadsWithStats } from "@/services/leads";
-
+import { LEAD_LIST_CHANGED, LeadListChangedPayload } from "@/types/realtime";
+import { subscribeRealtime } from "@/lib/socket";
 export function useLeads() {
   const [leads, setLeads] = useState<Lead[]>([]);
   const [stats, setStats] = useState<LeadStats>({
@@ -32,6 +33,12 @@ export function useLeads() {
   useEffect(() => {
     fetchLeads();
   }, [fetchLeads]);
+
+  useEffect(() => {
+    return subscribeRealtime<LeadListChangedPayload>(LEAD_LIST_CHANGED, () => {
+      fetchLeads();
+    });
+  },[fetchLeads]);
 
   return {
     leads,
