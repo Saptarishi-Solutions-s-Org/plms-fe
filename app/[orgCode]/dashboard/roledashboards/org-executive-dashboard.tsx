@@ -37,24 +37,10 @@ const getExecutiveOfferRows = (response: unknown): ExecutiveOfferItem[] => {
 
   const envelope = response as ExecutiveOffersEnvelope;
 
-  if (Array.isArray(envelope.offers)) {
-    return envelope.offers;
-  }
+  if (Array.isArray(envelope.offers)) return envelope.offers;
+  if (Array.isArray(envelope.value)) return envelope.value;
 
-  if (Array.isArray(envelope.value)) {
-    return envelope.value;
-  }
-
-  if (
-    envelope.value &&
-    typeof envelope.value === "object" &&
-    "value" in envelope.value &&
-    Array.isArray(envelope.value.value)
-  ) {
-    return envelope.value.value;
-  }
-
-  return [];
+  return envelope.value?.value ?? [];
 };
 
 const getActiveOfferCount = (response: unknown) =>
