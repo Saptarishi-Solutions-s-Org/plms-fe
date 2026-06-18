@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 
 import ManagerCards from "@/components/commoncomponents/managerdashboard/card";
@@ -8,15 +8,54 @@ import CommonOverview from "@/components/commoncomponents/managerdashboard/leads
 import ExecutivePerformance from "@/components/commoncomponents/managerdashboard/executiveperformance";
 import {
   getManagerDashboard,
-  getLeadStatusOverview,
   getExecutivePerformance,
+  getExecutiveOverview,
+  getManagerOfferOverview,
 } from "@/services/managerdashboard";
+import { getLeadsWithStats } from "@/services/leads";
+import { subscribeRealtime } from "@/lib/socket";
+import { OFFER_LIST_CHANGED } from "@/types/realtime";
+import { getUser } from "@/lib/auth";
 import {
   DashboardData,
   LeadStatusRow,
   ExecutivePerformanceApiRow,
 } from "@/types/org-manager";
 import GlobalLoader from "@/components/commoncomponents/globalloader";
+
+const getCreatedById = (lead: any) =>
+  lead?.createdById ||
+  lead?.created_by_id ||
+  lead?.createdBy ||
+  lead?.createdby ||
+  lead?.created_by;
+
+const getManagerAssignedLeads = (leads: any[] = [], managerId?: string) =>
+  managerId
+    ? leads.filter(
+        (lead) => getCreatedById(lead) === managerId && Boolean(lead.assignedTo),
+      )
+    : [];
+
+const getManagerLeadStatusOverview = (leads: any[]) => {
+  const order = ["New", "Contacted", "Qualified", "Lost"];
+
+  return order.map((status) => ({
+    status,
+    count: leads.filter(
+      (lead) => String(lead.status || "").toLowerCase() === status.toLowerCase(),
+    ).length,
+  }));
+};
+
+const normalizeName = (value?: string) => value?.trim().toLowerCase() || "";
+
+const getExecutiveRows = (response: any) =>
+  response?.value?.executives ||
+  response?.executives ||
+  response?.value ||
+  response ||
+  [];
 
 export default function ManagerDashboard() {
   const [loading, setLoading] = useState(true);
@@ -33,43 +72,64 @@ export default function ManagerDashboard() {
     ExecutivePerformanceApiRow[]
   >([]);
 
+  const refreshActiveOffers = useCallback(async () => {
+    try {
+      const offerOverviewData = await getManagerOfferOverview();
+
+      setStats((currentStats) => ({
+        ...currentStats,
+        active_offers: offerOverviewData?.stats?.activeOffers ?? 0,
+      }));
+    } catch {
+      toast.error("Failed to refresh active offers");
+    }
+  }, []);
+
   useEffect(() => {
     const fetchDashboard = async () => {
       try {
-        const [dashboardData, executivePerformanceData, overviewData] =
-          await Promise.all([
-            getManagerDashboard().catch((error) => {
-              return null;
-            }),
+        const [
+          dashboardData,
+          executivePerformanceData,
+          executivesData,
+          leadsData,
+          offerOverviewData,
+        ] = await Promise.all([
+          getManagerDashboard(),
+          getExecutivePerformance(),
+          getExecutiveOverview(),
+          getLeadsWithStats(),
+          getManagerOfferOverview(),
+        ]);
 
-            getExecutivePerformance().catch((error) => {
-              return [];
-            }),
+        const managerExecutiveNames = new Set(
+          getExecutiveRows(executivesData).map((executive: any) =>
+            normalizeName(executive.name),
+          ),
+        );
 
-            getLeadStatusOverview().catch((error) => {
-              return {};
-            }),
-          ]);
-
-        setExecutivePerformance(executivePerformanceData || []);
+        setExecutivePerformance(
+          (executivePerformanceData || []).filter(
+            (row: ExecutivePerformanceApiRow) =>
+              managerExecutiveNames.has(normalizeName(row.executiveName)),
+          ),
+        );
 
         const data = dashboardData as DashboardData;
+        const currentUser = getUser();
+        const managerAssignedLeads = getManagerAssignedLeads(
+          leadsData?.leads,
+          currentUser?.id,
+        );
 
         setStats({
-          total_leads: data?.totalLeads ?? 0,
+          total_leads: managerAssignedLeads.length,
           converted_leads: data?.convertedLeads ?? 0,
           new_leads_this_week: data?.thisWeekLeads ?? 0,
-          active_offers: data?.activeOffers ?? 0,
+          active_offers: offerOverviewData?.stats?.activeOffers ?? 0,
         });
 
-        const order = ["New", "Contacted", "Qualified", "Lost"];
-
-        const formattedOverview = order.map((status) => ({
-          status,
-          count: Number(overviewData?.[status] || 0),
-        }));
-
-        setOverview(formattedOverview);
+        setOverview(getManagerLeadStatusOverview(managerAssignedLeads));
       } catch (error) {
         toast.error("Failed to load manager dashboard");
       } finally {
@@ -80,13 +140,19 @@ export default function ManagerDashboard() {
     fetchDashboard();
   }, []);
 
+  useEffect(() => {
+    return subscribeRealtime(OFFER_LIST_CHANGED, () => {
+      refreshActiveOffers();
+    });
+  }, [refreshActiveOffers]);
+
   const overviewData = overview.map((row) => ({
     label: row.status,
     value: row.count,
   }));
 
   const formattedExecutivePerformance = executivePerformance.map(
-    (row: any) => ({
+    (row: ExecutivePerformanceApiRow) => ({
       executiveName: row.executiveName,
       achievement:
         row.total > 0 ? Math.round((row.qualified / row.total) * 100) : 0,

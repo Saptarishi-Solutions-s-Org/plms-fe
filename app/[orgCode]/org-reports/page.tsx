@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import {
   usePathname,
   useParams,
@@ -19,6 +19,10 @@ import {
   getReportStats,
 } from "@/services/organizationreports";
 import { getManagerDashboard } from "@/services/managerdashboard";
+import { getLeadsWithStats } from "@/services/leads";
+import { subscribeRealtime } from "@/lib/socket";
+import { OFFER_LIST_CHANGED } from "@/types/realtime";
+import { getUser } from "@/lib/auth";
 import { LEAD_SOURCE_OPTIONS } from "@/types/leadtypes";
 import type {
   LeadSourceAnalyticsRow,
@@ -58,6 +62,20 @@ const mergeLeadSourceRows = (rows: LeadSourceAnalyticsRow[]): LeadSourceRow[] =>
 const isReportTab = (value: string | null): value is ReportTab =>
   value === "overview" || value === "team-performance";
 
+const getCreatedById = (lead: any) =>
+  lead?.createdById ||
+  lead?.created_by_id ||
+  lead?.createdBy ||
+  lead?.createdby ||
+  lead?.created_by;
+
+const getManagerAssignedLeadCount = (leads: any[] = [], managerId?: string) =>
+  managerId
+    ? leads.filter(
+        (lead) => getCreatedById(lead) === managerId && Boolean(lead.assignedTo),
+      ).length
+    : 0;
+
 export default function OrgReports() {
   const params = useParams<{ orgCode: string }>();
   const pathname = usePathname();
@@ -84,20 +102,48 @@ export default function OrgReports() {
     SourceConversionRateRow[]
   >([]);
 
+  const refreshOfferStats = useCallback(async () => {
+    setIsRefreshing(true);
+
+    try {
+      const [statsData, managerData] = await Promise.all([
+        getReportStats(),
+        getManagerDashboard(),
+      ]);
+
+      setStats((currentStats) => ({
+        ...currentStats,
+        active_offers: managerData?.activeOffers ?? 0,
+        offers_utilized: statsData?.offersUtilized ?? 0,
+      }));
+    } catch {
+      toast.error("Failed to refresh offer reports");
+    } finally {
+      setIsRefreshing(false);
+    }
+  }, []);
+
   useEffect(() => {
     const fetchReports = async () => {
       setIsRefreshing(true);
 
       try {
-        const [statsData, analyticsData, managerData] = await Promise.all([
+        const [statsData, analyticsData, managerData, leadsData] = await Promise.all([
           getReportStats(),
           getLeadSourceAnalytics(),
           getManagerDashboard(),
+          getLeadsWithStats(),
         ]);
 
+        const currentUser = getUser();
+        const managerAssignedLeadCount = getManagerAssignedLeadCount(
+          leadsData?.leads,
+          currentUser?.id,
+        );
+
         setStats({
-          total_leads: managerData?.totalLeads ?? 0,
-          leads_assigned: statsData?.leadsAssigned ?? 0,
+          total_leads: managerAssignedLeadCount,
+          leads_assigned: managerAssignedLeadCount,
           converted_leads: statsData?.convertedLeads ?? 0,
           active_offers: managerData?.activeOffers ?? 0,
           offers_utilized: statsData?.offersUtilized ?? 0,
@@ -135,6 +181,12 @@ export default function OrgReports() {
 
     fetchReports();
   }, []);
+
+  useEffect(() => {
+    return subscribeRealtime(OFFER_LIST_CHANGED, () => {
+      refreshOfferStats();
+    });
+  }, [refreshOfferStats]);
 
   if (initialLoading) {
     return <GlobalLoader />;

@@ -25,6 +25,7 @@ import {
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { subscribeRealtime } from "@/lib/socket";
 import { Plus, MoreHorizontal } from "lucide-react";
 
 import {
@@ -39,6 +40,7 @@ import type {
 } from "@/types/Createoffer";
 import type { Offer as BulkOffer } from "@/types/offerbulk";
 import type { BulkAssignResult } from "@/types/offerbulk";
+import { OFFER_LIST_CHANGED } from "@/types/realtime";
 
 import {
   formatDate,
@@ -109,9 +111,11 @@ export default function OrgManagerOffersPage() {
     [offers]
   );
 
-  const fetchOffers = useCallback(async () => {
+  const fetchOffers = useCallback(async (showLoader = true) => {
     try {
-      setIsLoading(true);
+      if (showLoader) {
+        setIsLoading(true);
+      }
       setError(null);
 
       const [response, executivesResponse] = await Promise.all([
@@ -194,12 +198,20 @@ export default function OrgManagerOffersPage() {
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to load offers");
     } finally {
-      setIsLoading(false);
+      if (showLoader) {
+        setIsLoading(false);
+      }
     }
   }, []);
 
   useEffect(() => {
-    fetchOffers();
+    fetchOffers(true);
+  }, [fetchOffers]);
+
+  useEffect(() => {
+    return subscribeRealtime(OFFER_LIST_CHANGED, () => {
+      fetchOffers(false);
+    });
   }, [fetchOffers]);
 
   const handleFilterChange = useCallback(

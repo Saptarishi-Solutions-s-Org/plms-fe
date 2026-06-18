@@ -1,14 +1,66 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 
 import ExecutiveCards from "@/components/commoncomponents/executivedashboard/stats";
 import RecentLeadsCard from "@/components/commoncomponents/executivedashboard/executiverecentleads";
 import CommonOverview from "@/components/commoncomponents/managerdashboard/leadstatusoverview";
-import { getExecutiveStats, getRecentLeads } from "@/services/executivestats";
-import { getLeadStats } from "@/services/executivestats";
+import {
+  getExecutiveOffers,
+  getExecutiveStats,
+  getLeadStats,
+  getRecentLeads,
+} from "@/services/executivestats";
 import { RecentLead } from "@/types/executivestats";
 import { useRouter, useParams } from "next/navigation";
+import { subscribeRealtime } from "@/lib/socket";
+import { OFFER_LIST_CHANGED } from "@/types/realtime";
+import type { ExecutiveOfferItem } from "@/types/org-manager";
+
+type ExecutiveOffersEnvelope = {
+  value?: ExecutiveOfferItem[] | { value?: ExecutiveOfferItem[] };
+  offers?: ExecutiveOfferItem[];
+};
+
+type RecentLeadsEnvelope = {
+  value?: RecentLead[];
+};
+
+const getExecutiveOfferRows = (response: unknown): ExecutiveOfferItem[] => {
+  if (Array.isArray(response)) {
+    return response as ExecutiveOfferItem[];
+  }
+
+  if (!response || typeof response !== "object") {
+    return [];
+  }
+
+  const envelope = response as ExecutiveOffersEnvelope;
+
+  if (Array.isArray(envelope.offers)) {
+    return envelope.offers;
+  }
+
+  if (Array.isArray(envelope.value)) {
+    return envelope.value;
+  }
+
+  if (
+    envelope.value &&
+    typeof envelope.value === "object" &&
+    "value" in envelope.value &&
+    Array.isArray(envelope.value.value)
+  ) {
+    return envelope.value.value;
+  }
+
+  return [];
+};
+
+const getActiveOfferCount = (response: unknown) =>
+  getExecutiveOfferRows(response).filter(
+    (offer) => offer.status?.toLowerCase() === "active",
+  ).length;
 
 export default function ExecutiveDashboard() {
   const [stats, setStats] = useState({
@@ -26,11 +78,28 @@ export default function ExecutiveDashboard() {
   const params = useParams<{ orgCode: string }>();
   const orgCode = params.orgCode;
 
+  const refreshActiveOffers = useCallback(async () => {
+    try {
+      const offersRes = await getExecutiveOffers();
+
+      setStats((currentStats) => ({
+        ...currentStats,
+        activeOffers: getActiveOfferCount(offersRes),
+      }));
+    } catch (err) {
+      console.error("Failed to refresh active offers", err);
+    }
+  }, []);
+
   useEffect(() => {
     const fetchDashboardData = async () => {
       try {
-        const [statsRes, leadsRes, overviewRes] = await Promise.all([
+        const [statsRes, offersRes, leadsRes, overviewRes] = await Promise.all([
           getExecutiveStats(),
+          getExecutiveOffers().catch((err) => {
+            console.error("Executive offers API failed", err);
+            return [];
+          }),
 
           getRecentLeads().catch((err) => {
             console.error("Recent leads API failed", err);
@@ -50,14 +119,17 @@ export default function ExecutiveDashboard() {
           myLeads: statsData?.totalLeads ?? 0,
           convertedLeads: statsData?.convertedLeads ?? 0,
           thisWeekLeads: statsData?.thisWeekLeads ?? 0,
-          activeOffers: statsData?.activeOffers ?? 0,
+          activeOffers: getActiveOfferCount(offersRes),
         });
 
         // Recent Leads
-        const leadsData = leadsRes?.value || leadsRes;
+        const leadsEnvelope = leadsRes as RecentLeadsEnvelope | RecentLead[];
+        const leadsData = Array.isArray(leadsEnvelope)
+          ? leadsEnvelope
+          : leadsEnvelope?.value || [];
 
         setRecentLeads(
-          (leadsData || []).map((lead: any) => ({
+          leadsData.map((lead) => ({
             leadId: lead.leadId,
             leadName: lead.leadName,
             status: lead.status,
@@ -81,6 +153,12 @@ export default function ExecutiveDashboard() {
 
     fetchDashboardData();
   }, []);
+
+  useEffect(() => {
+    return subscribeRealtime(OFFER_LIST_CHANGED, () => {
+      refreshActiveOffers();
+    });
+  }, [refreshActiveOffers]);
 
   return (
     <div className="w-full space-y-4 px-3 py-4 sm:px-5 sm:py-6 lg:px-6">

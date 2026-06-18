@@ -17,6 +17,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { MultiSelectCombobox } from "@/components/ui/multi-select-combobox";
+import { subscribeRealtime } from "@/lib/socket";
 
 import {
   getExecutiveOffers,
@@ -24,6 +25,7 @@ import {
 
 import { OFFER_STATUS_OPTIONS, type Offer } from "@/types/Createoffer";
 import { DISCOUNT_OPTIONS } from "@/lib/validators/offervalidation";
+import { OFFER_LIST_CHANGED } from "@/types/realtime";
 
 import {
   ExecutiveOfferItem,
@@ -133,9 +135,11 @@ export default function OrgExecutiveOffersPage() {
 
   const [draftFilters, setDraftFilters] = useState(DEFAULT_FILTERS);
 
-  const fetchOffers = useCallback(async () => {
+  const fetchOffers = useCallback(async (showLoader = true) => {
     try {
-      setIsLoading(true);
+      if (showLoader) {
+        setIsLoading(true);
+      }
 
       const response = await getExecutiveOffers();
 
@@ -146,12 +150,20 @@ export default function OrgExecutiveOffersPage() {
       console.error("Failed to load executive offers", err);
       setOffers([]);
     } finally {
-      setIsLoading(false);
+      if (showLoader) {
+        setIsLoading(false);
+      }
     }
   }, []);
 
   useEffect(() => {
-    fetchOffers();
+    fetchOffers(true);
+  }, [fetchOffers]);
+
+  useEffect(() => {
+    return subscribeRealtime(OFFER_LIST_CHANGED, () => {
+      fetchOffers(false);
+    });
   }, [fetchOffers]);
 
   const handleFilterChange = useCallback(
