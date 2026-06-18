@@ -89,13 +89,34 @@ export default function ManagerLeadsPage() {
 
   const handleFormSubmit = async (data: LeadFormData) => {
     if (editingLead) {
-      await updateLead({ id: editingLead.uuid, ...data });
+      await updateLead({ id: editingLead.uuid, ...data, assignedTo: editingLead.assignedTo });
     } else {
-      await createLead(data);
+      await createLead({ ...data, assignedTo: "" });
     }
 
     await refetch();
     closeForm();
+  };
+
+  const handleAssignLead = async (lead: Lead, assignedTo: string) => {
+    await updateLead({
+      id: lead.uuid,
+      name: lead.name,
+      gender: lead.gender,
+      email: lead.email,
+      phone: lead.phone,
+      city: lead.city,
+      state: lead.state,
+      country: lead.country,
+      postalCode: lead.postalCode,
+      leadSource: lead.leadSource,
+      status: lead.status,
+      assignedTo,
+      priority: lead.priority,
+      notes: lead.notes,
+    });
+
+    await refetch();
   };
 
   const mapLead = (lead: Lead): Lead => {
@@ -150,6 +171,8 @@ export default function ManagerLeadsPage() {
                 lead={lead}
                 onEdit={openEditForm}
                 onViewDetails={handleViewDetails}
+                executives={executives}
+                onAssign={handleAssignLead}
               />
             )}
           />
@@ -167,4 +190,3 @@ export default function ManagerLeadsPage() {
     </>
   );
 }
- 

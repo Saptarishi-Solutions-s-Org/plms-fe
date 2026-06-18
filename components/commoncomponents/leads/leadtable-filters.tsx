@@ -8,7 +8,6 @@ import { MultiSelectCombobox } from "@/components/ui/multi-select-combobox";
 import {
   ExecutiveOption,
   LEAD_PRIORITY_OPTIONS,
-  LEAD_SOURCE_OPTIONS,
   LEAD_STATUS_OPTIONS,
   LeadFilters,
 } from "@/types/leadtypes";

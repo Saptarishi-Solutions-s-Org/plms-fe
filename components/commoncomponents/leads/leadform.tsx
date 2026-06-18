@@ -26,15 +26,7 @@ import {
 } from "@/types/leadtypes";
 
 import { leadFormSchema } from "@/lib/validators/lead-form-schema";
-import { getExecutiveUsers } from "@/services/leads";
 import { getCountries, getStatesByCountry } from "@/services/location";
-
-const PRIORITY_ACTIVE_CLASS: Record<string, string> = {
-  Low: "bg-red-100 border-gray-300 text-gray-700",
-  Medium: "bg-red-200 border-amber-400 text-gray-800",
-  High: "bg-red-300 border-orange-400 text-gray-900",
-  Urgent: "bg-red-500 border-red-500 text-white",
-};
 
 function normalizeOptionValue(value: string) {
   return value.trim().toLowerCase().replace(/[\s_]+/g, "");
@@ -87,18 +79,13 @@ export default function LeadForm({
   onSubmit,
   onCancel,
   initialData,
-  fixedAssignedToId,
-  hideAssignedTo = false,
 }: {
   onSubmit: (data: LeadFormData) => Promise<void>;
   onCancel?: () => void;
   initialData?: LeadFormData;
-  fixedAssignedToId?: string;
-  hideAssignedTo?: boolean;
 }) {
   const isEditing = Boolean(initialData);
 
-  const [executives, setExecutives] = useState<Option[]>([]);
   const [countries, setCountries] = useState<Option[]>([]);
   const [states, setStates] = useState<Option[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -123,7 +110,6 @@ export default function LeadForm({
       postalCode: initialData?.postalCode ?? "",
       status: initialData?.status ?? "",
       leadSource: getLeadSourceValue(initialData?.leadSource),
-      assignedTo: initialData?.assignedTo ?? fixedAssignedToId ?? "",
       priority: initialData?.priority ?? "",
       notes: initialData?.notes ?? "",
     },
@@ -134,22 +120,15 @@ export default function LeadForm({
       try {
         const countryList = await getCountries();
         setCountries(countryList);
-
-        if (!hideAssignedTo) {
-          const executiveList = await getExecutiveUsers();
-          setExecutives(executiveList);
-        }
       } catch (err) {
         console.error(err);
       }
     };
 
     fetchInitialData();
-  }, [hideAssignedTo]);
+  }, []);
 
   useEffect(() => {
-    const assignedTo = initialData?.assignedTo ?? fixedAssignedToId ?? "";
-
     reset({
       name: initialData?.name ?? "",
       gender: initialData?.gender ?? "",
@@ -161,11 +140,10 @@ export default function LeadForm({
       postalCode: initialData?.postalCode ?? "",
       status: initialData?.status ?? "",
       leadSource: getLeadSourceValue(initialData?.leadSource),
-      assignedTo,
       priority: initialData?.priority ?? "",
       notes: initialData?.notes ?? "",
     });
-  }, [fixedAssignedToId, initialData, reset]);
+  }, [initialData, reset]);
 
   useEffect(() => {
     const loadInitialStates = async () => {
@@ -202,10 +180,7 @@ export default function LeadForm({
     setIsSubmitting(true);
 
     try {
-      await onSubmit({
-        ...data,
-        assignedTo: fixedAssignedToId ?? data.assignedTo,
-      });
+      await onSubmit(data);
     } finally {
       setIsSubmitting(false);
     }
@@ -382,76 +357,26 @@ export default function LeadForm({
             />
           </FieldWrapper>
 
-          {!hideAssignedTo && (
-            <FieldWrapper
-              label="Assigned To"
-              required
-              error={errors.assignedTo?.message}
-            >
-              <Controller
-                name="assignedTo"
-                control={control}
-                render={({ field }) => (
-                  <Select
-                    value={field.value || ""}
-                    onValueChange={field.onChange}
-                  >
-                    <SelectTrigger className="w-full">
-                      <SelectValue placeholder="Select executive" />
-                    </SelectTrigger>
-
-                    <SelectContent className="z-[9999] bg-white shadow-lg">
-                      {executives.length === 0 ? (
-                        <div className="px-3 py-2 text-sm text-gray-400">
-                          No executives found
-                        </div>
-                      ) : (
-                        executives.map((u) => (
-                          <SelectItem key={u.id} value={u.id}>
-                            {u.name}
-                          </SelectItem>
-                        ))
-                      )}
-                    </SelectContent>
-                  </Select>
-                )}
-              />
-            </FieldWrapper>
-          )}
-
-          <div className="flex flex-col gap-1.5 sm:col-span-2">
-            <Label required className="text-sm font-normal text-gray-700">
-              Priority
-            </Label>
-
+          <FieldWrapper label="Priority" required error={errors.priority?.message}>
             <Controller
               name="priority"
               control={control}
               render={({ field }) => (
-                <div className="flex flex-wrap gap-2">
-                  {LEAD_PRIORITY_OPTIONS.map(({ value }) => (
-                    <Button
-                      key={value}
-                      type="button"
-                      variant="outline"
-                      onClick={() => field.onChange(value)}
-                      className={`rounded-md border px-4 py-1.5 text-xs font-semibold transition-all ${
-                        field.value === value
-                          ? PRIORITY_ACTIVE_CLASS[value]
-                          : "border-gray-200 bg-white text-gray-500 hover:border-gray-400"
-                      }`}
-                    >
-                      {value}
-                    </Button>
-                  ))}
-                </div>
+                <Select value={field.value} onValueChange={field.onChange}>
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Select priority" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {LEAD_PRIORITY_OPTIONS.map((option) => (
+                      <SelectItem key={option.value} value={option.value}>
+                        {option.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               )}
             />
-
-            {errors.priority && (
-              <p className="text-xs text-red-500">{errors.priority.message}</p>
-            )}
-          </div>
+          </FieldWrapper>
         </div>
       </div>
 
