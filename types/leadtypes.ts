@@ -145,3 +145,11 @@ export type LeadActionsProps = {
 export interface LeadSummaryCardsProps {
   stats: LeadStats;
 }
+
+export const allFilters: LeadFilters = {
+  search: "",
+  sources: [],
+  statuses: [],
+  priorities: [],
+  assignedTo: [],
+};
