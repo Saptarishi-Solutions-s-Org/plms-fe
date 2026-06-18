@@ -9,6 +9,7 @@ import ExecutivePerformance from "@/components/commoncomponents/managerdashboard
 import {
   getManagerDashboard,
   getExecutivePerformance,
+  getLeadStatusOverview,
 } from "@/services/managerdashboard";
 import { getLeadsWithStats } from "@/services/leads";
 import { subscribeRealtime } from "@/lib/socket";
@@ -20,24 +21,9 @@ import {
 import {
   DashboardData,
   ExecutivePerformanceApiRow,
+  LeadStatusRow,
 } from "@/types/org-manager";
-import type { LeadWithStatsApiRow } from "@/types/org-reports";
 import GlobalLoader from "@/components/commoncomponents/globalloader";
-
-const STATUS_ORDER = ["New", "Contacted", "Qualified", "Lost"];
-
-const getManagerLeadStatusOverview = (leads: LeadWithStatsApiRow[]) => {
-  const statusCounts = leads.reduce<Record<string, number>>((acc, lead) => {
-    const status = String(lead.status || "");
-    acc[status] = (acc[status] || 0) + 1;
-    return acc;
-  }, {});
-
-  return STATUS_ORDER.map((status) => ({
-    label: status,
-    value: statusCounts[status] || 0,
-  }));
-};
 
 export default function ManagerDashboard() {
   const [loading, setLoading] = useState(true);
@@ -49,10 +35,7 @@ export default function ManagerDashboard() {
     active_offers: 0,
   });
 
-  const [overviewData, setOverviewData] = useState<
-  { label: string; value: number }[]
-  >([]);
-
+  const [overview, setOverview] = useState<LeadStatusRow[]>([]);
 
   const [executivePerformance, setExecutivePerformance] = useState<
     ExecutivePerformanceApiRow[]
@@ -73,12 +56,17 @@ export default function ManagerDashboard() {
 
   const fetchDashboard = useCallback(async () => {
     try {
-      const [dashboardData, executivePerformanceData, leadsData] =
-        await Promise.all([
-          getManagerDashboard(),
-          getExecutivePerformance(),
-          getLeadsWithStats(),
-        ]);
+      const [
+        dashboardData,
+        executivePerformanceData,
+        leadsData,
+        leadStatusOverviewData,
+      ] = await Promise.all([
+        getManagerDashboard(),
+        getExecutivePerformance(),
+        getLeadsWithStats(),
+        getLeadStatusOverview(),
+      ]);
 
       const data = dashboardData as DashboardData;
       const leads = leadsData?.leads ?? [];
@@ -92,7 +80,14 @@ export default function ManagerDashboard() {
         active_offers: data?.activeOffers ?? 0,
       });
 
-      setOverviewData(getManagerLeadStatusOverview(leads));
+      const order = ["New", "Contacted", "Qualified", "Lost"];
+
+      const formattedOverview = order.map((status) => ({
+        status,
+        count: Number(leadStatusOverviewData?.[status] || 0),
+      }));
+
+      setOverview(formattedOverview);
     } catch {
       toast.error("Failed to load manager dashboard");
     } finally {
@@ -117,14 +112,24 @@ export default function ManagerDashboard() {
   }, [refreshActiveOffers]);
 
   const formattedExecutivePerformance = useMemo(
-  () =>
-    executivePerformance.map((row) => ({
-      executiveName: row.executiveName,
-      achievement:
-        row.total > 0 ? Math.round((row.qualified / row.total) * 100) : 0,
-    })),
-  [executivePerformance],
-);
+    () =>
+      executivePerformance.map((row) => ({
+        executiveName: row.executiveName,
+        achievement:
+          row.total > 0 ? Math.round((row.qualified / row.total) * 100) : 0,
+      })),
+    [executivePerformance],
+  );
+
+  const overviewData = useMemo(
+    () =>
+      overview.map((row) => ({
+        label: row.status,
+        value: row.count,
+      })),
+    [overview],
+  );
+
   return (
     <>
       {loading ? (
