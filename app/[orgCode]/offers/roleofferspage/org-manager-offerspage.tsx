@@ -111,11 +111,9 @@ export default function OrgManagerOffersPage() {
     [offers]
   );
 
-  const fetchOffers = useCallback(async (showLoader = true) => {
+  const fetchOffers = useCallback(async () => {
     try {
-      if (showLoader) {
-        setIsLoading(true);
-      }
+      setIsLoading(true);
       setError(null);
 
       const [response, executivesResponse] = await Promise.all([
@@ -198,19 +196,17 @@ export default function OrgManagerOffersPage() {
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to load offers");
     } finally {
-      if (showLoader) {
-        setIsLoading(false);
-      }
+      setIsLoading(false);
     }
   }, []);
 
   useEffect(() => {
-    fetchOffers(true);
+    fetchOffers();
   }, [fetchOffers]);
 
   useEffect(() => {
     return subscribeRealtime(OFFER_LIST_CHANGED, () => {
-      fetchOffers(false);
+      fetchOffers();
     });
   }, [fetchOffers]);
 
