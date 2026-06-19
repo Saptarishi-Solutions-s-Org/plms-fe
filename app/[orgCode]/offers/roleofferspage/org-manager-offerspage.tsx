@@ -504,11 +504,7 @@ export default function OrgManagerOffersPage() {
                               No Executives
                             </DropdownMenuItem>
                           ) : (
-                            executives.map(
-                              (
-                                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                                executive: any,
-                              ) => (
+                            executives.map((executive) => (
                                 <DropdownMenuItem
                                   key={executive.id}
                                   onClick={() =>
