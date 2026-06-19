@@ -14,7 +14,10 @@ import GlobalLoader from "@/components/commoncomponents/globalloader";
 import OverviewTab from "@/components/commoncomponents/reports/Overview/overview-tab";
 import TeamPerformanceTab from "@/components/commoncomponents/reports/team-performance/team-performance-tab";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { getReportStats } from "@/services/organizationreports";
+import {
+  getLeadSourceAnalytics,
+  getReportStats,
+} from "@/services/organizationreports";
 import { getManagerDashboard } from "@/services/managerdashboard";
 import { getExecutiveUsers, getLeadsWithStats } from "@/services/leads";
 import { subscribeRealtime } from "@/lib/socket";
@@ -22,6 +25,7 @@ import { getUser } from "@/lib/auth";
 import { LEAD_SOURCE_OPTIONS } from "@/types/leadtypes";
 import type {
   ExecutiveUserRecord,
+  LeadSourceAnalyticsRow,
   LeadSourceRow,
   LeadWithStatsApiRow,
   OrganizationReportStats,
@@ -82,24 +86,43 @@ const getManagerLeadSourceRows = (
   }));
 };
 
-const getManagerSourceConversionRows = (
-  leads: LeadWithStatsApiRow[],
-): SourceConversionRateRow[] =>
-  reportSources.map(({ key, label }) => {
-    const sourceLeads = leads.filter(
-      (lead) => normalizeSource(getLeadSource(lead)) === key,
-    );
-    const converted = sourceLeads.filter(isConvertedLead).length;
+const toNumber = (value: unknown) => {
+  const numericValue = Number(value);
 
-    return {
-      source: label,
-      leads: sourceLeads.length,
-      rate:
-        sourceLeads.length > 0
-          ? Math.round((converted / sourceLeads.length) * 100)
-          : 0,
-    };
-  });
+  return Number.isFinite(numericValue) ? numericValue : 0;
+};
+
+const getAnalyticsRows = (analytics: unknown): LeadSourceAnalyticsRow[] => {
+  if (Array.isArray(analytics)) {
+    return analytics as LeadSourceAnalyticsRow[];
+  }
+
+  if (
+    analytics &&
+    typeof analytics === "object" &&
+    "data" in analytics &&
+    Array.isArray(analytics.data)
+  ) {
+    return analytics.data as LeadSourceAnalyticsRow[];
+  }
+
+  return [];
+};
+
+const getSourceConversionRows = (
+  analytics: unknown,
+): SourceConversionRateRow[] =>
+  getAnalyticsRows(analytics).map((row) => ({
+    source: row.source || row.leadSource || "",
+    leads: toNumber(
+      row.leads ??
+        row.leadCount ??
+        row.totalLeads ??
+        row.total_leads ??
+        row.count,
+    ),
+    rate: toNumber(row.conversionRate ?? row.conversion_rate ?? row.rate),
+  }));
 
 const isReportTab = (value: string | null): value is ReportTab =>
   value === "overview" || value === "team-performance";
@@ -155,12 +178,19 @@ export default function OrgReports() {
     setIsRefreshing(true);
 
     try {
-      const [statsData, managerData, leadsData, executivesData] =
+      const [
+        statsData,
+        managerData,
+        leadsData,
+        executivesData,
+        leadSourceAnalyticsData,
+      ] =
         await Promise.all([
           getReportStats(),
           getManagerDashboard(),
           getLeadsWithStats(),
           getExecutiveUsers(),
+          getLeadSourceAnalytics(),
         ]);
 
       const currentUser = getUser();
@@ -180,7 +210,7 @@ export default function OrgReports() {
       const managerAssignedLeadCount = managerAssignedLeads.length;
 
       const convertedLeadCount =
-  managerAssignedLeads.filter(isConvertedLead).length;
+        managerAssignedLeads.filter(isConvertedLead).length;
 
       setStats({
         total_leads: managerAssignedLeadCount,
@@ -194,7 +224,7 @@ export default function OrgReports() {
         getManagerLeadSourceRows(managerAssignedLeads),
       );
       setSourceConversionRateData(
-        getManagerSourceConversionRows(managerAssignedLeads),
+        getSourceConversionRows(leadSourceAnalyticsData),
       );
     } catch {
       setStats({
