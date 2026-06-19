@@ -18,7 +18,6 @@ import { getReportStats } from "@/services/organizationreports";
 import { getManagerDashboard } from "@/services/managerdashboard";
 import { getExecutiveUsers, getLeadsWithStats } from "@/services/leads";
 import { subscribeRealtime } from "@/lib/socket";
-import { OFFER_LIST_CHANGED } from "@/types/realtime";
 import { getUser } from "@/lib/auth";
 import { LEAD_SOURCE_OPTIONS } from "@/types/leadtypes";
 import type {
@@ -28,7 +27,11 @@ import type {
   OrganizationReportStats,
   SourceConversionRateRow,
 } from "@/types/org-reports";
-import { LEAD_LIST_CHANGED, type LeadListChangedPayload } from "@/types/realtime";
+import {
+  LEAD_LIST_CHANGED,
+  OFFER_LIST_CHANGED,
+  type LeadListChangedPayload,
+} from "@/types/realtime";
 
 const normalizeSource = (source: string) =>
   source.trim().replace(/\s+/g, "_").toLowerCase();
@@ -157,7 +160,7 @@ export default function OrgReports() {
           getReportStats(),
           getManagerDashboard(),
           getLeadsWithStats(),
-          getExecutiveUsers().catch(() => []),
+          getExecutiveUsers(),
         ]);
 
       const currentUser = getUser();
@@ -176,10 +179,13 @@ export default function OrgReports() {
       );
       const managerAssignedLeadCount = managerAssignedLeads.length;
 
+      const convertedLeadCount =
+  managerAssignedLeads.filter(isConvertedLead).length;
+
       setStats({
         total_leads: managerAssignedLeadCount,
         leads_assigned: managerAssignedLeadCount,
-        converted_leads: statsData?.convertedLeads ?? 0,
+        converted_leads: convertedLeadCount,
         active_offers: managerData?.activeOffers ?? 0,
         offers_utilized: statsData?.offersUtilized ?? 0,
       });
@@ -240,7 +246,7 @@ export default function OrgReports() {
   return (
     <div className="min-h-screen w-full bg-slate-50 px-4 py-4 sm:px-5 sm:py-5">
       <div className="flex w-full flex-col gap-6">
-        <div>
+        
           <div>
             <h1 className="text-xl font-semibold sm:text-2xl lg:text-3xl">
               Reports
@@ -249,7 +255,7 @@ export default function OrgReports() {
               Analyzing team performance for the current cycle
             </p>
           </div>
-        </div>
+        
 
         <Tabs
           value={activeTab}
