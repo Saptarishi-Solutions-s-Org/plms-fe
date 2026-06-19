@@ -46,12 +46,6 @@ export interface LeadSourceRow {
   leads: number;
 }
 
-export interface LeadSourceAnalyticsRow {
-  source?: string;
-  leads?: number;
-  conversionRate?: number;
-}
-
 export interface LeadSourceDistributionProps {
   title: string;
   subtitle?: string;
