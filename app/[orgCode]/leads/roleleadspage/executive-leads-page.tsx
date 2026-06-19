@@ -73,10 +73,15 @@ export default function ExecutiveLeadsPage() {
   };
 
   const handleFormSubmit = async (data: LeadFormData) => {
+    const payload = {
+      ...data,
+      assignedTo: currentUserId ?? editingLead?.assignedTo ?? "",
+    };
+
     if (editingLead) {
-      await updateLead({ id: editingLead.uuid, ...data });
+      await updateLead({ id: editingLead.uuid, ...payload });
     } else {
-      await createLead(data);
+      await createLead(payload);
     }
 
     await refetch();
@@ -141,8 +146,6 @@ export default function ExecutiveLeadsPage() {
             onFormClose={closeForm}
             selectedLead={selectedLead}
             onDetailsClose={() => setSelectedLead(null)}
-            fixedAssignedToId={currentUserId}
-            hideAssignedTo
           />
         </div>
       )}

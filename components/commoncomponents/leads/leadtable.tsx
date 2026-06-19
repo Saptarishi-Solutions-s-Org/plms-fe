@@ -8,7 +8,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { ExecutiveOption, Lead } from "@/types/leadtypes";
+import { ExecutiveOption, Lead, LEAD_SOURCE_OPTIONS } from "@/types/leadtypes";
 
 export interface LeadTableProps {
   leads: Lead[];
@@ -26,6 +26,10 @@ export default function LeadTable({
   emptyMessage,
 }: LeadTableProps) {
   const showActionsColumn = renderActions !== undefined;
+  const getLeadSourceLabel = (source?: string) =>
+    LEAD_SOURCE_OPTIONS.find((option) => option.value === source)?.label ??
+    source?.replace(/_/g, " ") ??
+    "-";
 
   return (
     <div className="overflow-x-auto rounded-lg border border-gray-200 bg-white shadow-sm">
@@ -97,7 +101,7 @@ export default function LeadTable({
                 <TableCell>{lead.status || "-"}</TableCell>
                 <TableCell>{lead.priority || "-"}</TableCell>
                 <TableCell className="text-gray-600">
-                  {lead.leadSource?.replace(/_/g, " ") || "-"}
+                  {getLeadSourceLabel(lead.leadSource)}
                 </TableCell>
                 {showAssignedTo && (
                   <TableCell className="text-gray-600">

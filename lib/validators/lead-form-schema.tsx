@@ -31,7 +31,5 @@ export const leadFormSchema = z.object({
 
   priority: z.string().min(1, "Priority is required"),
 
-  assignedTo: z.string().min(1, "Assigned To is required"),
-
   notes: z.string().min(1, "Notes is required"),
 });

@@ -17,8 +17,6 @@ export default function LeadDialogs({
   onFormClose,
   selectedLead,
   onDetailsClose,
-  fixedAssignedToId,
-  hideAssignedTo = false,
 }: LeadDialogsProps) {
   return (
     <>
@@ -38,8 +36,6 @@ export default function LeadDialogs({
             onSubmit={onFormSubmit}
             onCancel={onFormClose}
             initialData={editingLead ?? undefined}
-            fixedAssignedToId={fixedAssignedToId}
-            hideAssignedTo={hideAssignedTo}
           />
         </DialogContent>
       </Dialog>
