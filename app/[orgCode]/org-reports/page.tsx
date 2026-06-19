@@ -45,9 +45,6 @@ const reportSources = LEAD_SOURCE_OPTIONS.map(({ value, label }) => ({
   label,
 }));
 
-const getLeadSource = (lead: LeadWithStatsApiRow) =>
-  lead.leadSource || lead.source || "";
-
 const isConvertedLead = (lead: LeadWithStatsApiRow) =>
   String(lead.status || "").toLowerCase() === "qualified";
 
@@ -65,18 +62,19 @@ const getManagerAssignedLeads = (
       )
     : [];
 
-const getManagerLeadSourceRows = (
-  leads: LeadWithStatsApiRow[],
+const getLeadSourceRows = (
+  rows: LeadSourceAnalyticsRow[],
 ): LeadSourceRow[] => {
   const merged = new Map<string, number>(
     reportSources.map(({ key }) => [key, 0]),
   );
 
-  leads.forEach((lead) => {
-    const source = normalizeSource(getLeadSource(lead));
+  rows.forEach((row) => {
+    const source = normalizeSource(row.source ?? "");
+    const leads = row.leads ?? 0;
 
     if (merged.has(source)) {
-      merged.set(source, (merged.get(source) ?? 0) + 1);
+      merged.set(source, (merged.get(source) ?? 0) + leads);
     }
   });
 
@@ -172,14 +170,13 @@ export default function OrgReports() {
         leadsData,
         executivesData,
         leadSourceAnalyticsData,
-      ] =
-        await Promise.all([
-          getReportStats(),
-          getManagerDashboard(),
-          getLeadsWithStats(),
-          getExecutiveUsers(),
-          getLeadSourceAnalytics(),
-        ]);
+      ] = await Promise.all([
+        getReportStats(),
+        getManagerDashboard(),
+        getLeadsWithStats(),
+        getExecutiveUsers(),
+        getLeadSourceAnalytics(),
+      ]);
 
       const currentUser = getUser();
       const managerExecutiveIds = new Set(
@@ -208,12 +205,11 @@ export default function OrgReports() {
         offers_utilized: statsData?.offersUtilized ?? 0,
       });
 
-      setLeadSourceDistributionData(
-        getManagerLeadSourceRows(managerAssignedLeads),
-      );
-      setSourceConversionRateData(
-        getSourceConversionRows(leadSourceAnalyticsData),
-      );
+      const analyticsRows = getAnalyticsRows(leadSourceAnalyticsData);
+
+      setLeadSourceDistributionData(getLeadSourceRows(analyticsRows));
+
+      setSourceConversionRateData(getSourceConversionRows(analyticsRows));
     } catch {
       setStats({
         total_leads: 0,
@@ -264,16 +260,14 @@ export default function OrgReports() {
   return (
     <div className="min-h-screen w-full bg-slate-50 px-4 py-4 sm:px-5 sm:py-5">
       <div className="flex w-full flex-col gap-6">
-        
-          <div>
-            <h1 className="text-xl font-semibold sm:text-2xl lg:text-3xl">
-              Reports
-            </h1>
-            <p className="text-xs sm:text-sm text-gray-600">
-              Analyzing team performance for the current cycle
-            </p>
-          </div>
-        
+        <div>
+          <h1 className="text-xl font-semibold sm:text-2xl lg:text-3xl">
+            Reports
+          </h1>
+          <p className="text-xs sm:text-sm text-gray-600">
+            Analyzing team performance for the current cycle
+          </p>
+        </div>
 
         <Tabs
           value={activeTab}
