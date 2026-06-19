@@ -86,12 +86,6 @@ const getManagerLeadSourceRows = (
   }));
 };
 
-const toNumber = (value: unknown) => {
-  const numericValue = Number(value);
-
-  return Number.isFinite(numericValue) ? numericValue : 0;
-};
-
 const getAnalyticsRows = (analytics: unknown): LeadSourceAnalyticsRow[] => {
   if (Array.isArray(analytics)) {
     return analytics as LeadSourceAnalyticsRow[];
@@ -113,15 +107,9 @@ const getSourceConversionRows = (
   analytics: unknown,
 ): SourceConversionRateRow[] =>
   getAnalyticsRows(analytics).map((row) => ({
-    source: row.source || row.leadSource || "",
-    leads: toNumber(
-      row.leads ??
-        row.leadCount ??
-        row.totalLeads ??
-        row.total_leads ??
-        row.count,
-    ),
-    rate: toNumber(row.conversionRate ?? row.conversion_rate ?? row.rate),
+    source: row.source,
+    leads: row.leads,
+    rate: row.conversionRate,
   }));
 
 const isReportTab = (value: string | null): value is ReportTab =>
