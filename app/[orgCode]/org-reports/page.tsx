@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import {
   usePathname,
   useParams,
@@ -19,15 +19,23 @@ import {
   getReportStats,
 } from "@/services/organizationreports";
 import { getManagerDashboard } from "@/services/managerdashboard";
+import { getExecutiveUsers, getLeadsWithStats } from "@/services/leads";
+import { subscribeRealtime } from "@/lib/socket";
+import { getUser } from "@/lib/auth";
 import { LEAD_SOURCE_OPTIONS } from "@/types/leadtypes";
 import type {
+  ExecutiveUserRecord,
   LeadSourceAnalyticsRow,
   LeadSourceRow,
+  LeadWithStatsApiRow,
   OrganizationReportStats,
   SourceConversionRateRow,
 } from "@/types/org-reports";
-import {LEAD_LIST_CHANGED, type LeadListChangedPayload} from "@/types/realtime";
-import { subscribeRealtime } from "@/lib/socket";
+import {
+  LEAD_LIST_CHANGED,
+  OFFER_LIST_CHANGED,
+  type LeadListChangedPayload,
+} from "@/types/realtime";
 
 const normalizeSource = (source: string) =>
   source.trim().replace(/\s+/g, "_").toLowerCase();
@@ -37,7 +45,26 @@ const reportSources = LEAD_SOURCE_OPTIONS.map(({ value, label }) => ({
   label,
 }));
 
-const mergeLeadSourceRows = (rows: LeadSourceAnalyticsRow[]): LeadSourceRow[] => {
+const isConvertedLead = (lead: LeadWithStatsApiRow) =>
+  String(lead.status || "").toLowerCase() === "qualified";
+
+const getManagerAssignedLeads = (
+  leads: LeadWithStatsApiRow[] = [],
+  managerId?: string,
+  executiveIds = new Set<string>(),
+) =>
+  managerId || executiveIds.size > 0
+    ? leads.filter(
+        (lead) =>
+          Boolean(lead.assignedTo) &&
+          (executiveIds.has(lead.assignedTo ?? "") ||
+            lead.createdById === managerId),
+      )
+    : [];
+
+const getLeadSourceRows = (
+  rows: LeadSourceAnalyticsRow[],
+): LeadSourceRow[] => {
   const merged = new Map<string, number>(
     reportSources.map(({ key }) => [key, 0]),
   );
@@ -56,6 +83,32 @@ const mergeLeadSourceRows = (rows: LeadSourceAnalyticsRow[]): LeadSourceRow[] =>
     leads: merged.get(key) ?? 0,
   }));
 };
+
+const getAnalyticsRows = (analytics: unknown): LeadSourceAnalyticsRow[] => {
+  if (Array.isArray(analytics)) {
+    return analytics as LeadSourceAnalyticsRow[];
+  }
+
+  if (
+    analytics &&
+    typeof analytics === "object" &&
+    "data" in analytics &&
+    Array.isArray(analytics.data)
+  ) {
+    return analytics.data as LeadSourceAnalyticsRow[];
+  }
+
+  return [];
+};
+
+const getSourceConversionRows = (
+  analytics: unknown,
+): SourceConversionRateRow[] =>
+  getAnalyticsRows(analytics).map((row) => ({
+    source: row.source,
+    leads: row.leads,
+    rate: row.conversionRate,
+  }));
 
 const isReportTab = (value: string | null): value is ReportTab =>
   value === "overview" || value === "team-performance";
@@ -86,53 +139,94 @@ export default function OrgReports() {
     SourceConversionRateRow[]
   >([]);
 
-    const fetchReports = async () => {
-      setIsRefreshing(true);
+  const refreshOfferStats = useCallback(async () => {
+    setIsRefreshing(true);
 
-      try {
-        const [statsData, analyticsData, managerData] = await Promise.all([
-          getReportStats(),
-          getLeadSourceAnalytics(),
-          getManagerDashboard(),
-        ]);
+    try {
+      const [statsData, managerData] = await Promise.all([
+        getReportStats(),
+        getManagerDashboard(),
+      ]);
 
-        setStats({
-          total_leads: managerData?.totalLeads ?? 0,
-          leads_assigned: statsData?.leadsAssigned ?? 0,
-          converted_leads: statsData?.convertedLeads ?? 0,
-          active_offers: managerData?.activeOffers ?? 0,
-          offers_utilized: statsData?.offersUtilized ?? 0,
-        });
+      setStats((currentStats) => ({
+        ...currentStats,
+        active_offers: managerData?.activeOffers ?? 0,
+        offers_utilized: statsData?.offersUtilized ?? 0,
+      }));
+    } catch {
+      toast.error("Failed to refresh offer reports");
+    } finally {
+      setIsRefreshing(false);
+    }
+  }, []);
 
-        const analyticsRows = Array.isArray(analyticsData)
-          ? (analyticsData as LeadSourceAnalyticsRow[])
-          : [];
+  const fetchReports = async () => {
+    setIsRefreshing(true);
 
-        setLeadSourceDistributionData(mergeLeadSourceRows(analyticsRows));
+    try {
+      const [
+        statsData,
+        managerData,
+        leadsData,
+        executivesData,
+        leadSourceAnalyticsData,
+      ] = await Promise.all([
+        getReportStats(),
+        getManagerDashboard(),
+        getLeadsWithStats(),
+        getExecutiveUsers(),
+        getLeadSourceAnalytics(),
+      ]);
 
-        setSourceConversionRateData(
-          analyticsRows.map((row) => ({
-            source: row.source ?? "",
-            leads: row.leads ?? 0,
-            rate: row.conversionRate ?? 0,
-          })),
-        );
-      } catch {
-        setStats({
-          total_leads: 0,
-          leads_assigned: 0,
-          converted_leads: 0,
-          active_offers: 0,
-          offers_utilized: 0,
-        });
-        setLeadSourceDistributionData([]);
-        setSourceConversionRateData([]);
-        toast.error("Failed to load reports");
-      } finally {
-        setInitialLoading(false);
-        setIsRefreshing(false);
-      }
-    };
+      const currentUser = getUser();
+      const managerExecutiveIds = new Set(
+        (Array.isArray(executivesData)
+          ? (executivesData as ExecutiveUserRecord[])
+          : []
+        )
+          .map((executive) => executive.id)
+          .filter((id): id is string => Boolean(id)),
+      );
+      const managerAssignedLeads = getManagerAssignedLeads(
+        leadsData?.leads,
+        currentUser?.id,
+        managerExecutiveIds,
+      );
+      const managerAssignedLeadCount = managerAssignedLeads.length;
+
+      const convertedLeadCount =
+        managerAssignedLeads.filter(isConvertedLead).length;
+
+      setStats({
+        total_leads: managerAssignedLeadCount,
+        leads_assigned: managerAssignedLeadCount,
+        converted_leads: convertedLeadCount,
+        active_offers: managerData?.activeOffers ?? 0,
+        offers_utilized: statsData?.offersUtilized ?? 0,
+      });
+
+      const analyticsRows = getAnalyticsRows(leadSourceAnalyticsData);
+
+      setLeadSourceDistributionData(getLeadSourceRows(analyticsRows));
+
+      setSourceConversionRateData(getSourceConversionRows(analyticsRows));
+    } catch {
+      setStats({
+        total_leads: 0,
+        leads_assigned: 0,
+        converted_leads: 0,
+        active_offers: 0,
+        offers_utilized: 0,
+      });
+      setLeadSourceDistributionData([]);
+      setSourceConversionRateData([]);
+      toast.error("Failed to load reports");
+    } finally {
+      setInitialLoading(false);
+      setIsRefreshing(false);
+    }
+  };
+
   useEffect(() => {
     fetchReports();
   }, []);
@@ -142,6 +236,12 @@ export default function OrgReports() {
       fetchReports();
     });
   }, []);
+
+  useEffect(() => {
+    return subscribeRealtime(OFFER_LIST_CHANGED, () => {
+      refreshOfferStats();
+    });
+  }, [refreshOfferStats]);
 
   if (initialLoading) {
     return <GlobalLoader />;
@@ -161,14 +261,12 @@ export default function OrgReports() {
     <div className="min-h-screen w-full bg-slate-50 px-4 py-4 sm:px-5 sm:py-5">
       <div className="flex w-full flex-col gap-6">
         <div>
-          <div>
-            <h1 className="text-xl font-semibold sm:text-2xl lg:text-3xl">
-              Reports
-            </h1>
-            <p className="text-xs sm:text-sm text-gray-600">
-              Analyzing team performance for the current cycle
-            </p>
-          </div>
+          <h1 className="text-xl font-semibold sm:text-2xl lg:text-3xl">
+            Reports
+          </h1>
+          <p className="text-xs sm:text-sm text-gray-600">
+            Analyzing team performance for the current cycle
+          </p>
         </div>
 
         <Tabs

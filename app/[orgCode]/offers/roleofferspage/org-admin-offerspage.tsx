@@ -8,12 +8,14 @@ import { OfferFilters } from "@/components/commoncomponents/offers/offerfilter";
 import { OffersTable } from "@/components/commoncomponents/offers/offertable";
 import { CreateOfferDialog } from "@/components/commoncomponents/offers/createoffer";
 import { Button } from "@/components/ui/button";
+import { subscribeRealtime } from "@/lib/socket";
 import {
   createOffer,
   getOfferSummary,
   getOffers,
   toggleOfferStatus,
 } from "@/services/offers";
+import { OFFER_LIST_CHANGED } from "@/types/realtime";
 
 import type { OfferPayload } from "@/lib/validators/offervalidation";
 
@@ -182,6 +184,13 @@ export default function OrgAdminOffersPage() {
   useEffect(() => {
     fetchOffers(true);
   }, [fetchOffers]);
+
+  useEffect(() => {
+    return subscribeRealtime(OFFER_LIST_CHANGED, () => {
+      fetchOffers(false);
+    });
+  }, [fetchOffers]);
+
   const handleCreateOffer = useCallback(
     async (data: OfferPayload) => {
       try {

@@ -38,6 +38,16 @@ export const MENU_CONFIG: MenuGroup[] = [
         roles: ["System Admin"],
       },
       {
+        href: "/executives",
+        icon: Users,
+        label: "Executives",
+        modules: ["lead"],
+        permissions: ["view"],
+        roles: [
+          "Manager",
+        ],
+      },
+      {
         href: "/leads",
         icon: UserCheck,
         label: "Leads",
@@ -52,6 +62,16 @@ export const MENU_CONFIG: MenuGroup[] = [
           "Executive",
           "Manager",
         ],
+      },
+
+      // Manager → View only
+      {
+        href: "/offers",
+        icon: Gift,
+        label: "Offers",
+        modules: ["offers"],
+        permissions: ["view"],
+        roles: ["Manager"],
       },
 
       {
@@ -83,15 +103,7 @@ export const MENU_CONFIG: MenuGroup[] = [
         roles: ["Admin"],
       },
 
-      // Manager → View only
-      {
-        href: "/offers",
-        icon: Gift,
-        label: "Offers",
-        modules: ["offers"],
-        permissions: ["view"],
-        roles: ["Manager"],
-      },
+      
 
       {
         href: "/offers",
@@ -100,17 +112,6 @@ export const MENU_CONFIG: MenuGroup[] = [
         modules: ["offers"],
         permissions: ["view"],
         roles: ["Executive"],
-      },
-
-      {
-        href: "/executives",
-        icon: Users,
-        label: "Executives",
-        modules: ["lead"],
-        permissions: ["view"],
-        roles: [
-          "Manager",
-        ],
       },
 
     ],

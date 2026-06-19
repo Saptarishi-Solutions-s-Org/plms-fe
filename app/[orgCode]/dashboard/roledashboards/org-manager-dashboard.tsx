@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 
 import ManagerCards from "@/components/commoncomponents/managerdashboard/card";
@@ -8,17 +8,22 @@ import CommonOverview from "@/components/commoncomponents/managerdashboard/leads
 import ExecutivePerformance from "@/components/commoncomponents/managerdashboard/executiveperformance";
 import {
   getManagerDashboard,
-  getLeadStatusOverview,
   getExecutivePerformance,
+  getLeadStatusOverview,
 } from "@/services/managerdashboard";
+import { getLeadsWithStats } from "@/services/leads";
+import { subscribeRealtime } from "@/lib/socket";
+import {
+  LEAD_LIST_CHANGED,
+  LeadListChangedPayload,
+  OFFER_LIST_CHANGED,
+} from "@/types/realtime";
 import {
   DashboardData,
-  LeadStatusRow,
   ExecutivePerformanceApiRow,
+  LeadStatusRow,
 } from "@/types/org-manager";
 import GlobalLoader from "@/components/commoncomponents/globalloader";
-import { LEAD_LIST_CHANGED, type LeadListChangedPayload } from "@/types/realtime";
-import { subscribeRealtime } from "@/lib/socket";
 
 export default function ManagerDashboard() {
   const [loading, setLoading] = useState(true);
@@ -31,25 +36,45 @@ export default function ManagerDashboard() {
   });
 
   const [overview, setOverview] = useState<LeadStatusRow[]>([]);
+
   const [executivePerformance, setExecutivePerformance] = useState<
     ExecutivePerformanceApiRow[]
   >([]);
 
-  const fetchDashboard = async () => {
+  const refreshActiveOffers = useCallback(async () => {
     try {
-      const [dashboardData, executivePerformanceData, overviewData] =
-        await Promise.all([
-          getManagerDashboard(),
-          getExecutivePerformance(),
-          getLeadStatusOverview()
-        ]);
+      const dashboardData = (await getManagerDashboard()) as DashboardData;
+
+      setStats((currentStats) => ({
+        ...currentStats,
+        active_offers: dashboardData?.activeOffers ?? 0,
+      }));
+    } catch {
+      toast.error("Failed to refresh active offers");
+    }
+  }, []);
+
+  const fetchDashboard = useCallback(async () => {
+    try {
+      const [
+        dashboardData,
+        executivePerformanceData,
+        leadsData,
+        leadStatusOverviewData,
+      ] = await Promise.all([
+        getManagerDashboard(),
+        getExecutivePerformance(),
+        getLeadsWithStats(),
+        getLeadStatusOverview(),
+      ]);
+
+      const data = dashboardData as DashboardData;
+      const leads = leadsData?.leads ?? [];
 
       setExecutivePerformance(executivePerformanceData || []);
 
-      const data = dashboardData as DashboardData;
-
       setStats({
-        total_leads: data?.totalLeads ?? 0,
+        total_leads: leads.length,
         converted_leads: data?.convertedLeads ?? 0,
         new_leads_this_week: data?.thisWeekLeads ?? 0,
         active_offers: data?.activeOffers ?? 0,
@@ -59,38 +84,52 @@ export default function ManagerDashboard() {
 
       const formattedOverview = order.map((status) => ({
         status,
-        count: Number(overviewData?.[status] || 0),
+        count: Number(leadStatusOverviewData?.[status] || 0),
       }));
 
       setOverview(formattedOverview);
-    } catch (error) {
+    } catch {
       toast.error("Failed to load manager dashboard");
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
+
   useEffect(() => {
     fetchDashboard();
-  }, []);
+  }, [fetchDashboard]);
 
   useEffect(() => {
     return subscribeRealtime<LeadListChangedPayload>(LEAD_LIST_CHANGED, () => {
       fetchDashboard();
     });
-  }, []);
+  }, [fetchDashboard]);
 
-  const overviewData = overview.map((row) => ({
-    label: row.status,
-    value: row.count,
-  }));
+  useEffect(() => {
+    return subscribeRealtime(OFFER_LIST_CHANGED, () => {
+      refreshActiveOffers();
+    });
+  }, [refreshActiveOffers]);
 
-  const formattedExecutivePerformance = executivePerformance.map(
-    (row: any) => ({
-      executiveName: row.executiveName,
-      achievement:
-        row.total > 0 ? Math.round((row.qualified / row.total) * 100) : 0,
-    }),
+  const formattedExecutivePerformance = useMemo(
+    () =>
+      executivePerformance.map((row) => ({
+        executiveName: row.executiveName,
+        achievement:
+          row.total > 0 ? Math.round((row.qualified / row.total) * 100) : 0,
+      })),
+    [executivePerformance],
   );
+
+  const overviewData = useMemo(
+    () =>
+      overview.map((row) => ({
+        label: row.status,
+        value: row.count,
+      })),
+    [overview],
+  );
+
   return (
     <>
       {loading ? (

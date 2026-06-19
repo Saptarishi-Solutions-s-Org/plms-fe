@@ -17,13 +17,13 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { MultiSelectCombobox } from "@/components/ui/multi-select-combobox";
+import { subscribeRealtime } from "@/lib/socket";
 
-import {
-  getExecutiveOffers,
-} from "@/services/executivestats";
+import { getExecutiveOffers } from "@/services/executivestats";
 
 import { OFFER_STATUS_OPTIONS, type Offer } from "@/types/Createoffer";
 import { DISCOUNT_OPTIONS } from "@/lib/validators/offervalidation";
+import { OFFER_LIST_CHANGED } from "@/types/realtime";
 
 import {
   ExecutiveOfferItem,
@@ -154,6 +154,12 @@ export default function OrgExecutiveOffersPage() {
     fetchOffers();
   }, [fetchOffers]);
 
+  useEffect(() => {
+    return subscribeRealtime(OFFER_LIST_CHANGED, () => {
+      fetchOffers();
+    });
+  }, [fetchOffers]);
+
   const handleFilterChange = useCallback(
     <K extends keyof ExecutiveOfferFilters>(
       key: K,
@@ -182,9 +188,7 @@ export default function OrgExecutiveOffersPage() {
       offers.filter((offer) => {
         const query = filters.search.trim().toLowerCase();
 
-        const matchSearch =
-          !query ||
-          offer.title.toLowerCase().includes(query);
+        const matchSearch = !query || offer.title.toLowerCase().includes(query);
 
         const selectedStatuses = filters.statuses.map(
           (status) => STATUS_LABEL_TO_VALUE.get(status) ?? status,
@@ -232,7 +236,6 @@ export default function OrgExecutiveOffersPage() {
             Manage offers and assign them to leads easily.
           </p>
         </div>
-
       </div>
 
       {/* Cards */}
@@ -272,9 +275,7 @@ export default function OrgExecutiveOffersPage() {
         <MultiSelectCombobox
           options={OFFER_STATUS_OPTIONS.map((option) => option.label)}
           selectedValues={draftFilters.statuses}
-          onSelectionChange={(values) =>
-            handleFilterChange("statuses", values)
-          }
+          onSelectionChange={(values) => handleFilterChange("statuses", values)}
           placeholder="All Status"
           width="w-full sm:w-44"
         />
@@ -369,7 +370,6 @@ export default function OrgExecutiveOffersPage() {
                       {formatStatusLabel(offer.status)}
                     </Badge>
                   </TableCell>
-
                 </TableRow>
               ))
             )}
