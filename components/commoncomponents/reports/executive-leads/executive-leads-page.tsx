@@ -4,6 +4,7 @@ import Link from "next/link";
 import { ArrowLeft, BriefcaseBusiness, Download, Users } from "lucide-react";
 import { endOfDay, startOfDay } from "date-fns";
 import { useEffect, useState } from "react";
+import { getUser } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardTitle } from "@/components/ui/card";
 import { DateRangeFilter } from "@/components/commoncomponents/daterange";
@@ -64,12 +65,17 @@ const mapApiLeadToRow = (lead: LeadWithStatsApiRow): ExecutiveLeadRow => ({
   status: lead.status || "-",
   source: formatSource(lead.leadSource || lead.source),
   assignedBy: lead.createdByName || "-",
+  createdById: lead.createdById,
 });
 
-const buildSummary = (rows: ExecutiveLeadRow[]): ExecutiveLeadSummary => ({
+const buildSummary = (
+  rows: ExecutiveLeadRow[],
+  executiveId: string,
+  managerId?: string,
+): ExecutiveLeadSummary => ({
   totalCreated: rows.length,
-  byExecutives: rows.filter((lead) => lead.assignedBy !== "System").length,
-  byManager: rows.filter((lead) => lead.assignedBy === "System").length,
+  byExecutives: rows.filter((lead) => lead.createdById === executiveId).length,
+  byManager: rows.filter((lead) => lead.createdById === managerId).length,
 });
 
 export default function ExecutiveLeadsPage({
@@ -111,7 +117,7 @@ export default function ExecutiveLeadsPage({
         const rows = filteredLeads.map(mapApiLeadToRow);
 
         setLeadRows(rows);
-        setLeadSummary(buildSummary(rows));
+        setLeadSummary(buildSummary(rows, executiveId, getUser()?.id));
       } catch (error) {
         console.error("Failed to fetch lead stats:", error);
       }

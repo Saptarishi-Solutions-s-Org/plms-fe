@@ -115,6 +115,7 @@ export interface ExecutiveLeadRow {
   status: string;
   source: string;
   assignedBy: string;
+  createdById?: string;
 }
 
 export interface ExecutiveLeadsProps {
