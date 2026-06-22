@@ -10,7 +10,7 @@ export interface Offer {
   title: string;
   description: string;
   validTo: string;
-  status: "ACTIVE" | "INACTIVE";
+  status: "ACTIVE" | "INACTIVE" | "EXPIRED";
 }
  
 export interface AssignOfferToExecutivesPayload {

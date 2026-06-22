@@ -24,6 +24,7 @@ function formatDate(value: string): string {
 
 export function OfferCard({ offer, selected, onSelect }: OfferCardProps) {
   const isActive = offer.status === "ACTIVE";
+  const isExpired = offer.status === "EXPIRED";
 
   return (
     <TableRow
@@ -71,15 +72,17 @@ export function OfferCard({ offer, selected, onSelect }: OfferCardProps) {
           className={`inline-flex items-center gap-1.5 rounded-full border px-2 py-0.5 text-xs font-medium ${
             isActive
               ? "border-green-200 bg-green-50 text-green-700"
+              : isExpired
+              ? "border-red-200 bg-red-50 text-red-600"
               : "border-gray-200 bg-gray-50 text-gray-600"
           }`}
         >
           <span
             className={`h-1.5 w-1.5 rounded-full ${
-              isActive ? "bg-green-500" : "bg-gray-400"
+              isActive ? "bg-green-500" : isExpired ? "bg-red-400" : "bg-gray-400"
             }`}
           />
-          {isActive ? "Active" : "Inactive"}
+          {isActive ? "Active" : isExpired ? "Expired" : "Inactive"}
         </span>
       </TableCell>
     </TableRow>

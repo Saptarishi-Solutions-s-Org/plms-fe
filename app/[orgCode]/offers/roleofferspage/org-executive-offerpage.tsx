@@ -359,17 +359,28 @@ export default function OrgExecutiveOffersPage() {
                   <TableCell>{formatDate(offer.validTo)}</TableCell>
 
                   <TableCell>
-                    <Badge
-                      variant="outline"
-                      className={
-                        offer.status === "active"
-                          ? "border-green-200 bg-green-50 text-green-700"
-                          : "border-gray-200 bg-gray-50 text-gray-600"
-                      }
-                    >
-                      {formatStatusLabel(offer.status)}
-                    </Badge>
-                  </TableCell>
+                      <Badge
+                        variant="outline"
+                        className={
+                          offer.status === "active"
+                            ? "border-green-200 bg-green-50 text-green-700"
+                            : offer.status === "expired"
+                              ? "border-red-200 bg-red-50 text-red-700"
+                              : "border-gray-200 bg-gray-50 text-gray-600"
+                        }
+                      >
+                        <span
+                          className={`mr-1.5 h-1.5 w-1.5 rounded-full ${
+                            offer.status === "active"
+                              ? "bg-green-500"
+                              : offer.status === "expired"
+                                ? "bg-red-500"
+                                : "bg-gray-500"
+                          }`}
+                        />
+                        {formatStatusLabel(offer.status)}
+                      </Badge>
+                    </TableCell>
                 </TableRow>
               ))
             )}

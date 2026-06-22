@@ -96,7 +96,7 @@ export default function OrgManagerOffersPage() {
         leadCount: executive.leadCount,
         activeOfferCount: executive.offerCount,
       })),
-    [executives]
+    [executives],
   );
 
   const bulkActionOffers = useMemo(
@@ -106,9 +106,13 @@ export default function OrgManagerOffersPage() {
         title: offer.title,
         description: offer.description,
         validTo: offer.validTo,
-        status: (offer.status === "active" ? "ACTIVE" : "INACTIVE") as BulkOffer["status"],
+        status: (offer.status === "active"
+          ? "ACTIVE"
+          : offer.status === "inactive"
+          ? "INACTIVE"
+          : "EXPIRED") as BulkOffer["status"],
       })),
-    [offers]
+    [offers],
   );
 
   const fetchOffers = useCallback(async () => {
@@ -130,7 +134,7 @@ export default function OrgManagerOffersPage() {
           executivesResponse?.executives ||
           executivesResponse?.value ||
           executivesResponse ||
-          []
+          [],
       );
 
       setTotalCount(stats.totalOffers || 0);
@@ -460,9 +464,20 @@ export default function OrgManagerOffersPage() {
                         className={
                           offer.status === "active"
                             ? "border-green-200 bg-green-50 text-green-700"
-                            : "border-gray-200 bg-gray-50 text-gray-600"
+                            : offer.status === "expired"
+                              ? "border-red-200 bg-red-50 text-red-700"
+                              : "border-gray-200 bg-gray-50 text-gray-600"
                         }
                       >
+                        <span
+                          className={`mr-1.5 h-1.5 w-1.5 rounded-full ${
+                            offer.status === "active"
+                              ? "bg-green-500"
+                              : offer.status === "expired"
+                                ? "bg-red-400"
+                                : "bg-gray-400"
+                          }`}
+                        />
                         {formatStatusLabel(offer.status)}
                       </Badge>
                     </TableCell>
@@ -486,7 +501,16 @@ export default function OrgManagerOffersPage() {
                     <TableCell className="text-center">
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="icon">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            disabled={offer.status !== "active"}
+                            className={
+                              offer.status !== "active"
+                                ? "cursor-not-allowed opacity-100"
+                                : ""
+                            }
+                          >
                             <MoreHorizontal className="h-4 w-4" />
                           </Button>
                         </DropdownMenuTrigger>
@@ -505,16 +529,15 @@ export default function OrgManagerOffersPage() {
                             </DropdownMenuItem>
                           ) : (
                             executives.map((executive) => (
-                                <DropdownMenuItem
-                                  key={executive.id}
-                                  onClick={() =>
-                                    handleAssignOffer(offer.id, executive.id)
-                                  }
-                                >
-                                  {executive.name}
-                                </DropdownMenuItem>
-                              ),
-                            )
+                              <DropdownMenuItem
+                                key={executive.id}
+                                onClick={() =>
+                                  handleAssignOffer(offer.id, executive.id)
+                                }
+                              >
+                                {executive.name}
+                              </DropdownMenuItem>
+                            ))
                           )}
                         </DropdownMenuContent>
                       </DropdownMenu>
