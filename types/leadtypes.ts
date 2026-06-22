@@ -134,6 +134,7 @@ export type LeadHeaderProps = {
   onExport: () => void;
   onImportComplete?: () => Promise<void> | void;
   onAddLead: () => void;
+  onBulkAssign?: () => void;
   showImportExport?: boolean;
 };
 

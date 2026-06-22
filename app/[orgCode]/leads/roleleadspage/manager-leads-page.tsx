@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 
 import GlobalLoader from "@/components/commoncomponents/globalloader";
+import { BulkLeadActionsDrawer } from "@/components/commoncomponents/lead-bulk-actions/BulkLeadActionsDrawer";
 import LeadSummaryCards from "@/components/commoncomponents/leads/lead-cards";
 import LeadDialogs from "@/components/commoncomponents/leads/lead-dialogs";
 import LeadActions from "@/components/commoncomponents/leads/leadactions";
@@ -17,11 +18,26 @@ import type {
   Lead,
   LeadFilters,
   LeadFormData,
+  LeadPayload,
 } from "@/types/leadtypes";
 import { allFilters } from "@/types/leadtypes";
 
-function normalizeFilterValue(value: string) {
-  return value.trim().toLowerCase().replace(/[\s_]+/g, "");
+function toLeadPayload(lead: Lead, assignedTo: string): LeadPayload {
+  return {
+    name: lead.name,
+    gender: lead.gender,
+    email: lead.email,
+    phone: lead.phone,
+    city: lead.city,
+    state: lead.state,
+    country: lead.country,
+    postalCode: lead.postalCode,
+    leadSource: lead.leadSource,
+    status: lead.status,
+    assignedTo,
+    priority: lead.priority,
+    notes: lead.notes,
+  };
 }
 
 export default function ManagerLeadsPage() {
@@ -33,18 +49,26 @@ export default function ManagerLeadsPage() {
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
   const [filters, setFilters] = useState<LeadFilters>(allFilters);
   const [executives, setExecutives] = useState<ExecutiveOption[]>([]);
+  const [isBulkAssignOpen, setIsBulkAssignOpen] = useState(false);
 
   useEffect(() => {
     getExecutiveUsers().then(setExecutives).catch(console.error);
   }, []);
 
-  const filteredLeads = useMemo(() => {
-    return leads.filter((lead) => {
-      const search = filters.search.trim().toLowerCase();
-      const assignedExecutive = executives.find(
-        (executive) => executive.id === lead.assignedTo,
-      );
+  const executiveNamesById = useMemo(
+    () => new Map(executives.map((executive) => [executive.id, executive.name])),
+    [executives],
+  );
 
+  const leadsById = useMemo(
+    () => new Map(leads.map((lead) => [lead.uuid, lead])),
+    [leads],
+  );
+
+  const filteredLeads = useMemo(() => {
+    const search = filters.search.trim().toLowerCase();
+
+    return leads.filter((lead) => {
       const searchMatch =
         !search ||
         lead.name.toLowerCase().includes(search) ||
@@ -60,7 +84,7 @@ export default function ManagerLeadsPage() {
       const assignedToMatch =
         filters.assignedTo.length === 0 ||
         filters.assignedTo.includes(
-          assignedExecutive?.name ?? lead.assignedToName ?? "",
+          executiveNamesById.get(lead.assignedTo) ?? lead.assignedToName ?? "",
         );
 
       return (
@@ -70,7 +94,7 @@ export default function ManagerLeadsPage() {
         assignedToMatch
       );
     });
-  }, [executives, filters, leads]);
+  }, [executiveNamesById, filters, leads]);
 
   const openAddForm = () => {
     setEditingLead(null);
@@ -99,35 +123,81 @@ export default function ManagerLeadsPage() {
   };
 
   const handleAssignLead = async (lead: Lead, assignedTo: string) => {
-    await updateLead({
-      id: lead.uuid,
-      name: lead.name,
-      gender: lead.gender,
-      email: lead.email,
-      phone: lead.phone,
-      city: lead.city,
-      state: lead.state,
-      country: lead.country,
-      postalCode: lead.postalCode,
-      leadSource: lead.leadSource,
-      status: lead.status,
-      assignedTo,
-      priority: lead.priority,
-      notes: lead.notes,
-    });
+    await updateLead({ id: lead.uuid, ...toLeadPayload(lead, assignedTo) });
 
     await refetch();
   };
 
-  const mapLead = (lead: Lead): Lead => {
-    const assignedExecutive = executives.find(
-      (executive) => executive.id === lead.assignedTo,
+  const handleBulkAssignLeads = async (
+    leadIds: string[],
+    assignedTo: string,
+  ) => {
+    const failures: Array<{ leadId: string; message: string }> = [];
+    let successCount = 0;
+    const assignableLeads: Lead[] = [];
+
+    for (const leadId of leadIds) {
+      const lead = leadsById.get(leadId);
+
+      if (!lead) {
+        failures.push({ leadId, message: "Lead was not found." });
+        continue;
+      }
+
+      if (lead.assignedTo === assignedTo) {
+        failures.push({
+          leadId,
+          message: `${lead.name} is already assigned to this executive.`,
+        });
+        continue;
+      }
+
+      assignableLeads.push(lead);
+    }
+
+    const results = await Promise.allSettled(
+      assignableLeads.map((lead) =>
+        updateLead({ id: lead.uuid, ...toLeadPayload(lead, assignedTo) }),
+      ),
     );
 
+    results.forEach((result, index) => {
+      if (result.status === "fulfilled") {
+        successCount += 1;
+        return;
+      }
+
+      failures.push({
+        leadId: assignableLeads[index].uuid,
+        message:
+          result.reason instanceof Error
+            ? result.reason.message
+            : "Failed to assign lead.",
+      });
+    });
+
+    if (successCount > 0) {
+      try {
+        await refetch();
+      } catch {
+        // Assignments succeeded even if refreshing the list fails.
+      }
+    }
+
+    return {
+      successCount,
+      failureCount: failures.length,
+      failures,
+    };
+  };
+
+  const mapLead = (lead: Lead): Lead => {
     return {
       ...lead,
       assignedToName:
-        assignedExecutive?.name ?? lead.assignedToName ?? "Unassigned",
+        executiveNamesById.get(lead.assignedTo) ??
+        lead.assignedToName ??
+        "Unassigned",
     };
   };
 
@@ -155,6 +225,7 @@ export default function ManagerLeadsPage() {
               onExport={handleExport}
               onImportComplete={refetch}
               onAddLead={openAddForm}
+              onBulkAssign={() => setIsBulkAssignOpen(true)}
             />
           </div>
 
@@ -184,6 +255,14 @@ export default function ManagerLeadsPage() {
             onFormClose={closeForm}
             selectedLead={selectedLead}
             onDetailsClose={() => setSelectedLead(null)}
+          />
+
+          <BulkLeadActionsDrawer
+            open={isBulkAssignOpen}
+            executives={executives}
+            leads={leads}
+            onClose={() => setIsBulkAssignOpen(false)}
+            onAssign={handleBulkAssignLeads}
           />
         </div>
       )}
