@@ -9,6 +9,9 @@ import { getExecutiveStats, getRecentLeads } from "@/services/executivestats";
 import { getLeadStats } from "@/services/executivestats";
 import { RecentLead } from "@/types/executivestats";
 import { useRouter, useParams } from "next/navigation";
+import {LEAD_LIST_CHANGED, type LeadListChangedPayload} from "@/types/realtime";
+import { OFFER_LIST_CHANGED, type OfferListChangedPayload } from "@/types/realtime";
+import { subscribeRealtime } from "@/lib/socket";
 
 export default function ExecutiveDashboard() {
   const [stats, setStats] = useState({
@@ -26,7 +29,6 @@ export default function ExecutiveDashboard() {
   const params = useParams<{ orgCode: string }>();
   const orgCode = params.orgCode;
 
-  useEffect(() => {
     const fetchDashboardData = async () => {
       try {
         const [statsRes, leadsRes, overviewRes] = await Promise.all([
@@ -78,9 +80,21 @@ export default function ExecutiveDashboard() {
         console.error("Failed to load executive dashboard", err);
       }
     };
+    useEffect(() => {
+      fetchDashboardData();
+    }, []);
 
-    fetchDashboardData();
-  }, []);
+    useEffect(() => {
+      return subscribeRealtime<LeadListChangedPayload>(LEAD_LIST_CHANGED, () => {
+        fetchDashboardData();
+      });
+    }, []);
+
+    useEffect(() => {
+      return subscribeRealtime<OfferListChangedPayload>(OFFER_LIST_CHANGED, () => {
+        fetchDashboardData();
+      });
+    }, []);
 
   return (
     <div className="w-full space-y-4 px-3 py-4 sm:px-5 sm:py-6 lg:px-6">
@@ -117,3 +131,4 @@ export default function ExecutiveDashboard() {
     </div>
   );
 }
+ 

@@ -9,7 +9,6 @@ export interface LeadFormData {
   postalCode: string;
   leadSource: string;
   status: string;
-  assignedTo: string;
   priority: string;
   notes: string;
 }
@@ -17,8 +16,13 @@ export interface LeadFormData {
 export interface Lead extends LeadFormData {
   uuid: string;
   leadCode: string;
+  assignedTo: string;
   assignedToName?: string;
 }
+
+export type LeadPayload = LeadFormData & {
+  assignedTo: string;
+};
 
 export interface LeadActivity {
   id: string;
@@ -88,8 +92,6 @@ export interface LeadDialogsProps {
   onFormClose: () => void;
   selectedLead: Lead | null;
   onDetailsClose: () => void;
-  fixedAssignedToId?: string;
-  hideAssignedTo?: boolean;
 }
 
 export type LeadFilters = {
@@ -106,7 +108,6 @@ export const LEAD_SOURCE_OPTIONS = [
   { value: "Referral", label: "Referral" },
   { value: "Manual_Entry", label: "Manual Entry" },
 ] as const;
-
 
 
 export const LEAD_STATUS_OPTIONS = [
@@ -140,8 +141,18 @@ export type LeadActionsProps = {
   lead: Lead;
   onEdit: (lead: Lead) => void;
   onViewDetails: (lead: Lead) => void;
+  executives?: ExecutiveOption[];
+  onAssign?: (lead: Lead, assignedTo: string) => Promise<void> | void;
 };
 
 export interface LeadSummaryCardsProps {
   stats: LeadStats;
 }
+
+export const allFilters: LeadFilters = {
+  search: "",
+  sources: [],
+  statuses: [],
+  priorities: [],
+  assignedTo: [],
+};

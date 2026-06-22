@@ -25,6 +25,7 @@ import {
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { subscribeRealtime } from "@/lib/socket";
 import { Plus, MoreHorizontal } from "lucide-react";
 
 import {
@@ -39,6 +40,7 @@ import type {
 } from "@/types/Createoffer";
 import type { Offer as BulkOffer } from "@/types/offerbulk";
 import type { BulkAssignResult } from "@/types/offerbulk";
+import { OFFER_LIST_CHANGED } from "@/types/realtime";
 
 import {
   formatDate,
@@ -200,6 +202,12 @@ export default function OrgManagerOffersPage() {
 
   useEffect(() => {
     fetchOffers();
+  }, [fetchOffers]);
+
+  useEffect(() => {
+    return subscribeRealtime(OFFER_LIST_CHANGED, () => {
+      fetchOffers();
+    });
   }, [fetchOffers]);
 
   const handleFilterChange = useCallback(
@@ -496,11 +504,7 @@ export default function OrgManagerOffersPage() {
                               No Executives
                             </DropdownMenuItem>
                           ) : (
-                            executives.map(
-                              (
-                                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                                executive: any,
-                              ) => (
+                            executives.map((executive) => (
                                 <DropdownMenuItem
                                   key={executive.id}
                                   onClick={() =>

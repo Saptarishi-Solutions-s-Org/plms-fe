@@ -17,6 +17,11 @@ import { useEffect, useState, useCallback } from "react";
 import AddLeadForm from "@/components/orgadmindashboard/userform";
 import { getOrganizationAdminDashboard } from "@/services/organizationAdmin";
 import { AdminCardsProps, UserDetails } from "@/types/organizationadmindashboard/dashboardtypes";
+import { subscribeRealtime } from "@/lib/socket";
+import {
+  USER_LIST_CHANGED,
+  type UserListChangedPayload,
+} from "@/types/realtime";
 
 
 export default function OrganizationAdminDashboard() {
@@ -61,8 +66,18 @@ export default function OrganizationAdminDashboard() {
   }, []);
 
   useEffect(() => {
-    fetchUsers();
+        fetchUsers();
   }, [fetchUsers]);
+
+  useEffect(() => {
+    return subscribeRealtime<UserListChangedPayload>(
+      USER_LIST_CHANGED,
+      () => {
+        fetchUsers();
+      }
+    );
+  }, [fetchUsers]);
+
   const filteredUsers = userdata.filter((user) => {
 
     const userStatus = user.is_active ? "Active" : "Inactive";

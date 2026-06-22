@@ -47,9 +47,10 @@ export interface LeadSourceRow {
 }
 
 export interface LeadSourceAnalyticsRow {
-  source?: string;
-  leads?: number;
-  conversionRate?: number;
+  source: string;
+  leads: number;
+  converted: number;
+  conversionRate: number;
 }
 
 export interface LeadSourceDistributionProps {
@@ -114,6 +115,7 @@ export interface ExecutiveLeadRow {
   status: string;
   source: string;
   assignedBy: string;
+  createdById?: string;
 }
 
 export interface ExecutiveLeadsProps {
@@ -130,6 +132,7 @@ export interface LeadWithStatsApiRow{
   leadSource?: string;
   source?: string;
   createdByName?: string;
+  createdById?: string;
   assignedTo?: string;
   createdAt?: string;
   createdat?: string;
