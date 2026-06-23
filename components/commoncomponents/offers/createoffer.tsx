@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { GlobeIcon, TagIcon, XIcon } from "lucide-react";
@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { MultiSelectCombobox } from "@/components/ui/multi-select-combobox";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   Select,
@@ -135,7 +136,34 @@ export function CreateOfferDialog({
   });
 
   const isGlobal = watch("isGlobal");
+  const selectedManagerIds = watch("managerIds");
   const discountType = watch("discountType");
+  const managerNameById = useMemo(
+    () => new Map(managers.map((manager) => [manager.id, manager.name])),
+    [managers],
+  );
+  const managerIdByName = useMemo(
+    () => new Map(managers.map((manager) => [manager.name, manager.id])),
+    [managers],
+  );
+  const managerOptions = useMemo(
+    () => managers.map((manager) => manager.name),
+    [managers],
+  );
+
+  useEffect(() => {
+    if (managers.length === 0) return;
+
+    const allManagersSelected = selectedManagerIds.length === managers.length;
+
+    if (allManagersSelected && !isGlobal) {
+      setValue("isGlobal", true);
+    }
+
+    if (!allManagersSelected && isGlobal) {
+      setValue("isGlobal", false);
+    }
+  }, [selectedManagerIds, managers, isGlobal, setValue]);
 
   // Fetch managers when dialog opens
   useEffect(() => {
@@ -282,7 +310,6 @@ export function CreateOfferDialog({
 
               {/* Offer Details */}
               <div>
-                
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                   <FieldWrapper
                     label="Offer Name"
@@ -329,7 +356,7 @@ export function CreateOfferDialog({
 
                   {!isGlobal && (
                     <FieldWrapper
-                      label="Manager"
+                      label="Managers"
                       required
                       error={errors.managerIds?.message}
                     >
@@ -337,22 +364,32 @@ export function CreateOfferDialog({
                         name="managerIds"
                         control={control}
                         render={({ field }) => (
-                          <Select
-                            value={field.value[0] ?? ""}
-                            onValueChange={(v) => field.onChange([v])}
-                            disabled={isSubmitting}
+                          <div
+                            onClick={(event) => event.preventDefault()}
+                            onKeyDown={(event) => {
+                              if (event.key === "Enter") {
+                                event.preventDefault();
+                              }
+                            }}
                           >
-                            <SelectTrigger className="w-full">
-                              <SelectValue placeholder="Select a manager" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {managers.map((m) => (
-                                <SelectItem key={m.id} value={m.id}>
-                                  {m.name}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
+                            <MultiSelectCombobox
+                              options={managerOptions}
+                              selectedValues={
+                                field.value
+                                  .map((id) => managerNameById.get(id))
+                                  .filter(Boolean) as string[]
+                              }
+                              onSelectionChange={(selectedManagers) =>
+                                field.onChange(
+                                  selectedManagers
+                                    .map((name) => managerIdByName.get(name))
+                                    .filter(Boolean),
+                                )
+                              }
+                              placeholder="Select managers"
+                              width="w-full"
+                            />
+                          </div>
                         )}
                       />
                     </FieldWrapper>
@@ -534,7 +571,9 @@ export function CreateOfferDialog({
 
               {/* Description */}
               <div>
-                <h3 className="mb-3 text-sm font-semibold text-blue-600">Additional Information</h3>
+                <h3 className="mb-3 text-sm font-semibold text-blue-600">
+                  Additional Information
+                </h3>
                 <FieldWrapper
                   required
                   label="Description"
