@@ -18,7 +18,7 @@ import {
   getLeadSourceAnalytics,
   getReportStats,
 } from "@/services/organizationreports";
-import { getManagerDashboard } from "@/services/managerdashboard";
+import { getManagerOfferOverview } from "@/services/managerdashboard";
 import { getExecutiveUsers, getLeadsWithStats } from "@/services/leads";
 import { subscribeRealtime } from "@/lib/socket";
 import { getUser } from "@/lib/auth";
@@ -143,14 +143,14 @@ export default function OrgReports() {
     setIsRefreshing(true);
 
     try {
-      const [statsData, managerData] = await Promise.all([
+      const [statsData, offerOverviewData] = await Promise.all([
         getReportStats(),
-        getManagerDashboard(),
+        getManagerOfferOverview(),
       ]);
 
       setStats((currentStats) => ({
         ...currentStats,
-        active_offers: managerData?.activeOffers ?? 0,
+        active_offers: offerOverviewData?.stats?.activeOffers ?? 0,
         offers_utilized: statsData?.offersUtilized ?? 0,
       }));
     } catch {
@@ -166,13 +166,13 @@ export default function OrgReports() {
     try {
       const [
         statsData,
-        managerData,
+        offerOverviewData,
         leadsData,
         executivesData,
         leadSourceAnalyticsData,
       ] = await Promise.all([
         getReportStats(),
-        getManagerDashboard(),
+        getManagerOfferOverview(),
         getLeadsWithStats(),
         getExecutiveUsers(),
         getLeadSourceAnalytics(),
@@ -198,10 +198,10 @@ export default function OrgReports() {
         managerAssignedLeads.filter(isConvertedLead).length;
 
       setStats({
-        total_leads: managerAssignedLeadCount,
+        total_leads: leadsData?.leads?.length ?? 0,
         leads_assigned: managerAssignedLeadCount,
         converted_leads: convertedLeadCount,
-        active_offers: managerData?.activeOffers ?? 0,
+        active_offers: offerOverviewData?.stats?.activeOffers ?? 0,
         offers_utilized: statsData?.offersUtilized ?? 0,
       });
 
