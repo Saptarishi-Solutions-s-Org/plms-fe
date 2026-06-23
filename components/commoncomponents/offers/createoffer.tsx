@@ -159,10 +159,7 @@ export function CreateOfferDialog({
     if (allManagersSelected && !isGlobal) {
       setValue("isGlobal", true);
     }
-
-    if (!allManagersSelected && isGlobal) {
-      setValue("isGlobal", false);
-    }
+    
   }, [selectedManagerIds, managers, isGlobal, setValue]);
 
   // Fetch managers when dialog opens
@@ -420,24 +417,26 @@ export function CreateOfferDialog({
               {/* Discount Fields */}
               {discountType && (
                 <div>
-                  <h3 className="mb-3 text-sm font-semibold text-blue-600">
+                  <h3 className="mb-2 text-sm font-semibold text-blue-600">
                     Discount Details
                   </h3>
                   <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                     {discountType === "Fixed_Amount" && (
-                      <FieldWrapper
-                        label="Discount Amount"
-                        required
-                        error={errors.discountAmount?.message}
-                      >
-                        <Input
-                          type="number"
-                          min="0"
-                          step="0.01"
-                          placeholder="e.g. 500"
-                          {...register("discountAmount")}
-                        />
-                      </FieldWrapper>
+                      <div className="sm:col-span-2">
+                        <FieldWrapper
+                          label="Discount Amount"
+                          required
+                          error={errors.discountAmount?.message}
+                        >
+                          <Input
+                            type="number"
+                            min="0"
+                            step="0.01"
+                            placeholder="e.g. 500"
+                            {...register("discountAmount")}
+                          />
+                        </FieldWrapper>
+                      </div>
                     )}
 
                     {discountType === "Percentage" && (
@@ -481,7 +480,7 @@ export function CreateOfferDialog({
                         >
                           <Textarea
                             placeholder="Describe the combo offer…"
-                            className="min-h-[80px] field-sizing-fixed resize-y"
+                            className="min-h-[40px] field-sizing-fixed resize-y"
                             {...register("comboDescription")}
                           />
                         </FieldWrapper>
@@ -551,19 +550,21 @@ export function CreateOfferDialog({
                     )}
 
                     {discountType === "Flag_Discount" && (
-                      <FieldWrapper
-                        label="Discount Amount"
-                        required
-                        error={errors.flagDiscountAmount?.message}
-                      >
-                        <Input
-                          type="number"
-                          min="0"
-                          step="0.01"
-                          placeholder="e.g. 150"
-                          {...register("flagDiscountAmount")}
-                        />
-                      </FieldWrapper>
+                      <div className="sm:col-span-2">
+                        <FieldWrapper
+                          label="Discount Amount"
+                          required
+                          error={errors.flagDiscountAmount?.message}
+                        >
+                          <Input
+                            type="number"
+                            min="0"
+                            step="0.01"
+                            placeholder="e.g. 150"
+                            {...register("flagDiscountAmount")}
+                          />
+                        </FieldWrapper>
+                      </div>
                     )}
                   </div>
                 </div>
@@ -571,7 +572,7 @@ export function CreateOfferDialog({
 
               {/* Description */}
               <div>
-                <h3 className="mb-3 text-sm font-semibold text-blue-600">
+                <h3 className="mb-2 text-sm font-semibold text-blue-600">
                   Additional Information
                 </h3>
                 <FieldWrapper
@@ -581,7 +582,7 @@ export function CreateOfferDialog({
                 >
                   <Textarea
                     placeholder="Describe what this offer includes…"
-                    className="field-sizing-fixed resize-y min-h-[80px]"
+                    className="field-sizing-fixed resize-y min-h-[40px]"
                     {...register("description")}
                   />
                 </FieldWrapper>
