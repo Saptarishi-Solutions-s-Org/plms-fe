@@ -37,9 +37,8 @@ export default function LeadActions({
   const [isAssignOpen, setAssignOpen] = useState(false);
   const [assignedTo, setAssignedTo] = useState("");
   const [isAssigning, setIsAssigning] = useState(false);
-  const availableExecutives = executives.filter(
-    (executive) => executive.id !== lead.assignedTo,
-  );
+  const canAssign = Boolean(onAssign && !lead.assignedTo);
+  const availableExecutives = canAssign ? executives : [];
   const currentExecutiveName =
     executives.find((executive) => executive.id === lead.assignedTo)?.name ??
     lead.assignedToName ??
@@ -77,7 +76,7 @@ export default function LeadActions({
             View Details
           </DropdownMenuItem>
           <DropdownMenuItem onClick={() => onEdit(lead)}>Edit</DropdownMenuItem>
-          {onAssign && (
+          {canAssign && (
             <DropdownMenuItem
               onClick={() => {
                 setAssignedTo("");
@@ -90,7 +89,7 @@ export default function LeadActions({
         </DropdownMenuContent>
       </DropdownMenu>
 
-      {onAssign && (
+      {canAssign && (
         <Dialog open={isAssignOpen} onOpenChange={setAssignOpen}>
           <DialogContent className="sm:max-w-md">
             <DialogHeader>

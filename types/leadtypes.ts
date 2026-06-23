@@ -157,3 +157,18 @@ export const allFilters: LeadFilters = {
   priorities: [],
   assignedTo: [],
 };
+
+export type BulkLeadActionsDrawerProps = {
+  open: boolean;
+  executives: ExecutiveOption[];
+  leads: Lead[];
+  onClose: () => void;
+  onAssign: (
+    leadIds: string[],
+    executiveId: string,
+  ) => Promise<{
+    successCount: number;
+    failureCount: number;
+    failures: Array<{ leadId: string; message: string }>;
+  }>;
+};

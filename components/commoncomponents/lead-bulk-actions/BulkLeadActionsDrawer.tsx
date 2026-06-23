@@ -22,22 +22,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import type { ExecutiveOption, Lead } from "@/types/leadtypes";
-
-type BulkLeadActionsDrawerProps = {
-  open: boolean;
-  executives: ExecutiveOption[];
-  leads: Lead[];
-  onClose: () => void;
-  onAssign: (
-    leadIds: string[],
-    executiveId: string,
-  ) => Promise<{
-    successCount: number;
-    failureCount: number;
-    failures: Array<{ leadId: string; message: string }>;
-  }>;
-};
+import type { BulkLeadActionsDrawerProps } from "@/types/leadtypes";
 
 export function BulkLeadActionsDrawer({
   open,
@@ -63,8 +48,14 @@ export function BulkLeadActionsDrawer({
     }, {});
   }, [leads]);
 
+  const selectableLeads = useMemo(
+    () => leads.filter((lead) => !lead.assignedTo),
+    [leads],
+  );
+
   const allLeadsSelected =
-    leads.length > 0 && selectedLeadIds.length === leads.length;
+    selectableLeads.length > 0 &&
+    selectedLeadIds.length === selectableLeads.length;
   const someLeadsSelected =
     selectedLeadIds.length > 0 && !allLeadsSelected;
 
@@ -79,7 +70,10 @@ export function BulkLeadActionsDrawer({
     onClose();
   };
 
-  const toggleLead = (leadId: string) => {
+  const toggleLead = (lead: (typeof leads)[number]) => {
+    if (lead.assignedTo) return;
+
+    const leadId = lead.uuid;
     setSelectedLeadIds((current) =>
       current.includes(leadId)
         ? current.filter((id) => id !== leadId)
@@ -103,8 +97,9 @@ export function BulkLeadActionsDrawer({
         onClose();
       } else if (result.successCount > 0) {
         toast.warning(
-          `${result.successCount} ${result.successCount === 1 ? "lead was" : "leads were"} assigned to ${executiveName}; ${result.failureCount} ${result.failureCount === 1 ? "lead was" : "leads were"} skipped.`,
+          `Assigned ${result.successCount} of ${selectedLeadIds.length} selected leads to ${executiveName}.`,
         );
+        setSelectedLeadIds([]);
       } else {
         toast.error(
           result.failures[0]?.message || "The selected leads could not be assigned.",
@@ -139,7 +134,7 @@ export function BulkLeadActionsDrawer({
                   Bulk Assign Leads
                 </DrawerTitle>
                 <DrawerDescription className="mt-0.5 text-xs text-gray-500">
-                  Assign selected leads to one executive
+                  Assign unassigned leads to one executive
                 </DrawerDescription>
               </div>
             </div>
@@ -213,10 +208,12 @@ export function BulkLeadActionsDrawer({
                               : false
                         }
                         aria-label="Select all leads"
-                        disabled={leads.length === 0}
+                        disabled={selectableLeads.length === 0}
                         onCheckedChange={(checked) =>
                           setSelectedLeadIds(
-                            checked === true ? leads.map((lead) => lead.uuid) : [],
+                            checked === true
+                              ? selectableLeads.map((lead) => lead.uuid)
+                              : [],
                           )
                         }
                       />
@@ -240,22 +237,27 @@ export function BulkLeadActionsDrawer({
                   ) : (
                     leads.map((lead) => {
                       const selected = selectedLeadIds.includes(lead.uuid);
-                      const assignedTo =
-                        executives.find(
-                          (executive) => executive.id === lead.assignedTo,
-                        )?.name ?? lead.assignedToName ?? "Unassigned";
+                      const isAssigned = Boolean(lead.assignedTo);
 
                       return (
                         <TableRow
                           key={lead.uuid}
-                          tabIndex={0}
+                          tabIndex={isAssigned ? -1 : 0}
+                          aria-disabled={isAssigned}
                           data-state={selected ? "selected" : undefined}
-                          className="cursor-pointer hover:bg-gray-50/60"
-                          onClick={() => toggleLead(lead.uuid)}
+                          className={
+                            isAssigned
+                              ? "cursor-not-allowed bg-gray-50/60 opacity-60"
+                              : "cursor-pointer hover:bg-gray-50/60"
+                          }
+                          onClick={() => toggleLead(lead)}
                           onKeyDown={(event) => {
-                            if (event.key === "Enter" || event.key === " ") {
+                            if (
+                              !isAssigned &&
+                              (event.key === "Enter" || event.key === " ")
+                            ) {
                               event.preventDefault();
-                              toggleLead(lead.uuid);
+                              toggleLead(lead);
                             }
                           }}
                         >
@@ -263,7 +265,8 @@ export function BulkLeadActionsDrawer({
                             <Checkbox
                               checked={selected}
                               aria-label={`Select ${lead.name}`}
-                              onCheckedChange={() => toggleLead(lead.uuid)}
+                              disabled={isAssigned}
+                              onCheckedChange={() => toggleLead(lead)}
                               onClick={(e) => e.stopPropagation()}
                             />
                           </TableCell>
@@ -274,8 +277,8 @@ export function BulkLeadActionsDrawer({
                             {lead.email}
                           </TableCell>
                           <TableCell>{lead.status || "-"}</TableCell>
-                          <TableCell className="text-gray-600">
-                            {assignedTo}
+                          <TableCell className="text-gray-600 text-center">
+                            {lead.assignedToName || "-"}
                           </TableCell>
                         </TableRow>
                       );

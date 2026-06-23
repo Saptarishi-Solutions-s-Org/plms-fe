@@ -123,6 +123,8 @@ export default function ManagerLeadsPage() {
   };
 
   const handleAssignLead = async (lead: Lead, assignedTo: string) => {
+    if (lead.assignedTo) return;
+
     await updateLead({ id: lead.uuid, ...toLeadPayload(lead, assignedTo) });
 
     await refetch();
@@ -137,17 +139,11 @@ export default function ManagerLeadsPage() {
     const assignableLeads: Lead[] = [];
 
     for (const leadId of leadIds) {
-      const lead = leadsById.get(leadId);
-
-      if (!lead) {
-        failures.push({ leadId, message: "Lead was not found." });
-        continue;
-      }
-
-      if (lead.assignedTo === assignedTo) {
+      const lead = leadsById.get(leadId)!;
+      if (lead.assignedTo) {
         failures.push({
           leadId,
-          message: `${lead.name} is already assigned to this executive.`,
+          message: `${lead.name} is already assigned and cannot be reassigned.`,
         });
         continue;
       }
@@ -177,11 +173,7 @@ export default function ManagerLeadsPage() {
     });
 
     if (successCount > 0) {
-      try {
-        await refetch();
-      } catch {
-        // Assignments succeeded even if refreshing the list fails.
-      }
+      await refetch();
     }
 
     return {
