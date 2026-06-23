@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { GlobeIcon, TagIcon, XIcon } from "lucide-react";
@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { MultiSelectCombobox } from "@/components/ui/multi-select-combobox";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   Select,
@@ -135,7 +136,31 @@ export function CreateOfferDialog({
   });
 
   const isGlobal = watch("isGlobal");
+  const selectedManagerIds = watch("managerIds");
   const discountType = watch("discountType");
+  const managerNameById = useMemo(
+    () => new Map(managers.map((manager) => [manager.id, manager.name])),
+    [managers],
+  );
+  const managerIdByName = useMemo(
+    () => new Map(managers.map((manager) => [manager.name, manager.id])),
+    [managers],
+  );
+  const managerOptions = useMemo(
+    () => managers.map((manager) => manager.name),
+    [managers],
+  );
+
+  useEffect(() => {
+    if (managers.length === 0) return;
+
+    const allManagersSelected = selectedManagerIds.length === managers.length;
+
+    if (allManagersSelected && !isGlobal) {
+      setValue("isGlobal", true);
+    }
+    
+  }, [selectedManagerIds, managers, isGlobal, setValue]);
 
   // Fetch managers when dialog opens
   useEffect(() => {
@@ -282,7 +307,6 @@ export function CreateOfferDialog({
 
               {/* Offer Details */}
               <div>
-                
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                   <FieldWrapper
                     label="Offer Name"
@@ -329,7 +353,7 @@ export function CreateOfferDialog({
 
                   {!isGlobal && (
                     <FieldWrapper
-                      label="Manager"
+                      label="Managers"
                       required
                       error={errors.managerIds?.message}
                     >
@@ -337,22 +361,32 @@ export function CreateOfferDialog({
                         name="managerIds"
                         control={control}
                         render={({ field }) => (
-                          <Select
-                            value={field.value[0] ?? ""}
-                            onValueChange={(v) => field.onChange([v])}
-                            disabled={isSubmitting}
+                          <div
+                            onClick={(event) => event.preventDefault()}
+                            onKeyDown={(event) => {
+                              if (event.key === "Enter") {
+                                event.preventDefault();
+                              }
+                            }}
                           >
-                            <SelectTrigger className="w-full">
-                              <SelectValue placeholder="Select a manager" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {managers.map((m) => (
-                                <SelectItem key={m.id} value={m.id}>
-                                  {m.name}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
+                            <MultiSelectCombobox
+                              options={managerOptions}
+                              selectedValues={
+                                field.value
+                                  .map((id) => managerNameById.get(id))
+                                  .filter(Boolean) as string[]
+                              }
+                              onSelectionChange={(selectedManagers) =>
+                                field.onChange(
+                                  selectedManagers
+                                    .map((name) => managerIdByName.get(name))
+                                    .filter(Boolean),
+                                )
+                              }
+                              placeholder="Select managers"
+                              width="w-full"
+                            />
+                          </div>
                         )}
                       />
                     </FieldWrapper>
@@ -383,24 +417,26 @@ export function CreateOfferDialog({
               {/* Discount Fields */}
               {discountType && (
                 <div>
-                  <h3 className="mb-3 text-sm font-semibold text-blue-600">
+                  <h3 className="mb-2 text-sm font-semibold text-blue-600">
                     Discount Details
                   </h3>
                   <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                     {discountType === "Fixed_Amount" && (
-                      <FieldWrapper
-                        label="Discount Amount"
-                        required
-                        error={errors.discountAmount?.message}
-                      >
-                        <Input
-                          type="number"
-                          min="0"
-                          step="0.01"
-                          placeholder="e.g. 500"
-                          {...register("discountAmount")}
-                        />
-                      </FieldWrapper>
+                      <div className="sm:col-span-2">
+                        <FieldWrapper
+                          label="Discount Amount"
+                          required
+                          error={errors.discountAmount?.message}
+                        >
+                          <Input
+                            type="number"
+                            min="0"
+                            step="0.01"
+                            placeholder="₹500"
+                            {...register("discountAmount")}
+                          />
+                        </FieldWrapper>
+                      </div>
                     )}
 
                     {discountType === "Percentage" && (
@@ -415,7 +451,7 @@ export function CreateOfferDialog({
                             min="0"
                             max="100"
                             step="0.01"
-                            placeholder="e.g. 20"
+                            placeholder="20%"
                             {...register("discountPercentage")}
                           />
                         </FieldWrapper>
@@ -428,7 +464,7 @@ export function CreateOfferDialog({
                             type="number"
                             min="0"
                             step="0.01"
-                            placeholder="e.g. 1000"
+                            placeholder="₹1000"
                             {...register("maxDiscountAmount")}
                           />
                         </FieldWrapper>
@@ -443,8 +479,8 @@ export function CreateOfferDialog({
                           error={errors.comboDescription?.message}
                         >
                           <Textarea
-                            placeholder="Describe the combo offer…"
-                            className="min-h-[80px] field-sizing-fixed resize-y"
+                            placeholder="Describe the Combo Offer"
+                            className="min-h-[40px] field-sizing-fixed resize-y"
                             {...register("comboDescription")}
                           />
                         </FieldWrapper>
@@ -462,7 +498,7 @@ export function CreateOfferDialog({
                             type="number"
                             min="1"
                             step="1"
-                            placeholder="e.g. 2"
+                            placeholder="Quantity to buy: 2"
                             {...register("buyQuantity")}
                           />
                         </FieldWrapper>
@@ -475,7 +511,7 @@ export function CreateOfferDialog({
                             type="number"
                             min="1"
                             step="1"
-                            placeholder="e.g. 1"
+                            placeholder="Quantity to get: 1"
                             {...register("getQuantity")}
                           />
                         </FieldWrapper>
@@ -493,7 +529,7 @@ export function CreateOfferDialog({
                             type="number"
                             min="0"
                             step="0.01"
-                            placeholder="e.g. 2000"
+                            placeholder="₹2000"
                             {...register("minPurchaseAmount")}
                           />
                         </FieldWrapper>
@@ -506,7 +542,7 @@ export function CreateOfferDialog({
                             type="number"
                             min="0"
                             step="0.01"
-                            placeholder="e.g. 300"
+                            placeholder="₹300"
                             {...register("conditionalDiscountValue")}
                           />
                         </FieldWrapper>
@@ -514,19 +550,21 @@ export function CreateOfferDialog({
                     )}
 
                     {discountType === "Flag_Discount" && (
-                      <FieldWrapper
-                        label="Discount Amount"
-                        required
-                        error={errors.flagDiscountAmount?.message}
-                      >
-                        <Input
-                          type="number"
-                          min="0"
-                          step="0.01"
-                          placeholder="e.g. 150"
-                          {...register("flagDiscountAmount")}
-                        />
-                      </FieldWrapper>
+                      <div className="sm:col-span-2">
+                        <FieldWrapper
+                          label="Discount Amount"
+                          required
+                          error={errors.flagDiscountAmount?.message}
+                        >
+                          <Input
+                            type="number"
+                            min="0"
+                            step="0.01"
+                            placeholder="₹500"
+                            {...register("flagDiscountAmount")}
+                          />
+                        </FieldWrapper>
+                      </div>
                     )}
                   </div>
                 </div>
@@ -534,15 +572,17 @@ export function CreateOfferDialog({
 
               {/* Description */}
               <div>
-                <h3 className="mb-3 text-sm font-semibold text-blue-600">Additional Information</h3>
+                <h3 className="mb-2 text-sm font-semibold text-blue-600">
+                  Additional Information
+                </h3>
                 <FieldWrapper
                   required
                   label="Description"
                   error={errors.description?.message}
                 >
                   <Textarea
-                    placeholder="Describe what this offer includes…"
-                    className="field-sizing-fixed resize-y min-h-[80px]"
+                    placeholder="Describe what this Offer includes"
+                    className="field-sizing-fixed resize-y min-h-[40px]"
                     {...register("description")}
                   />
                 </FieldWrapper>
