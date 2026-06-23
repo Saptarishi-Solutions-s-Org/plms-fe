@@ -282,7 +282,7 @@ export function OffersTable({ offers, onToggleStatus }: OffersTableProps) {
                       </Badge>
                     ) : (
                       <Badge className="border-purple-200 bg-purple-100 text-xs text-purple-700">
-                        Assigned
+                        Manager Scope
                       </Badge>
                     )}
                   </TableCell>
