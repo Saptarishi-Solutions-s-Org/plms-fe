@@ -432,7 +432,7 @@ export function CreateOfferDialog({
                             type="number"
                             min="0"
                             step="0.01"
-                            placeholder="e.g. 500"
+                            placeholder="₹500"
                             {...register("discountAmount")}
                           />
                         </FieldWrapper>
@@ -451,7 +451,7 @@ export function CreateOfferDialog({
                             min="0"
                             max="100"
                             step="0.01"
-                            placeholder="e.g. 20"
+                            placeholder="20%"
                             {...register("discountPercentage")}
                           />
                         </FieldWrapper>
@@ -464,7 +464,7 @@ export function CreateOfferDialog({
                             type="number"
                             min="0"
                             step="0.01"
-                            placeholder="e.g. 1000"
+                            placeholder="₹1000"
                             {...register("maxDiscountAmount")}
                           />
                         </FieldWrapper>
@@ -479,7 +479,7 @@ export function CreateOfferDialog({
                           error={errors.comboDescription?.message}
                         >
                           <Textarea
-                            placeholder="Describe the combo offer…"
+                            placeholder="Describe the Combo Offer"
                             className="min-h-[40px] field-sizing-fixed resize-y"
                             {...register("comboDescription")}
                           />
@@ -498,7 +498,7 @@ export function CreateOfferDialog({
                             type="number"
                             min="1"
                             step="1"
-                            placeholder="e.g. 2"
+                            placeholder="Quantity to buy: 2"
                             {...register("buyQuantity")}
                           />
                         </FieldWrapper>
@@ -511,7 +511,7 @@ export function CreateOfferDialog({
                             type="number"
                             min="1"
                             step="1"
-                            placeholder="e.g. 1"
+                            placeholder="Quantity to get: 1"
                             {...register("getQuantity")}
                           />
                         </FieldWrapper>
@@ -529,7 +529,7 @@ export function CreateOfferDialog({
                             type="number"
                             min="0"
                             step="0.01"
-                            placeholder="e.g. 2000"
+                            placeholder="₹2000"
                             {...register("minPurchaseAmount")}
                           />
                         </FieldWrapper>
@@ -542,7 +542,7 @@ export function CreateOfferDialog({
                             type="number"
                             min="0"
                             step="0.01"
-                            placeholder="e.g. 300"
+                            placeholder="₹300"
                             {...register("conditionalDiscountValue")}
                           />
                         </FieldWrapper>
@@ -560,7 +560,7 @@ export function CreateOfferDialog({
                             type="number"
                             min="0"
                             step="0.01"
-                            placeholder="e.g. 150"
+                            placeholder="₹500"
                             {...register("flagDiscountAmount")}
                           />
                         </FieldWrapper>
@@ -581,7 +581,7 @@ export function CreateOfferDialog({
                   error={errors.description?.message}
                 >
                   <Textarea
-                    placeholder="Describe what this offer includes…"
+                    placeholder="Describe what this Offer includes"
                     className="field-sizing-fixed resize-y min-h-[40px]"
                     {...register("description")}
                   />
