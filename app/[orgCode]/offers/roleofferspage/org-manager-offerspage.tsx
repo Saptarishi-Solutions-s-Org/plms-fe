@@ -37,6 +37,7 @@ import { Plus, MoreHorizontal } from "lucide-react";
 
 import {
   assignOfferToExecutive,
+  getAvailableExecutivesForOffer,
   getExecutiveOverview,
   getManagerOfferOverview,
 } from "@/services/managerdashboard";
@@ -54,6 +55,7 @@ import {
   formatDate,
   formatStatusLabel,
   ExecutiveRow,
+  ExecutiveUser,
   AssignedExecutive,
   ManagerOffer,
   ManagerOfferOverviewItem,
@@ -74,10 +76,36 @@ const DISCOUNT_TYPE_LABELS: Record<string, string> = {
   Flag_Discount: "Flag Discount",
 };
 
+const getAvailableExecutiveRows = (response: unknown): ExecutiveUser[] => {
+  const candidates = Array.isArray(response)
+    ? response
+    : response && typeof response === "object"
+      ? (response as { executives?: unknown; value?: unknown }).executives ??
+        (response as { value?: unknown }).value ??
+        []
+      : [];
+
+  if (!Array.isArray(candidates)) return [];
+
+  return candidates.filter(
+    (executive): executive is ExecutiveUser =>
+      typeof executive === "object" &&
+      executive !== null &&
+      typeof (executive as ExecutiveUser).id === "string" &&
+      typeof (executive as ExecutiveUser).name === "string",
+  );
+};
+
 export default function OrgManagerOffersPage() {
   const [offers, setOffers] = useState<ManagerOffer[]>([]);
 
   const [executives, setExecutives] = useState<ExecutiveRow[]>([]);
+
+  const [availableExecutivesByOffer, setAvailableExecutivesByOffer] =
+    useState<Record<string, ExecutiveUser[]>>({});
+
+  const [availableExecutivesLoadingOfferId, setAvailableExecutivesLoadingOfferId] =
+    useState<string | null>(null);
 
   const [isBulkActionsOpen, setIsBulkActionsOpen] = useState(false);
 
@@ -312,12 +340,46 @@ export default function OrgManagerOffersPage() {
       toast.success(
         response?.message || "Offer assigned to executive successfully",
       );
+      setAvailableExecutivesByOffer((current) => ({
+        ...current,
+        [offerId]: (current[offerId] ?? []).filter(
+          (executive) => executive.id !== executiveId,
+        ),
+      }));
       fetchOffers();
     } catch (error) {
       toast.error(
         error instanceof Error
           ? error.message
           : "Failed to assign offer to executive",
+      );
+    }
+  };
+
+  const handleActionsMenuOpenChange = async (offerId: string, open: boolean) => {
+    if (!open) return;
+
+    setAvailableExecutivesLoadingOfferId(offerId);
+
+    try {
+      const response = await getAvailableExecutivesForOffer(offerId);
+      setAvailableExecutivesByOffer((current) => ({
+        ...current,
+        [offerId]: getAvailableExecutiveRows(response),
+      }));
+    } catch (error) {
+      setAvailableExecutivesByOffer((current) => ({
+        ...current,
+        [offerId]: [],
+      }));
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : "Failed to load available executives",
+      );
+    } finally {
+      setAvailableExecutivesLoadingOfferId((currentOfferId) =>
+        currentOfferId === offerId ? null : currentOfferId,
       );
     }
   };
@@ -553,7 +615,11 @@ export default function OrgManagerOffersPage() {
                     </TableCell>
 
                     <TableCell className="text-center">
-                      <DropdownMenu>
+                      <DropdownMenu
+                        onOpenChange={(open) =>
+                          handleActionsMenuOpenChange(offer.id, open)
+                        }
+                      >
                         <DropdownMenuTrigger asChild>
                           <Button
                             variant="ghost"
@@ -577,12 +643,17 @@ export default function OrgManagerOffersPage() {
                             Assign To
                           </div>
 
-                          {executives.length === 0 ? (
+                          {availableExecutivesLoadingOfferId === offer.id ? (
                             <DropdownMenuItem disabled>
-                              No Executives
+                              Loading executives...
+                            </DropdownMenuItem>
+                          ) : (availableExecutivesByOffer[offer.id] ?? [])
+                              .length === 0 ? (
+                            <DropdownMenuItem disabled>
+                              No eligible executives
                             </DropdownMenuItem>
                           ) : (
-                            executives.map((executive) => (
+                            availableExecutivesByOffer[offer.id].map((executive) => (
                               <DropdownMenuItem
                                 key={executive.id}
                                 onClick={() =>
