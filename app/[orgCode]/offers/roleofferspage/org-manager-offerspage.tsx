@@ -75,37 +75,19 @@ const DISCOUNT_TYPE_LABELS: Record<string, string> = {
   Conditional_Discount: "Conditional",
   Flag_Discount: "Flag Discount",
 };
-
-const getAvailableExecutiveRows = (response: unknown): ExecutiveUser[] => {
-  const candidates = Array.isArray(response)
-    ? response
-    : response && typeof response === "object"
-      ? (response as { executives?: unknown; value?: unknown }).executives ??
-        (response as { value?: unknown }).value ??
-        []
-      : [];
-
-  if (!Array.isArray(candidates)) return [];
-
-  return candidates.filter(
-    (executive): executive is ExecutiveUser =>
-      typeof executive === "object" &&
-      executive !== null &&
-      typeof (executive as ExecutiveUser).id === "string" &&
-      typeof (executive as ExecutiveUser).name === "string",
-  );
-};
-
 export default function OrgManagerOffersPage() {
   const [offers, setOffers] = useState<ManagerOffer[]>([]);
 
   const [executives, setExecutives] = useState<ExecutiveRow[]>([]);
 
-  const [availableExecutivesByOffer, setAvailableExecutivesByOffer] =
-    useState<Record<string, ExecutiveUser[]>>({});
+  const [availableExecutivesByOffer, setAvailableExecutivesByOffer] = useState<
+    Record<string, ExecutiveUser[]>
+  >({});
 
-  const [availableExecutivesLoadingOfferId, setAvailableExecutivesLoadingOfferId] =
-    useState<string | null>(null);
+  const [
+    availableExecutivesLoadingOfferId,
+    setAvailableExecutivesLoadingOfferId,
+  ] = useState<string | null>(null);
 
   const [isBulkActionsOpen, setIsBulkActionsOpen] = useState(false);
 
@@ -356,7 +338,10 @@ export default function OrgManagerOffersPage() {
     }
   };
 
-  const handleActionsMenuOpenChange = async (offerId: string, open: boolean) => {
+  const handleActionsMenuOpenChange = async (
+    offerId: string,
+    open: boolean,
+  ) => {
     if (!open) return;
 
     setAvailableExecutivesLoadingOfferId(offerId);
@@ -365,7 +350,7 @@ export default function OrgManagerOffersPage() {
       const response = await getAvailableExecutivesForOffer(offerId);
       setAvailableExecutivesByOffer((current) => ({
         ...current,
-        [offerId]: getAvailableExecutiveRows(response),
+        [offerId]: response ?? [],
       }));
     } catch (error) {
       setAvailableExecutivesByOffer((current) => ({
@@ -653,16 +638,18 @@ export default function OrgManagerOffersPage() {
                               No eligible executives
                             </DropdownMenuItem>
                           ) : (
-                            availableExecutivesByOffer[offer.id].map((executive) => (
-                              <DropdownMenuItem
-                                key={executive.id}
-                                onClick={() =>
-                                  handleAssignOffer(offer.id, executive.id)
-                                }
-                              >
-                                {executive.name}
-                              </DropdownMenuItem>
-                            ))
+                            availableExecutivesByOffer[offer.id].map(
+                              (executive) => (
+                                <DropdownMenuItem
+                                  key={executive.id}
+                                  onClick={() =>
+                                    handleAssignOffer(offer.id, executive.id)
+                                  }
+                                >
+                                  {executive.name}
+                                </DropdownMenuItem>
+                              ),
+                            )
                           )}
                         </DropdownMenuContent>
                       </DropdownMenu>
