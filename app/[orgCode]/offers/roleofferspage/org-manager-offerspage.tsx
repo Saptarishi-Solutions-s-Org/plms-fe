@@ -357,11 +357,13 @@ export default function OrgManagerOffersPage() {
         ...current,
         [offerId]: [],
       }));
+
       toast.error(
         error instanceof Error
           ? error.message
           : "Failed to load available executives",
       );
+      
     } finally {
       setAvailableExecutivesLoadingOfferId((currentOfferId) =>
         currentOfferId === offerId ? null : currentOfferId,
