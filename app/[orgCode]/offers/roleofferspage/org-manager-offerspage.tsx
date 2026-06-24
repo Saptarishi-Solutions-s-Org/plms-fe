@@ -74,56 +74,6 @@ const DISCOUNT_TYPE_LABELS: Record<string, string> = {
   Flag_Discount: "Flag Discount",
 };
 
-const toAssignedExecutives = (value: unknown): AssignedExecutive[] => {
-  if (!Array.isArray(value)) return [];
-
-  return value
-    .map((executive) => {
-      if (typeof executive === "string") {
-        const name = executive.trim();
-        return name ? { name } : null;
-      }
-
-      if (!executive || typeof executive !== "object") return null;
-
-      const record = executive as Record<string, unknown>;
-      const name =
-        typeof record.name === "string"
-          ? record.name
-          : typeof record.executiveName === "string"
-            ? record.executiveName
-            : typeof record.fullName === "string"
-              ? record.fullName
-              : null;
-
-      if (!name?.trim()) return null;
-
-      return {
-        id:
-          typeof record.id === "string"
-            ? record.id
-            : typeof record.executiveId === "string"
-              ? record.executiveId
-              : undefined,
-        name: name.trim(),
-        email: typeof record.email === "string" ? record.email : undefined,
-      };
-    })
-    .filter((executive): executive is AssignedExecutive => executive !== null);
-};
-
-const getAssignedExecutives = (
-  item: ManagerOfferOverviewItem,
-): AssignedExecutive[] => {
-  return toAssignedExecutives(
-    item.assignedTo ??
-      item.assignedUsers ??
-      item.assigned_executives ??
-      item.executives ??
-      [],
-  );
-};
-
 export default function OrgManagerOffersPage() {
   const [offers, setOffers] = useState<ManagerOffer[]>([]);
 
@@ -194,6 +144,7 @@ export default function OrgManagerOffersPage() {
       ]);
 
       const data = response?.value || response;
+      console.log(data.offers);
 
       const stats = data?.stats || {};
 
@@ -225,7 +176,7 @@ export default function OrgManagerOffersPage() {
 
           assignedUsers: "",
 
-          assignedExecutives: getAssignedExecutives(item),
+          assignedExecutives: item.assigned_executives ?? [],
 
           isGlobal: item.is_global,
 
@@ -378,7 +329,8 @@ export default function OrgManagerOffersPage() {
 
     try {
       const response = await getExecutivesByOffer(offer.id);
-      setAssignedExecutives(toAssignedExecutives(response));
+      console.log(response);
+      setAssignedExecutives(response ?? []);
     } catch (error) {
       toast.error(
         error instanceof Error
@@ -683,10 +635,10 @@ export default function OrgManagerOffersPage() {
             )}
             {!isAssignedExecutivesLoading &&
               assignedExecutives.length === 0 && (
-              <p className="py-6 text-center text-sm text-gray-500">
-                No executives assigned yet.
-              </p>
-            )}
+                <p className="py-6 text-center text-sm text-gray-500">
+                  No executives assigned yet.
+                </p>
+              )}
           </div>
         </DialogContent>
       </Dialog>
