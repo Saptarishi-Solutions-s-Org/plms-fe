@@ -30,12 +30,16 @@ function cleanValue(value: unknown) {
   return String(value ?? "").trim();
 }
 
+function normalizeHeader(value: unknown) {
+  return cleanValue(value).toLowerCase();
+}
+
 async function readLeadCsvFile(file: File) {
   const [headerLine = "", ...dataLines] = (await file.text())
     .replace(/^\uFEFF/, "")
     .split(/\r?\n/)
     .filter((line) => line.trim());
-  const headers = headerLine.split(",").map(cleanValue);
+  const headers = headerLine.split(",").map(normalizeHeader);
 
   const missingColumns = requiredColumns.filter(
     (column) => !headers.includes(column.csvKey),
