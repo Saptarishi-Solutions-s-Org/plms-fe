@@ -18,3 +18,6 @@ export const toggleOfferStatus = (id: string) =>
   });
 export const getManagers = () =>
   api(`/odata/v4/offer/getManagers()`);
+
+export const getExecutivesByOffer = (offerId: string) =>
+  api(`/odata/v4/offer/getExecutivesByOffer(offerId='${offerId}')`);
