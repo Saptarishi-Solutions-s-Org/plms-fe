@@ -65,6 +65,12 @@ export type ManagerOffer = Offer & {
   assignStatus?: string;
 };
 
+export interface AssignedExecutive {
+  id?: string;
+  name: string;
+  email?: string;
+}
+
 export interface ManagerOfferOverviewItem {
   id: string;
   title?: string;
@@ -86,6 +92,10 @@ export interface ManagerOfferOverviewItem {
   valid_to?: string;
   createdat?: string;
   assignStatus?: string;
+  assignedTo?: AssignedExecutive[] | string[] | string;
+  assignedUsers?: AssignedExecutive[] | string[] | string;
+  assigned_executives?: AssignedExecutive[] | string[] | string;
+  executives?: AssignedExecutive[] | string[] | string;
 };
 
 export interface ExecutiveOfferItem {

@@ -25,6 +25,13 @@ import {
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { subscribeRealtime } from "@/lib/socket";
 import { Plus, MoreHorizontal } from "lucide-react";
 
@@ -33,6 +40,7 @@ import {
   getExecutiveOverview,
   getManagerOfferOverview,
 } from "@/services/managerdashboard";
+import { getExecutivesByOffer } from "@/services/offers";
 
 import type {
   Offer,
@@ -46,6 +54,7 @@ import {
   formatDate,
   formatStatusLabel,
   ExecutiveRow,
+  AssignedExecutive,
   ManagerOffer,
   ManagerOfferOverviewItem,
 } from "@/types/org-manager";
@@ -65,12 +74,71 @@ const DISCOUNT_TYPE_LABELS: Record<string, string> = {
   Flag_Discount: "Flag Discount",
 };
 
+const toAssignedExecutives = (value: unknown): AssignedExecutive[] => {
+  if (!Array.isArray(value)) return [];
+
+  return value
+    .map((executive) => {
+      if (typeof executive === "string") {
+        const name = executive.trim();
+        return name ? { name } : null;
+      }
+
+      if (!executive || typeof executive !== "object") return null;
+
+      const record = executive as Record<string, unknown>;
+      const name =
+        typeof record.name === "string"
+          ? record.name
+          : typeof record.executiveName === "string"
+            ? record.executiveName
+            : typeof record.fullName === "string"
+              ? record.fullName
+              : null;
+
+      if (!name?.trim()) return null;
+
+      return {
+        id:
+          typeof record.id === "string"
+            ? record.id
+            : typeof record.executiveId === "string"
+              ? record.executiveId
+              : undefined,
+        name: name.trim(),
+        email: typeof record.email === "string" ? record.email : undefined,
+      };
+    })
+    .filter((executive): executive is AssignedExecutive => executive !== null);
+};
+
+const getAssignedExecutives = (
+  item: ManagerOfferOverviewItem,
+): AssignedExecutive[] => {
+  return toAssignedExecutives(
+    item.assignedTo ??
+      item.assignedUsers ??
+      item.assigned_executives ??
+      item.executives ??
+      [],
+  );
+};
+
 export default function OrgManagerOffersPage() {
   const [offers, setOffers] = useState<ManagerOffer[]>([]);
 
   const [executives, setExecutives] = useState<ExecutiveRow[]>([]);
 
   const [isBulkActionsOpen, setIsBulkActionsOpen] = useState(false);
+
+  const [selectedOffer, setSelectedOffer] = useState<ManagerOffer | null>(null);
+
+  const [assignedExecutives, setAssignedExecutives] = useState<
+    AssignedExecutive[]
+  >([]);
+
+  const [isAssignedExecutivesLoading, setIsAssignedExecutivesLoading] =
+    useState(false);
 
   const [totalCount, setTotalCount] = useState(0);
 
@@ -109,8 +177,8 @@ export default function OrgManagerOffersPage() {
         status: (offer.status === "active"
           ? "ACTIVE"
           : offer.status === "inactive"
-          ? "INACTIVE"
-          : "EXPIRED") as BulkOffer["status"],
+            ? "INACTIVE"
+            : "EXPIRED") as BulkOffer["status"],
       })),
     [offers],
   );
@@ -156,6 +224,8 @@ export default function OrgManagerOffersPage() {
           description: item.description,
 
           assignedUsers: "",
+
+          assignedExecutives: getAssignedExecutives(item),
 
           isGlobal: item.is_global,
 
@@ -291,12 +361,32 @@ export default function OrgManagerOffersPage() {
       toast.success(
         response?.message || "Offer assigned to executive successfully",
       );
+      fetchOffers();
     } catch (error) {
       toast.error(
         error instanceof Error
           ? error.message
           : "Failed to assign offer to executive",
       );
+    }
+  };
+
+  const handleViewAssignedExecutives = async (offer: ManagerOffer) => {
+    setSelectedOffer(offer);
+    setAssignedExecutives([]);
+    setIsAssignedExecutivesLoading(true);
+
+    try {
+      const response = await getExecutivesByOffer(offer.id);
+      setAssignedExecutives(toAssignedExecutives(response));
+    } catch (error) {
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : "Failed to load assigned executives",
+      );
+    } finally {
+      setIsAssignedExecutivesLoading(false);
     }
   };
 
@@ -413,6 +503,8 @@ export default function OrgManagerOffersPage() {
 
                 <TableHead>Assign Status</TableHead>
 
+                <TableHead>Assigned To</TableHead>
+
                 <TableHead className="text-center">Actions</TableHead>
               </TableRow>
             </TableHeader>
@@ -421,7 +513,7 @@ export default function OrgManagerOffersPage() {
               {offers.length === 0 ? (
                 <TableRow>
                   <TableCell
-                    colSpan={10}
+                    colSpan={11}
                     className="py-10 text-center text-gray-500"
                   >
                     No Offers Available
@@ -430,7 +522,7 @@ export default function OrgManagerOffersPage() {
               ) : filteredOffers.length === 0 ? (
                 <TableRow>
                   <TableCell
-                    colSpan={10}
+                    colSpan={11}
                     className="py-10 text-center text-gray-500"
                   >
                     No Offers Match the Applied Filters
@@ -498,6 +590,16 @@ export default function OrgManagerOffersPage() {
                       )}
                     </TableCell>
 
+                    <TableCell>
+                      <Button
+                        variant="link"
+                        className="h-auto p-0 text-blue-600 hover:text-blue-700"
+                        onClick={() => handleViewAssignedExecutives(offer)}
+                      >
+                        View All
+                      </Button>
+                    </TableCell>
+
                     <TableCell className="text-center">
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
@@ -549,6 +651,45 @@ export default function OrgManagerOffersPage() {
           </Table>
         </div>
       )}
+
+      <Dialog
+        open={selectedOffer !== null}
+        onOpenChange={(open) => !open && setSelectedOffer(null)}
+      >
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Assigned to</DialogTitle>
+            <DialogDescription>
+              {selectedOffer?.title} is assigned to Executives.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="max-h-72 space-y-2 overflow-y-auto">
+            {assignedExecutives.map((executive, index) => (
+              <div
+                key={executive.id ?? `${executive.name}-${index}`}
+                className="rounded-md border border-gray-200 px-3 py-2"
+              >
+                <p className="font-medium text-gray-900">{executive.name}</p>
+                {executive.email && (
+                  <p className="text-sm text-gray-500">{executive.email}</p>
+                )}
+              </div>
+            ))}
+            {isAssignedExecutivesLoading && (
+              <p className="py-6 text-center text-sm text-gray-500">
+                Loading assigned executives...
+              </p>
+            )}
+            {!isAssignedExecutivesLoading &&
+              assignedExecutives.length === 0 && (
+              <p className="py-6 text-center text-sm text-gray-500">
+                No executives assigned yet.
+              </p>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
