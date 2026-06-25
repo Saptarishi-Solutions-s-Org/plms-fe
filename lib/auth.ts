@@ -27,6 +27,12 @@ type AuthResponse = {
   };
 };
 
+type PublicAuthResponse = {
+  message?: string;
+  error?: { message?: string };
+  value?: { message?: string };
+};
+
 let session: AuthSession | null = null;
 let refreshPromise: Promise<AuthSession | null> | null = null;
 
@@ -123,6 +129,46 @@ export async function logoutSession() {
   } finally {
     clearSession();
   }
+}
+
+async function postPublicAuthAction(
+  action: "forgotPassword" | "resetPassword",
+  body: Record<string, string>,
+) {
+  const response = await fetch(`${API_URL}/odata/v4/auth/${action}`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    credentials: "include",
+    body: JSON.stringify(body),
+  });
+
+  const data = (await response.json().catch(() => null)) as
+    | PublicAuthResponse
+    | null;
+
+  if (!response.ok) {
+    throw new Error(
+      data?.error?.message || data?.message || "Please try again later.",
+    );
+  }
+
+  return data?.value || data || {};
+}
+
+export function requestPasswordReset(email: string) {
+  return postPublicAuthAction("forgotPassword", { email });
+}
+
+export function resetPassword(
+  token: string,
+  newPassword: string,
+  confirmPassword: string,
+) {
+  return postPublicAuthAction("resetPassword", {
+    token,
+    newPassword,
+    confirmPassword,
+  });
 }
 
 export function redirectToLogin() {
