@@ -66,7 +66,11 @@ export default function LoginForm() {
 
     refreshSession(true).then((session) => {
       if (!cancelled && session) {
-        router.replace(getDashboardPath(session.user));
+        if (session.user.mustChangePassword) {
+          router.replace("/set-password");
+        } else {
+          router.replace(getDashboardPath(session.user));
+        }
       }
     });
 
@@ -120,6 +124,14 @@ export default function LoginForm() {
       }
 
       setSession(data.accessToken, data.user);
+
+      if (data.user.mustChangePassword) {
+        toast.success("Password Change Required", {
+          description: "Please set a new password before proceeding",
+        });
+        window.location.assign("/set-password");
+        return;
+      }
 
       toast.success("Welcome to LMA portal", {
         description: "You have successfully signed in",
