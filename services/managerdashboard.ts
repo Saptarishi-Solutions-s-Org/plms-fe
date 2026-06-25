@@ -24,3 +24,8 @@ export const assignOfferToExecutive = (payload: {
 export const getExecutiveOverview = () =>
   api("/odata/v4/manager-dashboard/getExecutiveOverview()");  
 
+
+export const getAvailableExecutivesForOffer = (offerId: string) =>
+  api(
+    `/odata/v4/manager-dashboard/getAvailableExecutivesForOffer(offerId='${offerId}')`,
+  );
