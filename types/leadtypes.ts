@@ -65,7 +65,7 @@ export interface LeadDetailData {
 
 export interface AddActivityFormData {
   notes: string;
-  type?: string;
+  type: string;
 }
 
 export interface ExecutiveOption {
