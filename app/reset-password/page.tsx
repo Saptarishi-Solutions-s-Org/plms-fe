@@ -148,7 +148,7 @@ function ResetPasswordContent() {
                     }}
                     className="h-11 rounded-xl border-gray-200 pr-11 text-sm focus-visible:ring-violet-400"
                   />
-                  <button
+                  <Button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
                     className="absolute right-3.5 top-1/2 -translate-y-1/2 text-gray-400 transition-colors hover:text-gray-600"
@@ -157,7 +157,7 @@ function ResetPasswordContent() {
                     }
                   >
                     {showPassword ? <EyeOff size={17} /> : <Eye size={17} />}
-                  </button>
+                  </Button>
                 </div>
               </div>
 
@@ -189,14 +189,14 @@ function ResetPasswordContent() {
                     }}
                     className="h-11 rounded-xl border-gray-200 pr-11 text-sm focus-visible:ring-violet-400"
                   />
-                  <button
+                  <Button
                     type="button"
                     onClick={() => setShowConfirm(!showConfirm)}
                     className="absolute right-3.5 top-1/2 -translate-y-1/2 text-gray-400 transition-colors hover:text-gray-600"
                     aria-label={showConfirm ? "Hide password" : "Show password"}
                   >
                     {showConfirm ? <EyeOff size={17} /> : <Eye size={17} />}
-                  </button>
+                  </Button>
                 </div>
               </div>
 
