@@ -637,7 +637,7 @@ export default function OrgManagerOffersPage() {
                           ) : (availableExecutivesByOffer[offer.id] ?? [])
                               .length === 0 ? (
                             <DropdownMenuItem disabled>
-                              No eligible executives
+                              No Eligible Executives
                             </DropdownMenuItem>
                           ) : (
                             availableExecutivesByOffer[offer.id].map(
