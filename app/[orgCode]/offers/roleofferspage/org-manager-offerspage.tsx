@@ -110,8 +110,6 @@ export default function OrgManagerOffersPage() {
 
   const [isLoading, setIsLoading] = useState(true);
 
-  const [error, setError] = useState<string | null>(null);
-
   const [filters, setFilters] = useState(DEFAULT_FILTERS);
 
   const [draftFilters, setDraftFilters] = useState(DEFAULT_FILTERS);
@@ -146,7 +144,6 @@ export default function OrgManagerOffersPage() {
   const fetchOffers = useCallback(async () => {
     try {
       setIsLoading(true);
-      setError(null);
 
       const [response, executivesResponse] = await Promise.all([
         getManagerOfferOverview(),
@@ -229,7 +226,13 @@ export default function OrgManagerOffersPage() {
       );
       setOffers(formattedOffers);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to load offers");
+      console.error("Failed to load offers", err);
+      setOffers([]);
+      setExecutives([]);
+      setTotalCount(0);
+      setActiveCount(0);
+      setInactiveCount(0);
+      setGlobalCount(0);
     } finally {
       setIsLoading(false);
     }
@@ -477,12 +480,7 @@ export default function OrgManagerOffersPage() {
       />
 
       {/* Table */}
-      {error ? (
-        <div className="flex items-center justify-center py-20 text-red-500">
-          {error}
-        </div>
-      ) : (
-        <div className="overflow-x-auto rounded-lg border border-gray-200 bg-white shadow-sm">
+      <div className="overflow-x-auto rounded-lg border border-gray-200 bg-white shadow-sm">
           <Table>
             <TableHeader className="bg-[#7677F41A]">
               <TableRow>
@@ -661,8 +659,7 @@ export default function OrgManagerOffersPage() {
               )}
             </TableBody>
           </Table>
-        </div>
-      )}
+      </div>
 
       <Dialog
         open={selectedOffer !== null}
