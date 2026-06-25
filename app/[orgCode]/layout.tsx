@@ -154,6 +154,11 @@ export default function Layout({ children }: { children: ReactNode }) {
         return;
       }
 
+      if (session.user.mustChangePassword) {
+        router.replace("/set-password");
+        return;
+      }
+
       setUser(session.user);
       connectSocket(session.accessToken);
 
