@@ -7,7 +7,7 @@ import { ArrowLeft, Loader2 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { requestPasswordReset } from "@/lib/auth";
+import { forgotPassword } from "@/services/auth";
 import { forgotPasswordSchema } from "@/lib/validators/forgot-password";
 import type { ForgotPasswordForm } from "@/types/forgotpassword";
 
@@ -30,7 +30,9 @@ export default function ForgotPasswordPage() {
 
     try {
       setLoading(true);
-      await requestPasswordReset(parsed.data.email.trim().toLowerCase());
+      await forgotPassword({
+        email: parsed.data.email.trim().toLowerCase(),
+      });
       setMessage(
         "If this email is registered, you will receive a password reset link shortly.",
       );

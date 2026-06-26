@@ -8,7 +8,7 @@ import { ArrowLeft, Eye, EyeOff, Loader2 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { resetPassword } from "@/lib/auth";
+import { resetPassword } from "@/services/auth";
 import { resetPasswordSchema } from "@/lib/validators/reset-password";
 import type { ResetPasswordForm } from "@/types/forgotpassword";
 
@@ -56,11 +56,11 @@ function ResetPasswordContent() {
     setAlertMessage("");
 
     try {
-      await resetPassword(
+      await resetPassword({
         token,
-        parsed.data.password,
-        parsed.data.confirmPassword,
-      );
+        newPassword: parsed.data.password,
+        confirmPassword: parsed.data.confirmPassword,
+      });
       setAlertMessage("Password updated successfully!");
       setForm({ password: "", confirmPassword: "" });
     } catch (submitError) {
@@ -148,16 +148,16 @@ function ResetPasswordContent() {
                     }}
                     className="h-11 rounded-xl border-gray-200 pr-11 text-sm focus-visible:ring-violet-400"
                   />
-                  <Button
+                  <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3.5 top-1/2 -translate-y-1/2 text-gray-400 transition-colors hover:text-gray-600"
+                    className="absolute right-3.5 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full text-gray-400 transition-colors hover:text-gray-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-300"
                     aria-label={
                       showPassword ? "Hide password" : "Show password"
                     }
                   >
                     {showPassword ? <EyeOff size={17} /> : <Eye size={17} />}
-                  </Button>
+                  </button>
                 </div>
               </div>
 
@@ -189,14 +189,14 @@ function ResetPasswordContent() {
                     }}
                     className="h-11 rounded-xl border-gray-200 pr-11 text-sm focus-visible:ring-violet-400"
                   />
-                  <Button
+                  <button
                     type="button"
                     onClick={() => setShowConfirm(!showConfirm)}
-                    className="absolute right-3.5 top-1/2 -translate-y-1/2 text-gray-400 transition-colors hover:text-gray-600"
+                    className="absolute right-3.5 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full text-gray-400 transition-colors hover:text-gray-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-300"
                     aria-label={showConfirm ? "Hide password" : "Show password"}
                   >
                     {showConfirm ? <EyeOff size={17} /> : <Eye size={17} />}
-                  </Button>
+                  </button>
                 </div>
               </div>
 
