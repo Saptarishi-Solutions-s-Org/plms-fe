@@ -1,5 +1,7 @@
 "use client";
 
+import Link from "next/link";
+import { useParams } from "next/navigation";
 import {
   Table,
   TableBody,
@@ -25,6 +27,7 @@ export default function LeadTable({
   showAssignedTo = true,
   emptyMessage,
 }: LeadTableProps) {
+  const { orgCode } = useParams<{ orgCode: string }>();
   const showActionsColumn = renderActions !== undefined;
   const getLeadSourceLabel = (source?: string) =>
     LEAD_SOURCE_OPTIONS.find((option) => option.value === source)?.label ??
@@ -89,7 +92,12 @@ export default function LeadTable({
                   title={lead.name}
                   className="max-w-[180px] font-medium text-gray-800 sm:max-w-[220px]"
                 >
-                  {lead.name}
+                  <Link
+                    href={`/${orgCode}/leads/${lead.uuid}`}
+                    className="truncate text-gray-800 hover:text-gray-900"
+                  >
+                    {lead.name}
+                  </Link>
                 </TableCell>
                 <TableCell
                   title={lead.email}

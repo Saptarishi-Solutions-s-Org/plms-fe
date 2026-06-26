@@ -1,4 +1,5 @@
 import type { LeadActivity } from "@/types/leadtypes";
+import { Badge } from "@/components/ui/badge";
 import {
   Tooltip,
   TooltipContent,
@@ -17,6 +18,10 @@ function timeAgo(iso: string): string {
   const days = Math.floor(hrs / 24);
   if (days < 7) return `${days} day${days > 1 ? "s" : ""} ago`;
   return new Date(iso).toLocaleDateString();
+}
+
+function formatActivityType(type?: string) {
+  return type?.replace(/_/g, " ") || "Activity";
 }
 
 export default function ActivityTimeline({
@@ -50,9 +55,17 @@ export default function ActivityTimeline({
           </div>
 
           <div className="min-w-0 flex-1 pb-5">
-            <p className="text-sm font-medium text-gray-900">
-              {act.createdByName}
-            </p>
+            <div className="flex flex-wrap items-center gap-2">
+              <p className="text-sm font-medium text-gray-900">
+                {act.createdByName}
+              </p>
+              <Badge
+                variant="outline"
+                className="border-blue-200 bg-blue-50 text-xs font-medium text-blue-700"
+              >
+                {formatActivityType(act.type)}
+              </Badge>
+            </div>
             <p className="mb-1 text-xs text-gray-400">
               {timeAgo(act.createdAt)}
             </p>
