@@ -9,6 +9,15 @@ import { OfferCards } from "@/components/commoncomponents/offers/offercards";
 import { OfferFilters } from "@/components/commoncomponents/offers/offerfilter";
 
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
   Table,
   TableBody,
   TableCell,
@@ -25,15 +34,9 @@ import {
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
 import { subscribeRealtime } from "@/lib/socket";
 import { Plus, MoreHorizontal } from "lucide-react";
+import Image from "next/image";
 
 import {
   assignOfferToExecutive,
@@ -54,9 +57,9 @@ import { OFFER_LIST_CHANGED } from "@/types/realtime";
 import {
   formatDate,
   formatStatusLabel,
+  AssignedExecutive,
   ExecutiveRow,
   ExecutiveUser,
-  AssignedExecutive,
   ManagerOffer,
   ManagerOfferOverviewItem,
 } from "@/types/org-manager";
@@ -91,14 +94,14 @@ export default function OrgManagerOffersPage() {
 
   const [isBulkActionsOpen, setIsBulkActionsOpen] = useState(false);
 
+  const [isViewAllErrorOpen, setIsViewAllErrorOpen] = useState(false);
   const [selectedOffer, setSelectedOffer] = useState<ManagerOffer | null>(null);
-
   const [assignedExecutives, setAssignedExecutives] = useState<
     AssignedExecutive[]
   >([]);
-
   const [isAssignedExecutivesLoading, setIsAssignedExecutivesLoading] =
     useState(false);
+  const [assignedExecutivesError, setAssignedExecutivesError] = useState("");
 
   const [totalCount, setTotalCount] = useState(0);
 
@@ -377,14 +380,15 @@ export default function OrgManagerOffersPage() {
   const handleViewAssignedExecutives = async (offer: ManagerOffer) => {
     setSelectedOffer(offer);
     setAssignedExecutives([]);
+    setAssignedExecutivesError("");
     setIsAssignedExecutivesLoading(true);
+    setIsViewAllErrorOpen(true);
 
     try {
       const response = await getExecutivesByOffer(offer.id);
-      console.log(response);
       setAssignedExecutives(response ?? []);
     } catch (error) {
-      toast.error(
+      setAssignedExecutivesError(
         error instanceof Error
           ? error.message
           : "Failed to load assigned executives",
@@ -661,44 +665,83 @@ export default function OrgManagerOffersPage() {
           </Table>
       </div>
 
-      <Dialog
-        open={selectedOffer !== null}
-        onOpenChange={(open) => !open && setSelectedOffer(null)}
+      <AlertDialog
+        open={isViewAllErrorOpen}
+        onOpenChange={(open) => {
+          setIsViewAllErrorOpen(open);
+          if (!open) {
+            setSelectedOffer(null);
+          }
+        }}
       >
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>Assigned to</DialogTitle>
-            <DialogDescription>
-              {selectedOffer?.title} is assigned to Executives.
-            </DialogDescription>
-          </DialogHeader>
+        <AlertDialogContent className="w-[540px] max-w-[calc(100vw-2rem)] rounded-[2rem] border-0 bg-white px-5 py-6 shadow-2xl sm:px-6">
+          <AlertDialogHeader className="items-center gap-2 text-center">
+            <Image
+              src="/saptarishi.png"
+              alt="SAPtarishi"
+              width={150}
+              height={54}
+              priority
+              className="h-auto w-[150px] object-contain"
+            />
 
-          <div className="max-h-72 space-y-2 overflow-y-auto">
-            {assignedExecutives.map((executive, index) => (
-              <div
-                key={executive.id ?? `${executive.name}-${index}`}
-                className="rounded-md border border-gray-200 px-3 py-2"
-              >
-                <p className="font-medium text-gray-900">{executive.name}</p>
-                {executive.email && (
-                  <p className="text-sm text-gray-500">{executive.email}</p>
-                )}
-              </div>
-            ))}
-            {isAssignedExecutivesLoading && (
-              <p className="py-6 text-center text-sm text-gray-500">
-                Loading assigned executives...
-              </p>
-            )}
-            {!isAssignedExecutivesLoading &&
-              assignedExecutives.length === 0 && (
-                <p className="py-6 text-center text-sm text-gray-500">
-                  No executives assigned yet.
+            <AlertDialogTitle className="text-center text-xl font-bold text-gray-950">
+              Assigned Executives
+            </AlertDialogTitle>
+
+            <AlertDialogDescription className="max-w-[420px] text-center text-sm leading-5 text-slate-600">
+              {selectedOffer?.title
+                ? `${selectedOffer.title} is assigned to the executives below.`
+                : "Assigned executives for this offer are shown below."}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+
+          <div className="rounded-xl border border-red-100 bg-red-50/70 p-3">
+            <div className="max-h-36 space-y-2 overflow-y-scroll rounded-lg bg-white p-3 shadow-sm custom-scrollbar">
+              {isAssignedExecutivesLoading && (
+                <p className="text-center text-sm font-medium text-slate-500">
+                  Loading assigned executives...
                 </p>
               )}
+
+              {!isAssignedExecutivesLoading && assignedExecutivesError && (
+                <p className="text-center text-sm font-medium text-red-600">
+                  {assignedExecutivesError}
+                </p>
+              )}
+
+              {!isAssignedExecutivesLoading &&
+                !assignedExecutivesError &&
+                assignedExecutives.length === 0 && (
+                  <p className="text-center text-sm font-medium text-slate-500">
+                    No executives assigned yet.
+                  </p>
+                )}
+
+              {!isAssignedExecutivesLoading &&
+                !assignedExecutivesError &&
+                assignedExecutives.map((executive, index) => (
+                  <div key={executive.id ?? `${executive.name}-${index}`}>
+                    <p className="text-sm font-bold text-gray-950">
+                      {executive.name}
+                    </p>
+                    {executive.email && (
+                      <p className="text-sm text-slate-600">
+                        {executive.email}
+                      </p>
+                    )}
+                  </div>
+                ))}
+            </div>
           </div>
-        </DialogContent>
-      </Dialog>
+
+          <AlertDialogFooter className="justify-center sm:justify-center">
+            <AlertDialogAction className="h-12 w-full rounded-lg bg-indigo-700 text-sm font-bold text-white hover:bg-indigo-800">
+              OK
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
