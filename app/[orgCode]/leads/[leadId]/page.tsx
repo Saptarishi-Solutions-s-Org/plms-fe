@@ -33,6 +33,7 @@ export default function LeadDetailPage() {
   const [data, setData] = useState<LeadDetailData | null>(null);
   const [isLoading, setLoading] = useState(true);
   const [isEditOpen, setEditOpen] = useState(false);
+  const [hasLoaded, setHasLoaded] = useState(false);
 
   const fetchDetail = useCallback(async () => {
     try {
@@ -57,9 +58,9 @@ export default function LeadDetailPage() {
       });
     } catch (err) {
       console.error(err);
-      setData(null);
     } finally {
       setLoading(false);
+      setHasLoaded(true);
     }
   }, [leadId]);
 
@@ -76,7 +77,9 @@ export default function LeadDetailPage() {
     );
   }, [fetchDetail]);
 
-  if (isLoading) {
+  const isInitialLoading = isLoading && !hasLoaded;
+
+  if (isInitialLoading) {
     return (
       <>
         <GlobalLoader />
