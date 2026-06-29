@@ -21,7 +21,7 @@ function timeAgo(iso: string): string {
 }
 
 function formatActivityType(type?: string) {
-  return type?.replace(/_/g, " ") || "Activity";
+  return type?.replace(/_/g, " ");
 }
 
 export default function ActivityTimeline({

@@ -14,6 +14,13 @@ export const createOrganizationUser = async (data: any) => {
   });
 };
 
+export const updateOrganizationUser = async (data: any) => {
+  return await api("/odata/v4/organization-admin/updateOrgUser", {
+    method: "POST",
+    body: JSON.stringify(data),
+  });
+};
+
 export const getAllExecutives = () => {
   return api("/odata/v4/organization-admin/getAllExecutives()");
 };
