@@ -2,7 +2,7 @@
 
 import { useEffect, useState, type ReactNode } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Controller, useForm, useWatch } from "react-hook-form";
+import { Controller, useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { z } from "zod";
 
@@ -133,14 +133,12 @@ export default function EditUserDialog({
     handleSubmit,
     control,
     reset,
-    setValue,
     formState: { errors, isDirty, isSubmitting },
   } = useForm<EditUserForm>({
     resolver: zodResolver(editUserSchema),
     defaultValues: EMPTY_FORM,
   });
 
-  const roleName = useWatch({ control, name: "roleName" });
   const hasManagerData =
     managerState !== null && managerState.userId === user?.id;
   const managers =
@@ -268,48 +266,13 @@ export default function EditUserDialog({
             </div>
           </section>
 
-          <section>
-            <h3 className="mb-3 text-sm font-semibold text-blue-600">
-              Role &amp; Reporting
-            </h3>
+          {user?.role_name === "Executive" && (
+            <section>
+              <h3 className="mb-3 text-sm font-semibold text-blue-600">
+                Reporting Details
+              </h3>
 
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              <FieldWrapper
-                label="Role"
-                required
-                error={errors.roleName?.message}
-              >
-                <Controller
-                  name="roleName"
-                  control={control}
-                  render={({ field }) => (
-                    <Select
-                      value={field.value}
-                      onValueChange={(value: EditUserForm["roleName"]) => {
-                        field.onChange(value);
-                        setValue(
-                          "reportingManager",
-                          value === "Executive" &&
-                            user?.role_name === "Executive"
-                            ? user.reporting_manager_id ?? ""
-                            : "",
-                          { shouldDirty: true, shouldValidate: true },
-                        );
-                      }}
-                    >
-                      <SelectTrigger className="w-full">
-                        <SelectValue placeholder="Select role" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="Manager">Manager</SelectItem>
-                        <SelectItem value="Executive">Executive</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  )}
-                />
-              </FieldWrapper>
-
-              {roleName === "Executive" && (
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <FieldWrapper
                   label="Reporting Manager"
                   required
@@ -344,9 +307,9 @@ export default function EditUserDialog({
                     )}
                   />
                 </FieldWrapper>
-              )}
-            </div>
-          </section>
+              </div>
+            </section>
+          )}
 
           <div className="flex justify-end gap-3 pt-2">
             <Button
