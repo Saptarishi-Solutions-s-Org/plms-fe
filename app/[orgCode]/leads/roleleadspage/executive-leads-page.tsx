@@ -7,9 +7,11 @@ import LeadSummaryCards from "@/components/commoncomponents/leads/lead-cards";
 import LeadDialogs from "@/components/commoncomponents/leads/lead-dialogs";
 import LeadActions from "@/components/commoncomponents/leads/leadactions";
 import LeadHeader from "@/components/commoncomponents/leads/leadheader";
+import LeadPagination from "@/components/commoncomponents/leads/lead-pagination";
 import LeadTableFilters from "@/components/commoncomponents/leads/leadtable-filters";
 import LeadTable from "@/components/commoncomponents/leads/leadtable";
 import { useLeads } from "@/hooks/use-leads";
+import { useUrlPagination } from "@/hooks/use-url-pagination";
 import { getUser } from "@/lib/auth";
 import { createLead, updateLead } from "@/services/leads";
 import type { Lead, LeadFilters, LeadFormData } from "@/types/leadtypes";
@@ -20,7 +22,11 @@ function normalizeFilterValue(value: string) {
 }
 
 export default function ExecutiveLeadsPage() {
-  const { leads, stats, isInitialLoading, refetch } = useLeads();
+  const { page, limit, setPage, setLimit } = useUrlPagination();
+  const { leads, stats, pagination, isInitialLoading, refetch } = useLeads({
+    page,
+    limit,
+  });
   const currentUser = getUser();
   const currentUserId = currentUser?.id;
 
@@ -137,6 +143,12 @@ export default function ExecutiveLeadsPage() {
                 onViewDetails={handleViewDetails}
               />
             )}
+          />
+
+          <LeadPagination
+            pagination={pagination}
+            onPageChange={setPage}
+            onLimitChange={setLimit}
           />
 
           <LeadDialogs

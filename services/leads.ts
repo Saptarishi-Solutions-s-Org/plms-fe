@@ -2,8 +2,20 @@ import { api } from "@/lib/api";
 import type { LeadImportRow } from "@/types/leadImport";
 import type { AddActivityFormData, LeadPayload } from "@/types/leadtypes";
 
-export const getLeadsWithStats = () =>
-  api("/odata/v4/lead/getLeadsWithStats()");
+export type GetLeadsWithStatsParams = {
+  page?: number;
+  limit?: number;
+};
+
+export const getLeadsWithStats = (params?: GetLeadsWithStatsParams) => {
+  if (!params) {
+    return api("/odata/v4/lead/getLeadsWithStats()");
+  }
+
+  return api(
+    `/odata/v4/lead/getLeadsWithStats(page=${params.page},limit=${params.limit})`,
+  );
+};
 
 export const getExecutiveUsers = () =>
   api("/odata/v4/lead/getExecutiveUsers()");

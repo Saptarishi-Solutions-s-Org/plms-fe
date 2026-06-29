@@ -8,10 +8,12 @@ import LeadSummaryCards from "@/components/commoncomponents/leads/lead-cards";
 import LeadDialogs from "@/components/commoncomponents/leads/lead-dialogs";
 import LeadActions from "@/components/commoncomponents/leads/leadactions";
 import LeadHeader from "@/components/commoncomponents/leads/leadheader";
+import LeadPagination from "@/components/commoncomponents/leads/lead-pagination";
 import LeadTableFilters from "@/components/commoncomponents/leads/leadtable-filters";
 import LeadTable from "@/components/commoncomponents/leads/leadtable";
 import { useLeadExport } from "@/hooks/export";
 import { useLeads } from "@/hooks/use-leads";
+import { useUrlPagination } from "@/hooks/use-url-pagination";
 import { createLead, getExecutiveUsers, updateLead } from "@/services/leads";
 import type {
   ExecutiveOption,
@@ -41,7 +43,11 @@ function toLeadPayload(lead: Lead, assignedTo: string): LeadPayload {
 }
 
 export default function ManagerLeadsPage() {
-  const { leads, stats, isInitialLoading, refetch } = useLeads();
+  const { page, limit, setPage, setLimit } = useUrlPagination();
+  const { leads, stats, pagination, isInitialLoading, refetch } = useLeads({
+    page,
+    limit,
+  });
   const { handleExport } = useLeadExport();
 
   const [isFormOpen, setIsFormOpen] = useState(false);
@@ -238,6 +244,12 @@ export default function ManagerLeadsPage() {
                 onAssign={handleAssignLead}
               />
             )}
+          />
+
+          <LeadPagination
+            pagination={pagination}
+            onPageChange={setPage}
+            onLimitChange={setLimit}
           />
 
           <LeadDialogs
