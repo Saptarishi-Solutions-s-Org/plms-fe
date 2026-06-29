@@ -83,6 +83,27 @@ export function updateSessionUser(updates: Partial<AuthUser>) {
   return session;
 }
 
+export async function validateCurrentAccessSession() {
+  const token = getAccessToken();
+  if (!token || !API_URL) return false;
+
+  try {
+    const res = await fetch(`${API_URL}/odata/v4/profile/getProfile()`, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      credentials: "include",
+    });
+
+    if (res.status === 401) return false;
+    return true;
+  } catch {
+    return true;
+  }
+}
+
 export function clearSession() {
   session = null;
   disconnectSocket();

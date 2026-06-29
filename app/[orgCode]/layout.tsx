@@ -47,14 +47,22 @@ import { LogoutConfirmationDialog } from "@/components/commoncomponents/logout-c
 
 import { MENU_CONFIG } from "@/lib/menu";
 import { canAccess } from "@/lib/permissions";
-import { connectSocket, disconnectSocket } from "@/lib/socket";
+import { connectSocket, disconnectSocket, subscribeRealtime } from "@/lib/socket";
 import {
   AuthUser,
+  clearSession,
   getDashboardPath,
   getUser,
   logoutSession,
   refreshSession,
+  validateCurrentAccessSession,
 } from "@/lib/auth";
+import {
+  PROFILE_CHANGED,
+  USER_DETAIL_CHANGED,
+  type ProfileChangedPayload,
+  type UserDetailChangedPayload,
+} from "@/types/realtime";
 
 const DASHBOARD_QUOTES = [
   "Consistency beats motivation",
@@ -190,6 +198,44 @@ export default function Layout({ children }: { children: ReactNode }) {
     return () =>
       window.removeEventListener("LMA-auth-changed", handleAuthChanged);
   }, []);
+
+  useEffect(() => {
+    if (!user?.id) return;
+
+    let checking = false;
+
+    const checkSession = async (eventUserId?: string) => {
+      if (eventUserId && eventUserId !== user.id) return;
+      if (checking) return;
+
+      checking = true;
+      const isValid = await validateCurrentAccessSession();
+      checking = false;
+
+      if (!isValid) {
+        clearSession();
+        router.replace("/");
+      }
+    };
+
+    const unsubscribeProfile = subscribeRealtime<ProfileChangedPayload>(
+      PROFILE_CHANGED,
+      (event) => {
+        void checkSession(event.data?.userId);
+      },
+    );
+    const unsubscribeUserDetail = subscribeRealtime<UserDetailChangedPayload>(
+      USER_DETAIL_CHANGED,
+      (event) => {
+        void checkSession(event.data?.userId);
+      },
+    );
+
+    return () => {
+      unsubscribeProfile();
+      unsubscribeUserDetail();
+    };
+  }, [router, user?.id]);
 
   const toggle = (key: string) => {
     setState((prev) => ({ ...prev, [key]: !prev[key] }));
