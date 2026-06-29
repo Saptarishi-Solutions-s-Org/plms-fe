@@ -17,8 +17,16 @@ export interface UserDetails {
     id: string;
     name: string;
     email: string;
+    phone: string;
     role_name: string;
+    reporting_manager_id: string | null;
+    reporting_manager_name: string | null;
     is_active: boolean;
+}
+
+export interface ReportingManagerOption {
+    id: string;
+    name: string;
 }
 
 export interface AdminCardsProps {

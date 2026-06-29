@@ -11,6 +11,7 @@ import { UserDetails } from "@/types/organizationadmindashboard/dashboardtypes"
 import { Button } from "../ui/button";
 import { MoreHorizontal } from "lucide-react";
 import DeactivateForm from "./deactivatedailog";
+import EditUserDialog from "./edit-user-dialog";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "../ui/dropdown-menu";
 import { useState } from "react";
 
@@ -32,6 +33,8 @@ const UserTable = ({
 }) => {
 
     const [isDeactivateOpen, setIsDeactivateOpen] = useState(false);
+    const [isEditOpen, setIsEditOpen] = useState(false);
+    const [editingUser, setEditingUser] = useState<UserDetails | null>(null);
     const [selectedMode, setSelectedMode] = useState<ActionMode>(actionModes.deactivate);
     const [selectedUser, setSelectedUser] = useState({
         id: "",
@@ -80,7 +83,7 @@ const UserTable = ({
                         </TableRow>
                     ) : (
                         users.map((item, index) => (
-                            <TableRow key={index}>
+                            <TableRow key={item.id}>
                                 <TableCell>{index + 1}</TableCell>
                                 <TableCell>{item.name}</TableCell>
                                 <TableCell>{item.email || "-"}</TableCell>
@@ -97,6 +100,14 @@ const UserTable = ({
                                         </DropdownMenuTrigger>
 
                                         <DropdownMenuContent align="end">
+                                            <DropdownMenuItem
+                                                onClick={() => {
+                                                    setEditingUser(item);
+                                                    setIsEditOpen(true);
+                                                }}
+                                            >
+                                                Edit
+                                            </DropdownMenuItem>
                                             <DropdownMenuItem
                                                 onClick={() => {
                                                     setSelectedUser({
@@ -128,6 +139,15 @@ const UserTable = ({
                 setIsOpen={setIsDeactivateOpen}
                 mode={selectedMode}
                 selectedUser={selectedUser}
+                onSuccess={onRefresh}
+            />
+            <EditUserDialog
+                open={isEditOpen}
+                onOpenChange={(open) => {
+                    setIsEditOpen(open);
+                    if (!open) setEditingUser(null);
+                }}
+                user={editingUser}
                 onSuccess={onRefresh}
             />
         </div>
