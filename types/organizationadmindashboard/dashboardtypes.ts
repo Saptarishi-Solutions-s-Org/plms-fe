@@ -1,4 +1,6 @@
 
+import type { ReactNode } from "react";
+
 export interface LeadFormData {
     name: string;
     dob: Date;
@@ -27,6 +29,33 @@ export interface UserDetails {
 export interface ReportingManagerOption {
     id: string;
     name: string;
+}
+
+export interface EditUserFormData {
+    name: string;
+    email: string;
+    phone: string;
+    roleName: "Manager" | "Executive";
+    reportingManager: string;
+}
+
+export interface EditUserDialogProps {
+    open: boolean;
+    onOpenChange: (open: boolean) => void;
+    user: UserDetails | null;
+    onSuccess?: () => void | Promise<void>;
+}
+
+export interface EditUserFieldWrapperProps {
+    label: string;
+    required?: boolean;
+    error?: string;
+    children: ReactNode;
+}
+
+export interface ReportingManagerState {
+    userId: string;
+    options: ReportingManagerOption[];
 }
 
 export interface AdminCardsProps {

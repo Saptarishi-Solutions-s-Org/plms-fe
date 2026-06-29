@@ -1,10 +1,9 @@
 "use client";
 
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useState } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Controller, useForm } from "react-hook-form";
 import { toast } from "sonner";
-import { z } from "zod";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -27,38 +26,17 @@ import {
   getReportingManagers,
   updateOrganizationUser,
 } from "@/services/organizationAdmin";
+import { editUser } from "@/lib/validators/admin/edit-user";
 import type {
+  EditUserDialogProps,
+  EditUserFieldWrapperProps,
+  EditUserFormData,
   ReportingManagerOption,
+  ReportingManagerState,
   UserDetails,
 } from "@/types/organizationadmindashboard/dashboardtypes";
 
-const editUserSchema = z
-  .object({
-    name: z
-      .string()
-      .trim()
-      .min(1, "Name is required")
-      .max(50, "Name cannot exceed 50 characters"),
-    email: z.string().trim().email("Enter a valid email address"),
-    phone: z
-      .string()
-      .trim()
-      .regex(/^\d{10}$/, "Phone number must contain exactly 10 digits"),
-    roleName: z.enum(["Manager", "Executive"]),
-    reportingManager: z.string(),
-  })
-  .refine(
-    (data) =>
-      data.roleName !== "Executive" || data.reportingManager.length > 0,
-    {
-      path: ["reportingManager"],
-      message: "Reporting manager is required for an Executive",
-    },
-  );
-
-type EditUserForm = z.infer<typeof editUserSchema>;
-
-const EMPTY_FORM: EditUserForm = {
+const EMPTY_FORM: EditUserFormData = {
   name: "",
   email: "",
   phone: "",
@@ -66,7 +44,7 @@ const EMPTY_FORM: EditUserForm = {
   reportingManager: "",
 };
 
-function getInitialForm(user: UserDetails | null): EditUserForm {
+function getInitialForm(user: UserDetails | null): EditUserFormData {
   if (!user) return EMPTY_FORM;
 
   return {
@@ -83,12 +61,7 @@ function FieldWrapper({
   required,
   error,
   children,
-}: {
-  label: string;
-  required?: boolean;
-  error?: string;
-  children: ReactNode;
-}) {
+}: EditUserFieldWrapperProps) {
   return (
     <div className="flex flex-col gap-1.5">
       <Label required={required} className="text-sm font-normal text-gray-700">
@@ -108,25 +81,14 @@ function FieldWrapper({
   );
 }
 
-type Props = {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  user: UserDetails | null;
-  onSuccess?: () => void | Promise<void>;
-};
-
-type ManagerState = {
-  userId: string;
-  options: ReportingManagerOption[];
-};
-
 export default function EditUserDialog({
   open,
   onOpenChange,
   user,
   onSuccess,
-}: Props) {
-  const [managerState, setManagerState] = useState<ManagerState | null>(null);
+}: EditUserDialogProps) {
+  const [managerState, setManagerState] =
+    useState<ReportingManagerState | null>(null);
 
   const {
     register,
@@ -134,8 +96,8 @@ export default function EditUserDialog({
     control,
     reset,
     formState: { errors, isDirty, isSubmitting },
-  } = useForm<EditUserForm>({
-    resolver: zodResolver(editUserSchema),
+  } = useForm<EditUserFormData>({
+    resolver: zodResolver(editUser),
     defaultValues: EMPTY_FORM,
   });
 
@@ -189,7 +151,7 @@ export default function EditUserDialog({
     };
   }, [open, reset, user]);
 
-  const onValid = async (data: EditUserForm) => {
+  const onValid = async (data: EditUserFormData) => {
     if (!user) return;
 
     try {
