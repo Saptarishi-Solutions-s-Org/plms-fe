@@ -154,7 +154,6 @@ export default function OrgManagerOffersPage() {
       ]);
 
       const data = response?.value || response;
-      console.log(data.offers);
 
       const stats = data?.stats || {};
 
