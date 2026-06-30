@@ -3,11 +3,23 @@
 import { useCallback, useEffect } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 
-import { DEFAULT_PAGE, DEFAULT_PAGE_LIMIT } from "@/types/pagination";
+import {
+  DEFAULT_PAGE,
+  DEFAULT_PAGE_LIMIT,
+  PAGE_LIMIT_OPTIONS,
+} from "@/types/pagination";
 
 function parsePositiveInt(value: string | null, fallback: number) {
   const parsed = Number.parseInt(value ?? "", 10);
   return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
+}
+
+function parsePageLimit(value: string | null) {
+  const parsed = parsePositiveInt(value, DEFAULT_PAGE_LIMIT);
+
+  return PAGE_LIMIT_OPTIONS.some((option) => option === parsed)
+    ? parsed
+    : DEFAULT_PAGE_LIMIT;
 }
 
 export function useUrlPagination() {
@@ -16,10 +28,7 @@ export function useUrlPagination() {
   const searchParams = useSearchParams();
 
   const page = parsePositiveInt(searchParams.get("page"), DEFAULT_PAGE);
-  const limit = parsePositiveInt(
-    searchParams.get("limit"),
-    DEFAULT_PAGE_LIMIT,
-  );
+  const limit = parsePageLimit(searchParams.get("limit"));
 
   const replacePagination = useCallback(
     (nextPage: number, nextLimit: number) => {

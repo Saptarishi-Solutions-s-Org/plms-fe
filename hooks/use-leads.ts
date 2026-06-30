@@ -68,7 +68,7 @@ export function useLeads(options: UseLeadsOptions = {}) {
       const [res, allStatsRes] = await Promise.all([
         getLeadsWithStats(params),
         statsScope === "all"
-          ? getLeadsWithStats({ page: 1, limit: 1 })
+          ? getLeadsWithStats({ page: 1, limit: DEFAULT_PAGE_LIMIT })
           : Promise.resolve(null),
       ]);
       const nextLeads = res.leads ?? [];
