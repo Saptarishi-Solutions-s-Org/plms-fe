@@ -140,10 +140,10 @@ export default function LeadDetailPage() {
 
         <LeadHeroCard lead={lead} />
 
-        <div className="grid grid-cols-1 items-start gap-5 lg:grid-cols-2">
+        <div className="grid grid-cols-1 items-start gap-5 lg:grid-cols-[2fr_3fr]">
           <div className="flex flex-col gap-5">
-            <div className="flex h-[420px] flex-col overflow-hidden rounded-xl border border-gray-200 bg-white lg:h-[620px]">
-              <div className="flex h-16 shrink-0 items-center border-b border-gray-100 px-5">
+            <div className="flex h-[400px] flex-col overflow-hidden rounded-xl border border-gray-300 bg-white lg:h-[600px]">
+              <div className="flex h-16 shrink-0 items-center border-b border-gray-200 px-5">
                 <h2 className="text-base font-semibold text-gray-800">
                   Timeline
                 </h2>
@@ -154,7 +154,7 @@ export default function LeadDetailPage() {
             </div>
           </div>
 
-          <div className="grid h-[620px] grid-rows-2 gap-5">
+          <div className="grid h-[600px] grid-rows-2 gap-6">
             <AddNoteForm leadId={lead.uuid} onAdded={fetchDetail} />
             <OfferCard />
           </div>

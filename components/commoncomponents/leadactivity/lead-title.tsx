@@ -31,7 +31,7 @@ export default function LeadTitleCard({ lead }: LeadTitleCardProps) {
     .join(", ");
 
   return (
-    <div className="rounded-xl border border-gray-200 bg-white px-6 py-5">
+    <div className="rounded-xl border border-gray-300 bg-white px-6 py-5">
       <div className="flex flex-col gap-5 sm:flex-row sm:items-start">
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
