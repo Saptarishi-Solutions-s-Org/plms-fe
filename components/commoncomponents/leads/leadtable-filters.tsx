@@ -10,23 +10,34 @@ import {
   LEAD_PRIORITY_OPTIONS,
   LEAD_STATUS_OPTIONS,
   LeadFilters,
+  allFilters,
 } from "@/types/leadtypes";
 
 export interface LeadTableFiltersProps {
   executives: ExecutiveOption[];
+  filters?: LeadFilters;
   showAssignedToFilter?: boolean;
   onApply: (filters: LeadFilters) => void;
 }
 
 export default function LeadTableFilters({
   executives,
+  filters,
   showAssignedToFilter = true,
   onApply,
 }: LeadTableFiltersProps) {
-  const [search, setSearch] = useState("");
-  const [selectedStatuses, setSelectedStatuses] = useState<string[]>([]);
-  const [selectedPriorities, setSelectedPriorities] = useState<string[]>([]);
-  const [selectedExecutives, setSelectedExecutives] = useState<string[]>([]);
+  const initialFilters = filters ?? allFilters;
+  const [search, setSearch] = useState(initialFilters.search);
+  
+  const [selectedStatuses, setSelectedStatuses] = useState<string[]>(
+    initialFilters.statuses,
+  );
+  const [selectedPriorities, setSelectedPriorities] = useState<string[]>(
+    initialFilters.priorities,
+  );
+  const [selectedExecutives, setSelectedExecutives] = useState<string[]>(
+    initialFilters.assignedTo,
+  );
 
   const statusOptions = LEAD_STATUS_OPTIONS.map((option) => option.value);
   const priorityOptions = LEAD_PRIORITY_OPTIONS.map((option) => option.value);

@@ -9,10 +9,31 @@ import {
   normalizePagination,
   type PaginationMeta,
 } from "@/types/pagination";
-import {UseLeadsOptions} from "@/types/pagination";
+
+type UseLeadsOptions = {
+  page?: number;
+  limit?: number;
+  search?: string;
+  statuses?: string[];
+  priorities?: string[];
+  sources?: string[];
+  assignedTo?: string[];
+};
+
+function joinFilterValues(values?: string[]) {
+  const filteredValues = values?.filter(Boolean) ?? [];
+
+  return filteredValues.length ? filteredValues.join(",") : undefined;
+}
+
 export function useLeads(options: UseLeadsOptions = {}) {
-  const page = options.page;
+  const page = options.page ?? 1;
   const limit = options.limit ?? DEFAULT_PAGE_LIMIT;
+  const search = options.search;
+  const statuses = options.statuses;
+  const priorities = options.priorities;
+  const sources = options.sources;
+  const assignedTo = options.assignedTo;
   const [leads, setLeads] = useState<Lead[]>([]);
   const [stats, setStats] = useState<LeadStats>({
     total: 0,
@@ -31,9 +52,15 @@ export function useLeads(options: UseLeadsOptions = {}) {
     setIsLoading(true);
     setError(null);
     try {
-      const res = await getLeadsWithStats(
-        page ? { page, limit } : undefined,
-      );
+      const res = await getLeadsWithStats({
+        page,
+        limit,
+        search,
+        status: joinFilterValues(statuses),
+        priority: joinFilterValues(priorities),
+        leadSource: joinFilterValues(sources),
+        assignedTo: assignedTo?.[0],
+      });
       const nextLeads = res.leads ?? [];
       setLeads(nextLeads);
       setStats(res.stats);
@@ -46,7 +73,7 @@ export function useLeads(options: UseLeadsOptions = {}) {
       setIsLoading(false);
       setHasLoaded(true);
     }
-  }, [limit, page]);
+  }, [assignedTo, limit, page, priorities, search, sources, statuses]);
 
   useEffect(() => {
     fetchLeads();

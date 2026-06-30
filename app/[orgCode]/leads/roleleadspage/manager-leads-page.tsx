@@ -13,16 +13,15 @@ import LeadTableFilters from "@/components/commoncomponents/leads/leadtable-filt
 import LeadTable from "@/components/commoncomponents/leads/leadtable";
 import { useLeadExport } from "@/hooks/export";
 import { useLeads } from "@/hooks/use-leads";
+import { useUrlLeadFilters } from "@/hooks/use-url-lead-filters";
 import { useUrlPagination } from "@/hooks/use-url-pagination";
 import { createLead, getExecutiveUsers, updateLead } from "@/services/leads";
 import type {
   ExecutiveOption,
   Lead,
-  LeadFilters,
   LeadFormData,
   LeadPayload,
 } from "@/types/leadtypes";
-import { allFilters } from "@/types/leadtypes";
 
 function toLeadPayload(lead: Lead, assignedTo: string): LeadPayload {
   return {
@@ -44,16 +43,12 @@ function toLeadPayload(lead: Lead, assignedTo: string): LeadPayload {
 
 export default function ManagerLeadsPage() {
   const { page, limit, setPage, setLimit } = useUrlPagination();
-  const { leads, stats, pagination, isInitialLoading, refetch } = useLeads({
-    page,
-    limit,
-  });
+  const { filters, setFilters } = useUrlLeadFilters();
   const { handleExport } = useLeadExport();
 
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingLead, setEditingLead] = useState<Lead | null>(null);
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
-  const [filters, setFilters] = useState<LeadFilters>(allFilters);
   const [executives, setExecutives] = useState<ExecutiveOption[]>([]);
   const [isBulkAssignOpen, setIsBulkAssignOpen] = useState(false);
 
@@ -65,42 +60,30 @@ export default function ManagerLeadsPage() {
     () => new Map(executives.map((executive) => [executive.id, executive.name])),
     [executives],
   );
+  const assignedToIds = useMemo(
+    () =>
+      filters.assignedTo
+        .map(
+          (name) =>
+            executives.find((executive) => executive.name === name)?.id ?? name,
+        )
+        .filter(Boolean),
+    [executives, filters.assignedTo],
+  );
+  const { leads, stats, pagination, isInitialLoading, refetch } = useLeads({
+    page,
+    limit,
+    search: filters.search,
+    statuses: filters.statuses,
+    priorities: filters.priorities,
+    sources: filters.sources,
+    assignedTo: assignedToIds,
+  });
 
   const leadsById = useMemo(
     () => new Map(leads.map((lead) => [lead.uuid, lead])),
     [leads],
   );
-
-  const filteredLeads = useMemo(() => {
-    const search = filters.search.trim().toLowerCase();
-
-    return leads.filter((lead) => {
-      const searchMatch =
-        !search ||
-        lead.name.toLowerCase().includes(search) ||
-        lead.email.toLowerCase().includes(search);
-
-      const statusMatch =
-        filters.statuses.length === 0 || filters.statuses.includes(lead.status);
-
-      const priorityMatch =
-        filters.priorities.length === 0 ||
-        filters.priorities.includes(lead.priority);
-
-      const assignedToMatch =
-        filters.assignedTo.length === 0 ||
-        filters.assignedTo.includes(
-          executiveNamesById.get(lead.assignedTo) ?? lead.assignedToName ?? "",
-        );
-
-      return (
-        searchMatch &&
-        statusMatch &&
-        priorityMatch &&
-        assignedToMatch
-      );
-    });
-  }, [executiveNamesById, filters, leads]);
 
   const openAddForm = () => {
     setEditingLead(null);
@@ -229,10 +212,15 @@ export default function ManagerLeadsPage() {
 
           <LeadSummaryCards stats={stats} />
 
-          <LeadTableFilters executives={executives} onApply={setFilters} />
+          <LeadTableFilters
+            key={JSON.stringify(filters)}
+            executives={executives}
+            filters={filters}
+            onApply={setFilters}
+          />
 
           <LeadTable
-            leads={filteredLeads}
+            leads={leads}
             executives={executives}
             emptyMessage="No leads found"
             renderActions={(lead) => (

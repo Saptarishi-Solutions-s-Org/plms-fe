@@ -14,11 +14,6 @@ export type PaginatedResponse<T> = {
   pagination: PaginationMeta;
 };
 
-export type UseLeadsOptions = {
-  page?: number;
-  limit?: number;
-};
-
 export function createPaginationMeta({
   page,
   limit,
