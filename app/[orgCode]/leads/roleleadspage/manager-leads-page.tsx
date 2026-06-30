@@ -9,9 +9,9 @@ import LeadSummaryCards from "@/components/commoncomponents/leads/lead-cards";
 import LeadDialogs from "@/components/commoncomponents/leads/lead-dialogs";
 import LeadActions from "@/components/commoncomponents/leads/leadactions";
 import LeadHeader from "@/components/commoncomponents/leads/leadheader";
-import LeadPagination from "@/components/commoncomponents/leads/lead-pagination";
 import LeadTableFilters from "@/components/commoncomponents/leads/leadtable-filters";
 import LeadTable from "@/components/commoncomponents/leads/leadtable";
+import TablePaginationFooter from "@/components/commoncomponents/table-pagination-footer";
 import { useLeadExport } from "@/hooks/export";
 import { useLeads } from "@/hooks/use-leads";
 import { useUrlLeadFilters } from "@/hooks/use-url-lead-filters";
@@ -311,9 +311,18 @@ export default function ManagerLeadsPage() {
             onApply={setFilters}
           />
 
+          <TablePaginationFooter
+            pagination={pagination}
+            onPageChange={setPage}
+            onLimitChange={setLimit}
+            totalLabel="leads"
+            placement="top"
+          />
+
           <LeadTable
             leads={leads}
             executives={executives}
+            rowOffset={(pagination.page - 1) * pagination.limit}
             emptyMessage="No leads found"
             renderActions={(lead) => (
               <LeadActions
@@ -326,10 +335,11 @@ export default function ManagerLeadsPage() {
             )}
           />
 
-          <LeadPagination
+          <TablePaginationFooter
             pagination={pagination}
             onPageChange={setPage}
             onLimitChange={setLimit}
+            totalLabel="leads"
           />
 
           <LeadDialogs
