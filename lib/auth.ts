@@ -11,6 +11,7 @@ export type AuthUser = {
   roleId: string;
   role: string;
   permissions?: Record<string, string[]>;
+  mustChangePassword?: boolean;
 };
 
 type AuthSession = {

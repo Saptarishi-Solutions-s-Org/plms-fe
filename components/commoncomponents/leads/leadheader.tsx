@@ -1,6 +1,6 @@
 "use client";
 
-import { Download, Plus, Upload } from "lucide-react";
+import { Download, ListChecks, Plus, Upload } from "lucide-react";
 import { useState } from "react";
 
 import LeadImportDialog from "@/components/commoncomponents/leads/lead-import-dialog";
@@ -11,6 +11,7 @@ export default function LeadHeader({
   onExport,
   onImportComplete,
   onAddLead,
+  onBulkAssign,
   showImportExport = true,
 }: LeadHeaderProps) {
   const [isImportOpen, setImportOpen] = useState(false);
@@ -18,6 +19,18 @@ export default function LeadHeader({
   return (
     <>
       <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
+        {onBulkAssign && (
+          <Button
+            type="button"
+            variant="outline"
+            onClick={onBulkAssign}
+            className="flex h-9 w-full items-center justify-center gap-1.5 rounded-full border-blue-600 px-4 text-blue-600 hover:bg-blue-50 hover:text-blue-700 sm:w-auto"
+          >
+            <ListChecks className="h-4 w-4" />
+            Bulk Assign
+          </Button>
+        )}
+
         {showImportExport && (
           <>
             <Button

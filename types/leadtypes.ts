@@ -65,7 +65,7 @@ export interface LeadDetailData {
 
 export interface AddActivityFormData {
   notes: string;
-  type?: string;
+  type: string;
 }
 
 export interface ExecutiveOption {
@@ -103,7 +103,7 @@ export type LeadFilters = {
 };
 
 export const LEAD_SOURCE_OPTIONS = [
-  { value: "Socil_Media", label: "Social Media" },
+  { value: "Social_Media", label: "Social Media" },
   { value: "Advertisement", label: "Advertisement" },
   { value: "Referral", label: "Referral" },
   { value: "Manual_Entry", label: "Manual Entry" },
@@ -134,6 +134,7 @@ export type LeadHeaderProps = {
   onExport: () => void;
   onImportComplete?: () => Promise<void> | void;
   onAddLead: () => void;
+  onBulkAssign?: () => void;
   showImportExport?: boolean;
 };
 
@@ -155,4 +156,19 @@ export const allFilters: LeadFilters = {
   statuses: [],
   priorities: [],
   assignedTo: [],
+};
+
+export type BulkLeadActionsDrawerProps = {
+  open: boolean;
+  executives: ExecutiveOption[];
+  leads: Lead[];
+  onClose: () => void;
+  onAssign: (
+    leadIds: string[],
+    executiveId: string,
+  ) => Promise<{
+    successCount: number;
+    failureCount: number;
+    failures: Array<{ leadId: string; message: string }>;
+  }>;
 };

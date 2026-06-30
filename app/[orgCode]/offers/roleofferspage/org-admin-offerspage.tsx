@@ -39,10 +39,6 @@ export default function OrgAdminOffersPage() {
   const [isLoading, setIsLoading] =
     useState(true);
 
-  const [error, setError] = useState<
-    string | null
-  >(null);
-
   const [createOpen, setCreateOpen] =
     useState(false);
 
@@ -70,8 +66,6 @@ export default function OrgAdminOffersPage() {
   const fetchOffers = useCallback(
     async (showLoader = false) => {
       try {
-        setError(null);
-
         if (showLoader) {
           setIsLoading(true);
         }
@@ -168,11 +162,10 @@ export default function OrgAdminOffersPage() {
         setGlobalCount(summary.globalCount);
 
       } catch (err) {
-        setError(
-          err instanceof Error
-            ? err.message
-            : "Failed to load offers"
-        );
+        console.error("Failed to load offers", err);
+        setOffers([]);
+        setTotalCount(0);
+        setGlobalCount(0);
       } finally {
         if (showLoader) {
           setIsLoading(false);
@@ -436,18 +429,12 @@ export default function OrgAdminOffersPage() {
 
       {/* Table */}
 
-      {error ? (
-        <div className="flex items-center justify-center py-20 text-red-500">
-          {error}
-        </div>
-      ) : (
-        <OffersTable
-          offers={filteredOffers}
-          onToggleStatus={
-            handleToggleStatus
-          }
-        />
-      )}
+      <OffersTable
+        offers={filteredOffers}
+        onToggleStatus={
+          handleToggleStatus
+        }
+      />
 
       {/* Dialog */}
 

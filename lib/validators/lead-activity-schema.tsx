@@ -1,5 +1,6 @@
 import * as z from "zod";
 
 export const leadActivitySchema = z.object({
-    notes: z.string().min(1, "Notes is required"),
+  type: z.string().min(1, "Activity type is required"),
+  notes: z.string().min(1, "Notes is required"),
 });
