@@ -1,0 +1,423 @@
+"use client";
+
+import { useCallback, useEffect, useState } from "react";
+import { Tags, X } from "lucide-react";
+import { toast } from "sonner";
+
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
+import {
+  Drawer,
+  DrawerContent,
+  DrawerDescription,
+  DrawerHeader,
+  DrawerTitle,
+} from "@/components/ui/drawer";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { getExecutiveOffers } from "@/services/executivestats";
+import type { Lead } from "@/types/leadtypes";
+import { formatDate, type ExecutiveOfferItem, type OfferOption } from "@/types/org-manager";
+
+type Props = {
+  open: boolean;
+  leads: Lead[];
+  onClose: () => void;
+  onAssign: (
+    offerIds: string[],
+    leadIds: string[],
+  ) => Promise<{ successCount: number; failureCount: number }>;
+};
+
+
+export function BulkOfferAssignDrawer({ open, leads, onClose, onAssign }: Props) {
+  const [offers, setOffers] = useState<OfferOption[]>([]);
+  const [offersLoading, setOffersLoading] = useState(false);
+  const [selectedOfferIds, setSelectedOfferIds] = useState<string[]>([]);
+  const [selectedLeadIds, setSelectedLeadIds] = useState<string[]>([]);
+  const [isSaving, setIsSaving] = useState(false);
+
+  const fetchOffers = useCallback(async () => {
+    setOffersLoading(true);
+    try {
+      const raw = await getExecutiveOffers() as { value?: ExecutiveOfferItem[] } | ExecutiveOfferItem[];
+      const items: ExecutiveOfferItem[] = Array.isArray(raw) ? raw : (raw?.value ?? []);
+      setOffers(
+        items.map((item) => ({
+          id: item.id ?? "",
+          title: item.title ?? "",
+          description: item.description ?? "",
+          status: (item.status ?? "inactive").toLowerCase(),
+          validTo: item.validTo ?? "",
+        })),
+      );
+    } catch {
+      setOffers([]);
+    } finally {
+      setOffersLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (open) fetchOffers();
+  }, [open, fetchOffers]);
+
+  const allOffersSelected =
+    offers.length > 0 && selectedOfferIds.length === offers.length;
+  const someOffersSelected =
+    selectedOfferIds.length > 0 && !allOffersSelected;
+
+  const allLeadsSelected =
+    leads.length > 0 && selectedLeadIds.length === leads.length;
+  const someLeadsSelected =
+    selectedLeadIds.length > 0 && !allLeadsSelected;
+
+  const toggleOffer = (id: string) =>
+    setSelectedOfferIds((prev) =>
+      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id],
+    );
+
+  const toggleLead = (id: string) =>
+    setSelectedLeadIds((prev) =>
+      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id],
+    );
+
+  const resetSelections = () => {
+    setSelectedOfferIds([]);
+    setSelectedLeadIds([]);
+  };
+
+  const handleClose = () => {
+    if (isSaving) return;
+    resetSelections();
+    onClose();
+  };
+
+  const pluralize = (
+    count: number,
+    singular: string,
+    plural = `${singular}s`,
+  ) => `${count} ${count === 1 ? singular : plural}`;
+
+  const handleSave = async () => {
+    if (selectedOfferIds.length === 0 || selectedLeadIds.length === 0) return;
+
+    const hasInactiveOffer = offers.some(
+      (o) => selectedOfferIds.includes(o.id) && o.status !== "active",
+    );
+    if (hasInactiveOffer) {
+      toast.error("Only active offers can be assigned to leads.");
+      return;
+    }
+
+    try {
+      setIsSaving(true);
+      const result = await onAssign(selectedOfferIds, selectedLeadIds);
+
+      if (result.failureCount === 0) {
+        toast.success(
+          `${pluralize(selectedOfferIds.length, "Offer")} Successfully Assigned to ${pluralize(selectedLeadIds.length, "Selected Lead")}.`,
+        );
+        resetSelections();
+        onClose();
+      } else if (result.successCount > 0) {
+        toast.warning(
+          `${pluralize(result.successCount, "Offer")} Successfully Assigned to ${pluralize(selectedLeadIds.length, "Selected Lead")}. ${pluralize(result.failureCount, "Offer")} ${result.failureCount === 1 ? "was" : "were"} already assigned to the selected ${result.failureCount === 1 ? "lead" : "leads"}.`,
+        );
+        resetSelections();
+      } else {
+        toast.error(
+          `${selectedOfferIds.length === 1 ? "This Offer" : "These Offers"} ${result.failureCount === 1 ? "was" : "were"}  ${selectedLeadIds.length === 1 ? "already assigned to this lead" : "already assigned to these leads"}.`,
+        );
+      }
+    } catch (error) {
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : "Failed to assign offers to leads.",
+      );
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const isSaveDisabled =
+    isSaving ||
+    offersLoading ||
+    selectedOfferIds.length === 0 ||
+    selectedLeadIds.length === 0;
+
+  return (
+    <Drawer
+      open={open}
+      onOpenChange={(nextOpen) => {
+        if (!nextOpen) handleClose();
+      }}
+      direction="bottom"
+    >
+      <DrawerContent className="z-[1000] h-[80vh] max-h-[80vh] overflow-hidden rounded-t-xl bg-white [&>div:first-child]:hidden">
+        <DrawerHeader className="!text-left border-b border-gray-200 px-5 py-4">
+          <div className="flex items-center justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-blue-50 text-blue-600">
+                <Tags className="h-4 w-4" />
+              </div>
+              <div>
+                <DrawerTitle className="text-lg font-semibold leading-tight text-blue-600">
+                  Bulk Assign Offers
+                </DrawerTitle>
+                <DrawerDescription className="mt-0.5 text-xs text-gray-500">
+                  Assign multiple offers to multiple leads at once
+                </DrawerDescription>
+              </div>
+            </div>
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              onClick={handleClose}
+              disabled={isSaving}
+              className="h-8 w-8 text-gray-400 hover:bg-gray-100 hover:text-gray-600"
+              aria-label="Close"
+            >
+              <X className="h-4 w-4" />
+            </Button>
+          </div>
+        </DrawerHeader>
+
+        <div className="grid min-h-0 flex-1 gap-5 overflow-y-auto p-5 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] md:overflow-hidden">
+          <section className="flex min-h-[380px] min-w-0 flex-col md:min-h-0">
+            <h3 className="mb-3 text-lg font-semibold text-gray-800">Offers</h3>
+            <div className="min-h-0 w-full flex-1 overflow-y-auto overflow-x-hidden rounded-lg border border-gray-200 bg-white shadow-sm">
+              <Table className="table-fixed">
+                <TableHeader className="sticky top-0 z-10 border-b border-gray-200 bg-[#7677F41A]">
+                  <TableRow>
+                    <TableHead className="w-14">
+                      <Checkbox
+                        checked={
+                          allOffersSelected
+                            ? true
+                            : someOffersSelected
+                              ? "indeterminate"
+                              : false
+                        }
+                        aria-label="Select all offers"
+                        disabled={!offers.length || offersLoading}
+                        onCheckedChange={(checked) =>
+                          setSelectedOfferIds(
+                            checked === true ? offers.map((o) => o.id) : [],
+                          )
+                        }
+                      />
+                    </TableHead>
+                    <TableHead className="min-w-30 text-xs sm:text-sm">
+                      Offer Name
+                    </TableHead>
+                    <TableHead className="min-w-45 text-xs sm:text-sm">
+                      Description
+                    </TableHead>
+                    <TableHead className="min-w-25 text-xs sm:text-sm">
+                      Valid To
+                    </TableHead>
+                    <TableHead className="min-w-20 text-xs sm:text-sm">
+                      Status
+                    </TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {offersLoading ? (
+                    <TableRow>
+                      <TableCell
+                        colSpan={5}
+                        className="py-12 text-center text-sm font-semibold text-gray-400"
+                      >
+                        Loading offers...
+                      </TableCell>
+                    </TableRow>
+                  ) : offers.length === 0 ? (
+                    <TableRow>
+                      <TableCell
+                        colSpan={5}
+                        className="py-12 text-center text-sm font-semibold text-gray-400"
+                      >
+                        No offers found
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                    offers.map((offer) => {
+                      const selected = selectedOfferIds.includes(offer.id);
+                      return (
+                        <TableRow
+                          key={offer.id}
+                          tabIndex={0}
+                          data-state={selected ? "selected" : undefined}
+                          className="cursor-pointer hover:bg-gray-50/60"
+                          onClick={() => toggleOffer(offer.id)}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter" || e.key === " ") {
+                              e.preventDefault();
+                              toggleOffer(offer.id);
+                            }
+                          }}
+                        >
+                          <TableCell>
+                            <Checkbox
+                              checked={selected}
+                              aria-label={`Select ${offer.title}`}
+                              onCheckedChange={() => toggleOffer(offer.id)}
+                              onClick={(e) => e.stopPropagation()}
+                            />
+                          </TableCell>
+                          <TableCell className="truncate font-medium text-gray-800">
+                            {offer.title || "—"}
+                          </TableCell>
+                          <TableCell className="max-w-45 truncate text-gray-600">
+                            {offer.description || "—"}
+                          </TableCell>
+                          <TableCell className="text-gray-600">
+                            {formatDate(offer.validTo)}
+                          </TableCell>
+                          <TableCell>
+                            <Badge
+                              variant="outline"
+                              className={
+                                offer.status === "active"
+                                  ? "border-green-200 bg-green-50 text-green-700"
+                                  : offer.status === "expired"
+                                    ? "border-red-200 bg-red-50 text-red-700"
+                                    : "border-gray-200 bg-gray-50 text-gray-600"
+                              }
+                            >
+                              {offer.status.charAt(0).toUpperCase() +
+                                offer.status.slice(1)}
+                            </Badge>
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })
+                  )}
+                </TableBody>
+              </Table>
+            </div>
+          </section>
+
+          <section className="flex min-h-95 min-w-0 flex-col md:min-h-0">
+            <h3 className="mb-3 text-lg font-semibold text-gray-800">Leads</h3>
+            <div className="min-h-0 w-full flex-1 overflow-y-auto overflow-x-hidden rounded-lg border border-gray-200 bg-white shadow-sm">
+              <Table className="table-fixed">
+                <TableHeader className="sticky top-0 z-10 border-b border-gray-200 bg-[#7677F41A]">
+                  <TableRow>
+                    <TableHead className="w-14">
+                      <Checkbox
+                        checked={
+                          allLeadsSelected
+                            ? true
+                            : someLeadsSelected
+                              ? "indeterminate"
+                              : false
+                        }
+                        aria-label="Select all leads"
+                        disabled={!leads.length}
+                        onCheckedChange={(checked) =>
+                          setSelectedLeadIds(
+                            checked === true ? leads.map((l) => l.uuid) : [],
+                          )
+                        }
+                      />
+                    </TableHead>
+                    <TableHead className="min-w-35 text-xs sm:text-sm">
+                      Lead Name
+                    </TableHead>
+                    <TableHead className="min-w-45 text-xs sm:text-sm">
+                      Email
+                    </TableHead>
+                    <TableHead className="min-w-25 text-xs sm:text-sm">
+                      Status
+                    </TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {leads.length === 0 ? (
+                    <TableRow>
+                      <TableCell
+                        colSpan={4}
+                        className="py-12 text-center text-sm font-semibold text-gray-400"
+                      >
+                        No leads found
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                    leads.map((lead) => {
+                      const selected = selectedLeadIds.includes(lead.uuid);
+                      return (
+                        <TableRow
+                          key={lead.uuid}
+                          tabIndex={0}
+                          data-state={selected ? "selected" : undefined}
+                          className="cursor-pointer hover:bg-gray-50/60"
+                          onClick={() => toggleLead(lead.uuid)}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter" || e.key === " ") {
+                              e.preventDefault();
+                              toggleLead(lead.uuid);
+                            }
+                          }}
+                        >
+                          <TableCell>
+                            <Checkbox
+                              checked={selected}
+                              aria-label={`Select ${lead.name}`}
+                              onCheckedChange={() => toggleLead(lead.uuid)}
+                              onClick={(e) => e.stopPropagation()}
+                            />
+                          </TableCell>
+                          <TableCell className="font-medium text-gray-800">
+                            {lead.name}
+                          </TableCell>
+                          <TableCell className="truncate text-gray-600">
+                            {lead.email}
+                          </TableCell>
+                          <TableCell>{lead.status || "—"}</TableCell>
+                        </TableRow>
+                      );
+                    })
+                  )}
+                </TableBody>
+              </Table>
+            </div>
+          </section>
+        </div>
+
+        <div className="border-t border-gray-200 bg-white px-5 py-3">
+          <div className="flex justify-end gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={handleClose}
+              disabled={isSaving}
+              size="sm"
+            >
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              onClick={handleSave}
+              disabled={isSaveDisabled}
+              size="sm"
+              className="bg-blue-600 text-white hover:bg-blue-700"
+            >
+              {isSaving ? "Assigning..." : "Assign Offers"}
+            </Button>
+          </div>
+        </div>
+      </DrawerContent>
+    </Drawer>
+  );
+}

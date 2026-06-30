@@ -104,7 +104,7 @@ const mapExecutiveOffer = (
   item: ExecutiveOfferItem,
   index: number,
 ): ExecutiveOfferRow => ({
-  id: `${item.title || "offer"}-${index}`,
+  id: item.id ?? `${item.title || "offer"}-${index}`,
   title: item.title || "",
   description: item.description || "",
   status: normalizeStatus(item.status),

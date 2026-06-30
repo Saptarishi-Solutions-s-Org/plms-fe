@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 
 import GlobalLoader from "@/components/commoncomponents/globalloader";
+import { BulkOfferAssignDrawer } from "@/components/commoncomponents/executive-bulk-actions/BulkOfferAssignDrawer";
 import LeadSummaryCards from "@/components/commoncomponents/leads/lead-cards";
 import LeadDialogs from "@/components/commoncomponents/leads/lead-dialogs";
 import LeadActions from "@/components/commoncomponents/leads/leadactions";
@@ -11,6 +12,7 @@ import LeadTableFilters from "@/components/commoncomponents/leads/leadtable-filt
 import LeadTable from "@/components/commoncomponents/leads/leadtable";
 import { useLeads } from "@/hooks/use-leads";
 import { getUser } from "@/lib/auth";
+import { assignOfferToLead } from "@/services/executivestats";
 import { createLead, updateLead } from "@/services/leads";
 import type { Lead, LeadFilters, LeadFormData } from "@/types/leadtypes";
 import { allFilters } from "@/types/leadtypes";
@@ -28,6 +30,7 @@ export default function ExecutiveLeadsPage() {
   const [editingLead, setEditingLead] = useState<Lead | null>(null);
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
   const [filters, setFilters] = useState<LeadFilters>(allFilters);
+  const [isBulkAssignOpen, setIsBulkAssignOpen] = useState(false);
 
   const filteredLeads = useMemo(() => {
     return leads.filter((lead) => {
@@ -95,6 +98,21 @@ export default function ExecutiveLeadsPage() {
     });
   };
 
+  const handleBulkAssign = async (offerIds: string[], leadIds: string[]) => {
+    const pairs = offerIds.flatMap((offerId) =>
+      leadIds.map((leadId) => ({ offerId, leadId })),
+    );
+
+    const results = await Promise.allSettled(
+      pairs.map((pair) => assignOfferToLead(pair)),
+    );
+
+    const successCount = results.filter((r) => r.status === "fulfilled").length;
+    const failureCount = results.filter((r) => r.status === "rejected").length;
+
+    return { successCount, failureCount };
+  };
+
   return (
     <>
       {isInitialLoading ? (
@@ -115,6 +133,7 @@ export default function ExecutiveLeadsPage() {
               onExport={() => undefined}
               onAddLead={openAddForm}
               showImportExport={false}
+              onBulkAssign={() => setIsBulkAssignOpen(true)}
             />
           </div>
 
@@ -146,6 +165,13 @@ export default function ExecutiveLeadsPage() {
             onFormClose={closeForm}
             selectedLead={selectedLead}
             onDetailsClose={() => setSelectedLead(null)}
+          />
+
+          <BulkOfferAssignDrawer
+            open={isBulkAssignOpen}
+            leads={leads}
+            onClose={() => setIsBulkAssignOpen(false)}
+            onAssign={handleBulkAssign}
           />
         </div>
       )}
