@@ -27,6 +27,7 @@ export default function ExecutiveLeadsPage() {
     statuses: filters.statuses,
     priorities: filters.priorities,
     sources: filters.sources,
+    statsScope: "all",
   });
   const currentUser = getUser();
   const currentUserId = currentUser?.id;

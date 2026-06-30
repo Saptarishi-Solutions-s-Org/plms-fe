@@ -18,6 +18,14 @@ type UseLeadsOptions = {
   priorities?: string[];
   sources?: string[];
   assignedTo?: string[];
+  statsScope?: "filtered" | "all";
+};
+
+const EMPTY_STATS: LeadStats = {
+  total: 0,
+  new: 0,
+  contacted: 0,
+  qualified: 0,
 };
 
 function joinFilterValues(values?: string[]) {
@@ -34,13 +42,9 @@ export function useLeads(options: UseLeadsOptions = {}) {
   const priorities = options.priorities;
   const sources = options.sources;
   const assignedTo = options.assignedTo;
+  const statsScope = options.statsScope ?? "filtered";
   const [leads, setLeads] = useState<Lead[]>([]);
-  const [stats, setStats] = useState<LeadStats>({
-    total: 0,
-    new: 0,
-    contacted: 0,
-    qualified: 0,
-  });
+  const [stats, setStats] = useState<LeadStats>(EMPTY_STATS);
   const [pagination, setPagination] = useState<PaginationMeta>(
     emptyPagination(limit),
   );
@@ -52,7 +56,7 @@ export function useLeads(options: UseLeadsOptions = {}) {
     setIsLoading(true);
     setError(null);
     try {
-      const res = await getLeadsWithStats({
+      const params = {
         page,
         limit,
         search,
@@ -60,10 +64,16 @@ export function useLeads(options: UseLeadsOptions = {}) {
         priority: joinFilterValues(priorities),
         leadSource: joinFilterValues(sources),
         assignedTo: assignedTo?.[0],
-      });
+      };
+      const [res, allStatsRes] = await Promise.all([
+        getLeadsWithStats(params),
+        statsScope === "all"
+          ? getLeadsWithStats({ page: 1, limit: 1 })
+          : Promise.resolve(null),
+      ]);
       const nextLeads = res.leads ?? [];
       setLeads(nextLeads);
-      setStats(res.stats);
+      setStats((allStatsRes ?? res).stats ?? EMPTY_STATS);
       setPagination(
         normalizePagination(res.pagination, nextLeads.length, limit),
       );
@@ -73,7 +83,16 @@ export function useLeads(options: UseLeadsOptions = {}) {
       setIsLoading(false);
       setHasLoaded(true);
     }
-  }, [assignedTo, limit, page, priorities, search, sources, statuses]);
+  }, [
+    assignedTo,
+    limit,
+    page,
+    priorities,
+    search,
+    sources,
+    statuses,
+    statsScope,
+  ]);
 
   useEffect(() => {
     fetchLeads();
