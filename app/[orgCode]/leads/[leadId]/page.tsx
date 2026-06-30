@@ -110,16 +110,16 @@ export default function LeadDetailPage() {
             <Button
               asChild
               variant="ghost"
-              className="h-9 px-2 text-sm font-semibold text-slate-500"
+              size="icon"
+              className="h-8 w-8 text-slate-500 hover:text-slate-900 rounded-full shrink-0"
             >
-              <Link href={`/${orgCode}/leads`}>
-                <ArrowLeft className="size-4" />
-                Back
+              <Link href={`/${orgCode}/leads`} aria-label="Back to leads">
+                <ArrowLeft className="w-5 h-5" />
               </Link>
             </Button>
             <div className="h-6 w-px bg-slate-200" />
             <div>
-              <h1 className="text-xl font-semibold text-gray-900 sm:text-2xl">
+              <h1 className="text-2xl font-semibold text-gray-900 sm:text-3xl">
                 Lead details
               </h1>
               <p className="mt-0.5 text-sm text-gray-500">
@@ -142,9 +142,9 @@ export default function LeadDetailPage() {
 
         <div className="grid grid-cols-1 items-start gap-5 lg:grid-cols-2">
           <div className="flex flex-col gap-5">
-            <div className="flex h-[300px] flex-col overflow-hidden rounded-xl border border-gray-200 bg-white">
-              <div className="shrink-0 border-b border-gray-100 px-5 py-4">
-                <h2 className="text-sm font-semibold text-gray-800">
+            <div className="flex h-[420px] flex-col overflow-hidden rounded-xl border border-gray-200 bg-white lg:h-[620px]">
+              <div className="flex h-16 shrink-0 items-center border-b border-gray-100 px-5">
+                <h2 className="text-base font-semibold text-gray-800">
                   Timeline
                 </h2>
               </div>
@@ -152,12 +152,11 @@ export default function LeadDetailPage() {
                 <ActivityTimeline activities={activities} />
               </div>
             </div>
-            <OfferCard />
           </div>
 
-          <div className="flex flex-col gap-5">
-            
+          <div className="grid h-[620px] grid-rows-2 gap-5">
             <AddNoteForm leadId={lead.uuid} onAdded={fetchDetail} />
+            <OfferCard />
           </div>
         </div>
       </div>

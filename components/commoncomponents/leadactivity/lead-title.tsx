@@ -35,7 +35,7 @@ export default function LeadTitleCard({ lead }: LeadTitleCardProps) {
       <div className="flex flex-col gap-5 sm:flex-row sm:items-start">
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
-            <h2 className="min-w-0 truncate text-xl font-bold text-gray-900">
+            <h2 className="min-w-0 truncate text-2xl font-bold text-gray-900">
               {lead.name}
             </h2>
             <Badge
