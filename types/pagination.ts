@@ -2,6 +2,8 @@ export const DEFAULT_PAGE = 1;
 export const DEFAULT_PAGE_LIMIT = 25;
 export const PAGE_LIMIT_OPTIONS = [25, 50, 75, 100] as const;
 
+export type TablePaginationPlacement = "top" | "bottom";
+
 export type PaginationMeta = {
   page: number;
   limit: number;
@@ -9,9 +11,12 @@ export type PaginationMeta = {
   totalPages: number;
 };
 
-export type PaginatedResponse<T> = {
-  data: T[];
+export type PaginationProps = {
   pagination: PaginationMeta;
+  onPageChange: (page: number) => void;
+  onLimitChange: (limit: number) => void;
+  placement?: TablePaginationPlacement;
+  totalLabel?: string;
 };
 
 export function createPaginationMeta({

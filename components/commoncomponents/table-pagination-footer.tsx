@@ -21,18 +21,8 @@ import {
 import { cn } from "@/lib/utils";
 import {
   PAGE_LIMIT_OPTIONS,
-  type PaginationMeta,
 } from "@/types/pagination";
-
-export type TablePaginationPlacement = "top" | "bottom";
-
-type TablePaginationFooterProps = {
-  pagination: PaginationMeta;
-  onPageChange: (page: number) => void;
-  onLimitChange: (limit: number) => void;
-  placement?: TablePaginationPlacement;
-  totalLabel?: string;
-};
+import type { PaginationProps } from "@/types/pagination";
 
 export default function TablePaginationFooter({
   pagination,
@@ -40,7 +30,7 @@ export default function TablePaginationFooter({
   onLimitChange,
   placement = "bottom",
   totalLabel = "records",
-}: TablePaginationFooterProps) {
+}: PaginationProps) {
   const currentPage = Math.max(1, pagination.page);
   const totalPages = Math.max(1, pagination.totalPages);
   const limit = pagination.limit;
