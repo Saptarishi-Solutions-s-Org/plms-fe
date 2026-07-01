@@ -47,14 +47,21 @@ import { LogoutConfirmationDialog } from "@/components/commoncomponents/logout-c
 
 import { MENU_CONFIG } from "@/lib/menu";
 import { canAccess } from "@/lib/permissions";
-import { connectSocket, disconnectSocket } from "@/lib/socket";
+import { connectSocket, disconnectSocket, subscribeRealtime } from "@/lib/socket";
 import {
   AuthUser,
+  clearSession,
   getDashboardPath,
   getUser,
   logoutSession,
   refreshSession,
 } from "@/lib/auth";
+import {
+  PROFILE_CHANGED,
+  USER_DETAIL_CHANGED,
+  type ProfileChangedPayload,
+  type UserDetailChangedPayload,
+} from "@/types/realtime";
 
 const DASHBOARD_QUOTES = [
   "Consistency beats motivation",
@@ -190,6 +197,65 @@ export default function Layout({ children }: { children: ReactNode }) {
     return () =>
       window.removeEventListener("LMA-auth-changed", handleAuthChanged);
   }, []);
+
+  useEffect(() => {
+    if (!user?.id) return;
+
+    let checking = false;
+
+    const checkSession = async (eventUserId?: string) => {
+      if (eventUserId && eventUserId !== user.id) return;
+      if (checking) return;
+
+      checking = true;
+      const latestSession = await refreshSession(true);
+      checking = false;
+
+      if (!latestSession) {
+        clearSession();
+        router.replace("/");
+        return;
+      }
+
+      if (latestSession.user.orgCode !== orgCode) {
+        router.replace(getDashboardPath(latestSession.user));
+        return;
+      }
+
+      if (latestSession.user.mustChangePassword) {
+        router.replace("/set-password");
+      }
+    };
+
+    const unsubscribeProfile = subscribeRealtime<ProfileChangedPayload>(
+      PROFILE_CHANGED,
+      (event) => {
+        if (event.data?.userId && event.data.userId !== user.id) return;
+
+        if (
+          event.data?.reason === "session-invalidated" ||
+          event.data?.reason === "session-changed"
+        ) {
+          clearSession();
+          router.replace("/");
+          return;
+        }
+
+        void checkSession(event.data?.userId);
+      },
+    );
+    const unsubscribeUserDetail = subscribeRealtime<UserDetailChangedPayload>(
+      USER_DETAIL_CHANGED,
+      (event) => {
+        void checkSession(event.data?.userId);
+      },
+    );
+
+    return () => {
+      unsubscribeProfile();
+      unsubscribeUserDetail();
+    };
+  }, [orgCode, router, user?.id]);
 
   const toggle = (key: string) => {
     setState((prev) => ({ ...prev, [key]: !prev[key] }));
