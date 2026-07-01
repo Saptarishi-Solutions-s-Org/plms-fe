@@ -55,7 +55,6 @@ import {
   getUser,
   logoutSession,
   refreshSession,
-  validateCurrentAccessSession,
 } from "@/lib/auth";
 import {
   PROFILE_CHANGED,
@@ -209,18 +208,39 @@ export default function Layout({ children }: { children: ReactNode }) {
       if (checking) return;
 
       checking = true;
-      const isValid = await validateCurrentAccessSession();
+      const latestSession = await refreshSession(true);
       checking = false;
 
-      if (!isValid) {
+      if (!latestSession) {
         clearSession();
         router.replace("/");
+        return;
+      }
+
+      if (latestSession.user.orgCode !== orgCode) {
+        router.replace(getDashboardPath(latestSession.user));
+        return;
+      }
+
+      if (latestSession.user.mustChangePassword) {
+        router.replace("/set-password");
       }
     };
 
     const unsubscribeProfile = subscribeRealtime<ProfileChangedPayload>(
       PROFILE_CHANGED,
       (event) => {
+        if (event.data?.userId && event.data.userId !== user.id) return;
+
+        if (
+          event.data?.reason === "session-invalidated" ||
+          event.data?.reason === "session-changed"
+        ) {
+          clearSession();
+          router.replace("/");
+          return;
+        }
+
         void checkSession(event.data?.userId);
       },
     );
@@ -235,7 +255,7 @@ export default function Layout({ children }: { children: ReactNode }) {
       unsubscribeProfile();
       unsubscribeUserDetail();
     };
-  }, [router, user?.id]);
+  }, [orgCode, router, user?.id]);
 
   const toggle = (key: string) => {
     setState((prev) => ({ ...prev, [key]: !prev[key] }));

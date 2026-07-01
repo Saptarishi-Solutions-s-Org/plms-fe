@@ -30,7 +30,11 @@ export type OrganizationAdminDashboardChangedPayload = {
 };
 
 export type ProfileChangedPayload = {
-  reason: "profile-updated" | "password-changed" | "session-changed";
+  reason:
+    | "profile-updated"
+    | "password-changed"
+    | "session-changed"
+    | "session-invalidated";
   userId?: string;
 };
 
