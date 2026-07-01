@@ -50,7 +50,7 @@ export default function ActivityTimeline({
               }`}
             />
             {idx < activities.length - 1 && (
-              <div className="my-1 w-px flex-1 bg-gray-200" />
+              <div className="my-1 w-px flex-1 bg-gray-300" />
             )}
           </div>
 

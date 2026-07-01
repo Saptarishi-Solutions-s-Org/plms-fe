@@ -155,11 +155,14 @@ export default function ExecutiveLeadsPage({
             <Button
               asChild
               variant="ghost"
-              className="h-9 px-2 text-sm font-semibold text-slate-500"
+              size="icon"
+              className="h-8 w-8 text-slate-500 hover:text-slate-900 rounded-full shrink-0"
             >
-              <Link href={`/${orgCode}/org-reports/?tab=team-performance`}>
-                <ArrowLeft className="size-4" />
-                Back
+              <Link
+                href={`/${orgCode}/org-reports/?tab=team-performance`}
+                aria-label="Back to reports"
+              >
+                <ArrowLeft className="w-5 h-5" />
               </Link>
             </Button>
             <div className="h-6 w-px bg-slate-200" />

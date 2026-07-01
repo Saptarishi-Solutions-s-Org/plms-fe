@@ -1,9 +1,20 @@
 import { api } from "@/lib/api";
+import { buildApiFunctionUrl } from "@/lib/api-function-url";
 import type { LeadImportRow } from "@/types/leadImport";
 import type { AddActivityFormData, LeadPayload } from "@/types/leadtypes";
 
-export const getLeadsWithStats = () =>
-  api("/odata/v4/lead/getLeadsWithStats()");
+export type GetLeadsWithStatsParams = {
+  page?: number;
+  limit?: number;
+  search?: string;
+  status?: string;
+  priority?: string;
+  leadSource?: string;
+  assignedTo?: string;
+};
+
+export const getLeadsWithStats = (params?: GetLeadsWithStatsParams) =>
+  api(buildApiFunctionUrl("/odata/v4/lead/getLeadsWithStats", params));
 
 export const getExecutiveUsers = () =>
   api("/odata/v4/lead/getExecutiveUsers()");

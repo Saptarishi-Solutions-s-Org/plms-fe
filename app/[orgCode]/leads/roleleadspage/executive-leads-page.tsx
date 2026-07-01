@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useState } from "react";
 
 import GlobalLoader from "@/components/commoncomponents/globalloader";
 import { BulkOfferAssignDrawer } from "@/components/commoncomponents/executive-bulk-actions/BulkOfferAssignDrawer";
@@ -10,19 +10,27 @@ import LeadActions from "@/components/commoncomponents/leads/leadactions";
 import LeadHeader from "@/components/commoncomponents/leads/leadheader";
 import LeadTableFilters from "@/components/commoncomponents/leads/leadtable-filters";
 import LeadTable from "@/components/commoncomponents/leads/leadtable";
+import TablePaginationFooter from "@/components/commoncomponents/table-pagination-footer";
 import { useLeads } from "@/hooks/use-leads";
+import { useUrlLeadFilters } from "@/hooks/use-url-lead-filters";
+import { useUrlPagination } from "@/hooks/use-url-pagination";
 import { getUser } from "@/lib/auth";
 import { assignOfferToLead } from "@/services/executivestats";
 import { createLead, updateLead } from "@/services/leads";
-import type { Lead, LeadFilters, LeadFormData } from "@/types/leadtypes";
-import { allFilters } from "@/types/leadtypes";
-
-function normalizeFilterValue(value: string) {
-  return value.trim().toLowerCase().replace(/[\s_]+/g, "");
-}
+import type { Lead, LeadFormData } from "@/types/leadtypes";
 
 export default function ExecutiveLeadsPage() {
-  const { leads, stats, isInitialLoading, refetch } = useLeads();
+  const { page, limit, setPage, setLimit } = useUrlPagination();
+  const { filters, setFilters } = useUrlLeadFilters();
+  const { leads, stats, pagination, isInitialLoading, refetch } = useLeads({
+    page,
+    limit,
+    search: filters.search,
+    statuses: filters.statuses,
+    priorities: filters.priorities,
+    sources: filters.sources,
+    statsScope: "all",
+  });
   const currentUser = getUser();
   const currentUserId = currentUser?.id;
 
@@ -140,14 +148,25 @@ export default function ExecutiveLeadsPage() {
           <LeadSummaryCards stats={stats} />
 
           <LeadTableFilters
+            key={JSON.stringify(filters)}
             executives={[]}
+            filters={filters}
             showAssignedToFilter={false}
             onApply={setFilters}
           />
 
+          <TablePaginationFooter
+            pagination={pagination}
+            onPageChange={setPage}
+            onLimitChange={setLimit}
+            totalLabel="leads"
+            placement="top"
+          />
+
           <LeadTable
-            leads={filteredLeads}
+            leads={leads}
             showAssignedTo={false}
+            rowOffset={(pagination.page - 1) * pagination.limit}
             emptyMessage="No leads found"
             renderActions={(lead) => (
               <LeadActions
@@ -156,6 +175,13 @@ export default function ExecutiveLeadsPage() {
                 onViewDetails={handleViewDetails}
               />
             )}
+          />
+
+          <TablePaginationFooter
+            pagination={pagination}
+            onPageChange={setPage}
+            onLimitChange={setLimit}
+            totalLabel="leads"
           />
 
           <LeadDialogs
