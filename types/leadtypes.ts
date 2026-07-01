@@ -37,16 +37,16 @@ export interface LeadActivity {
 }
 
 export interface AssignedOffer {
-  id: string;
+  assignmentId: string;
+  assignedAt: string;
+  assignedByName: string;
+  offerId: string;
   title: string;
   code: string;
   description?: string;
-  discountType: string;
-  discountAmount?: number;
-  discountPercentage?: number;
+  status: string;
   validFrom: string;
   validTo: string;
-  status: string;
 }
 
 export interface LeadDetailData {
@@ -60,7 +60,7 @@ export interface LeadDetailData {
     createdByRole: string;
   };
   activities: LeadActivity[];
-  assignedOffer: AssignedOffer | null;
+  offers: AssignedOffer[];
 }
 
 export interface AddActivityFormData {

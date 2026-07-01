@@ -109,7 +109,7 @@ export default function AddNoteForm({ leadId, onAdded }: AddNoteFormProps) {
           <Label required>Notes</Label>
           <Textarea
             placeholder="Write a note or activity..."
-            className={`min-h-[72px] resize-none ${
+            className={`min-h-[100px] resize-none ${
               errors.notes ? "border-red-500" : ""
             }`}
             {...register("notes")}
