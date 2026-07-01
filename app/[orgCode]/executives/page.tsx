@@ -15,6 +15,12 @@ import {
 
 import { getExecutiveOverview } from "@/services/managerdashboard";
 import type { ExecutiveFilters, ExecutiveRow } from "@/types/org-manager";
+import { subscribeRealtime } from "@/lib/socket";
+import {
+  LEAD_LIST_CHANGED,
+  OFFER_LIST_CHANGED,
+  USER_LIST_CHANGED,
+} from "@/types/realtime";
 import GlobalLoader from "@/components/commoncomponents/globalloader";
 
 import ExecutiveStatCards from "@/components/commoncomponents/managerdashboard/executive-stat-card";
@@ -45,9 +51,9 @@ export default function ExecutivesPage() {
   const [draftFilters, setDraftFilters] =
     useState<ExecutiveFilters>(DEFAULT_FILTERS);
 
-  const fetchExecutives = useCallback(async () => {
+  const fetchExecutives = useCallback(async (showLoader = false) => {
     try {
-      setIsLoading(true);
+      if (showLoader) setIsLoading(true);
 
       setError(null);
 
@@ -92,7 +98,32 @@ export default function ExecutivesPage() {
   }, []);
 
   useEffect(() => {
-    fetchExecutives();
+    fetchExecutives(true);
+  }, [fetchExecutives]);
+
+  useEffect(() => {
+    const refreshExecutives = () => {
+      fetchExecutives();
+    };
+
+    const unsubscribeUserChanges = subscribeRealtime(
+      USER_LIST_CHANGED,
+      refreshExecutives,
+    );
+    const unsubscribeLeadChanges = subscribeRealtime(
+      LEAD_LIST_CHANGED,
+      refreshExecutives,
+    );
+    const unsubscribeOfferChanges = subscribeRealtime(
+      OFFER_LIST_CHANGED,
+      refreshExecutives,
+    );
+
+    return () => {
+      unsubscribeUserChanges();
+      unsubscribeLeadChanges();
+      unsubscribeOfferChanges();
+    };
   }, [fetchExecutives]);
 
   const handleFilterChange = useCallback(

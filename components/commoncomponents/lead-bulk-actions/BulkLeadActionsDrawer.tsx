@@ -28,6 +28,7 @@ export function BulkLeadActionsDrawer({
   open,
   executives,
   leads,
+  isLoadingLeads = false,
   onClose,
   onAssign,
 }: BulkLeadActionsDrawerProps) {
@@ -208,7 +209,7 @@ export function BulkLeadActionsDrawer({
                               : false
                         }
                         aria-label="Select all leads"
-                        disabled={selectableLeads.length === 0}
+                        disabled={isLoadingLeads || selectableLeads.length === 0}
                         onCheckedChange={(checked) =>
                           setSelectedLeadIds(
                             checked === true
@@ -225,7 +226,16 @@ export function BulkLeadActionsDrawer({
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {leads.length === 0 ? (
+                  {isLoadingLeads ? (
+                    <TableRow>
+                      <TableCell
+                        colSpan={5}
+                        className="py-12 text-center text-sm font-semibold text-gray-400"
+                      >
+                        Loading leads...
+                      </TableCell>
+                    </TableRow>
+                  ) : leads.length === 0 ? (
                     <TableRow>
                       <TableCell
                         colSpan={5}
@@ -306,6 +316,7 @@ export function BulkLeadActionsDrawer({
               onClick={handleSave}
               disabled={
                 isSaving ||
+                isLoadingLeads ||
                 !selectedExecutiveId ||
                 selectedLeadIds.length === 0
               }

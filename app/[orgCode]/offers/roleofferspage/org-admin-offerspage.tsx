@@ -38,6 +38,8 @@ export default function OrgAdminOffersPage() {
 
   const [isLoading, setIsLoading] =
     useState(true);
+  const [hasLoaded, setHasLoaded] =
+    useState(false);
 
   const [createOpen, setCreateOpen] =
     useState(false);
@@ -64,11 +66,9 @@ export default function OrgAdminOffersPage() {
   );
 
   const fetchOffers = useCallback(
-    async (showLoader = false) => {
+    async () => {
       try {
-        if (showLoader) {
-          setIsLoading(true);
-        }
+        setIsLoading(true);
 
         const [offersResponse, summary] =
           await Promise.all([
@@ -167,20 +167,19 @@ export default function OrgAdminOffersPage() {
         setTotalCount(0);
         setGlobalCount(0);
       } finally {
-        if (showLoader) {
-          setIsLoading(false);
-        }
+        setIsLoading(false);
+        setHasLoaded(true);
       }
     },
     []
   );
   useEffect(() => {
-    fetchOffers(true);
+    fetchOffers();
   }, [fetchOffers]);
 
   useEffect(() => {
     return subscribeRealtime(OFFER_LIST_CHANGED, () => {
-      fetchOffers(false);
+      fetchOffers();
     });
   }, [fetchOffers]);
 
@@ -377,8 +376,14 @@ export default function OrgAdminOffersPage() {
       }),
     [offers, filters]
   );
-  if (isLoading) {
-    return <GlobalLoader />;
+  const isInitialLoading = isLoading && !hasLoaded;
+
+  if (isInitialLoading) {
+    return (
+      <>
+      <GlobalLoader />
+      </>
+    );
   }
 
   return (

@@ -59,10 +59,10 @@ export default function AddNoteForm({ leadId, onAdded }: AddNoteFormProps) {
   return (
     <form
       onSubmit={handleSubmit(onValid)}
-      className="flex flex-col rounded-xl border border-gray-200 bg-white"
+      className="flex flex-col rounded-xl border border-gray-300 bg-white"
     >
-      <div className="flex items-center justify-between border-b border-gray-100 px-5 py-4">
-        <h2 className="text-sm font-semibold text-gray-800">
+      <div className="flex h-16 shrink-0 items-center justify-between border-b border-gray-200 px-5">
+        <h2 className="text-base font-semibold text-gray-800">
           Activity & Notes
         </h2>
         <Button
@@ -76,7 +76,7 @@ export default function AddNoteForm({ leadId, onAdded }: AddNoteFormProps) {
       </div>
 
       <div className="flex flex-1 flex-col gap-3 px-5 pb-3 pt-4">
-        <div className="flex max-w-xs flex-col gap-1.5">
+        <div className="flex w-full flex-col gap-1.5">
           <Label required>Activity Type</Label>
           <Controller
             name="type"
@@ -106,17 +106,17 @@ export default function AddNoteForm({ leadId, onAdded }: AddNoteFormProps) {
         </div>
 
         <div className="flex flex-col gap-1.5">
-        <Label required>Notes</Label>
-        <Textarea
-          placeholder="Write a note or activity..."
-          className={`min-h-[96px] resize-none ${
-            errors.notes ? "border-red-500" : ""
-          }`}
-          {...register("notes")}
-        />
-        {errors.notes?.message && (
-          <p className="text-sm text-red-500">{errors.notes.message}</p>
-        )}
+          <Label required>Notes</Label>
+          <Textarea
+            placeholder="Write a note or activity..."
+            className={`min-h-[72px] resize-none ${
+              errors.notes ? "border-red-500" : ""
+            }`}
+            {...register("notes")}
+          />
+          {errors.notes?.message && (
+            <p className="text-sm text-red-500">{errors.notes.message}</p>
+          )}
         </div>
       </div>
     </form>
