@@ -54,7 +54,7 @@ export default function LeadDetailPage() {
       setData({
         lead,
         activities: detailRes.activities ?? [],
-        assignedOffer: null,
+        offers: detailRes.offers ?? [],
       });
     } catch (err) {
       console.error(err);
@@ -89,7 +89,7 @@ export default function LeadDetailPage() {
 
   if (!data) return null;
 
-  const { lead, activities = [] } = data;
+  const { lead, activities = [], offers = [] } = data;
 
   const handleEditSubmit = async (formData: LeadFormData) => {
     await updateLead({
@@ -156,7 +156,7 @@ export default function LeadDetailPage() {
 
           <div className="grid h-[600px] grid-rows-2 gap-6">
             <AddNoteForm leadId={lead.uuid} onAdded={fetchDetail} />
-            <OfferCard />
+            <OfferCard offers={offers} />
           </div>
         </div>
       </div>
