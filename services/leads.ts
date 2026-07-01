@@ -34,8 +34,8 @@ export const updateLead = (payload: { id: string } & LeadPayload) =>
 export const exportLeads = () =>
   api("/odata/v4/lead/exportLeads", { method: "POST" });
 
-export const getLeadDetail = (id: string) =>
-  api(`/odata/v4/lead/getLeadDetail(id='${id}')`);
+export const getLeadDetail = (leadCode: string) =>
+  api(`/odata/v4/lead/getLeadDetail(leadCode='${leadCode}')`);
 
 export const addLeadActivity = (leadId: string, data: AddActivityFormData) =>
   api("/odata/v4/lead/addLeadActivity", {

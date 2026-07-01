@@ -71,7 +71,11 @@ export default function LeadActions({
 
         <DropdownMenuContent align="end">
           <DropdownMenuItem
-            onClick={() => router.push(`/${orgCode}/leads/${lead.uuid}`)}
+            onClick={() =>
+              router.push(
+                `/${orgCode}/leads/${encodeURIComponent(lead.leadCode)}`,
+              )
+            }
           >
             View Details
           </DropdownMenuItem>

@@ -39,17 +39,20 @@ export default function LeadDetailPage() {
     try {
       setLoading(true);
 
-      const [leadsRes, detailRes] = await Promise.all([
-        getLeadsWithStats() as Promise<LeadsWithStatsResponse>,
-        getLeadDetail(leadId) as Promise<LeadDetailResponse>,
-      ]);
+      const leadsRes =
+        (await getLeadsWithStats()) as LeadsWithStatsResponse;
 
-      const lead = leadsRes.leads?.find((item) => item.uuid === leadId);
+      const lead = leadsRes.leads?.find(
+        (item) => item.leadCode === leadId || item.uuid === leadId,
+      );
 
       if (!lead) {
         setData(null);
         return;
       }
+
+      const detailRes =
+        (await getLeadDetail(lead.uuid)) as LeadDetailResponse;
 
       setData({
         lead,

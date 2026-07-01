@@ -97,7 +97,7 @@ export default function LeadTable({
                   className="max-w-[180px] font-medium text-gray-800 sm:max-w-[220px]"
                 >
                   <Link
-                    href={`/${orgCode}/leads/${lead.uuid}`}
+                    href={`/${orgCode}/leads/${encodeURIComponent(lead.leadCode)}`}
                     className="truncate text-gray-800 hover:text-gray-900"
                   >
                     {lead.name}
