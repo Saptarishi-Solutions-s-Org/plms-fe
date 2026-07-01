@@ -112,6 +112,7 @@ export default function OrgManagerOffersPage() {
   const [globalCount, setGlobalCount] = useState(0);
 
   const [isLoading, setIsLoading] = useState(true);
+  const [hasLoaded, setHasLoaded] = useState(false);
 
   const [filters, setFilters] = useState(DEFAULT_FILTERS);
 
@@ -237,6 +238,7 @@ export default function OrgManagerOffersPage() {
       setGlobalCount(0);
     } finally {
       setIsLoading(false);
+      setHasLoaded(true);
     }
   }, []);
 
@@ -430,8 +432,14 @@ export default function OrgManagerOffersPage() {
     };
   };
 
-  if (isLoading) {
-    return <GlobalLoader />;
+  const isInitialLoading = isLoading && !hasLoaded;
+
+  if (isInitialLoading) {
+    return (
+      <>
+        <GlobalLoader />
+      </>
+    );
   }
 
   return (
