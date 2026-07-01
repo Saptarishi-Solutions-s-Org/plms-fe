@@ -17,7 +17,7 @@ import { useUrlPagination } from "@/hooks/use-url-pagination";
 import { getUser } from "@/lib/auth";
 import { assignOfferToLead } from "@/services/executivestats";
 import { createLead, updateLead } from "@/services/leads";
-import type { Lead, LeadFormData } from "@/types/leadtypes";
+import { type Lead, type LeadFormData } from "@/types/leadtypes";
 
 export default function ExecutiveLeadsPage() {
   const { page, limit, setPage, setLimit } = useUrlPagination();
@@ -37,36 +37,7 @@ export default function ExecutiveLeadsPage() {
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingLead, setEditingLead] = useState<Lead | null>(null);
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
-  const [filters, setFilters] = useState<LeadFilters>(allFilters);
   const [isBulkAssignOpen, setIsBulkAssignOpen] = useState(false);
-
-  const filteredLeads = useMemo(() => {
-    return leads.filter((lead) => {
-      const search = filters.search.trim().toLowerCase();
-
-      const searchMatch =
-        !search ||
-        lead.name.toLowerCase().includes(search) ||
-        lead.email.toLowerCase().includes(search);
-
-      const sourceMatch =
-        (filters.sources?.length ?? 0) === 0 ||
-        filters.sources?.some(
-          (source) =>
-            normalizeFilterValue(source) ===
-            normalizeFilterValue(lead.leadSource),
-        );
-
-      const statusMatch =
-        filters.statuses.length === 0 || filters.statuses.includes(lead.status);
-
-      const priorityMatch =
-        filters.priorities.length === 0 ||
-        filters.priorities.includes(lead.priority);
-
-      return searchMatch && sourceMatch && statusMatch && priorityMatch;
-    });
-  }, [filters, leads]);
 
   const openAddForm = () => {
     setEditingLead(null);

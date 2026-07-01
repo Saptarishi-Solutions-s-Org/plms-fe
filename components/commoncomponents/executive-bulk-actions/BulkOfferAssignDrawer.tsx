@@ -24,7 +24,11 @@ import {
 } from "@/components/ui/table";
 import { getExecutiveOffers } from "@/services/executivestats";
 import type { Lead } from "@/types/leadtypes";
-import { formatDate, type ExecutiveOfferItem, type OfferOption } from "@/types/org-manager";
+import {
+  formatDate,
+  type ExecutiveOfferItem,
+  type OfferOption,
+} from "@/types/org-manager";
 
 type Props = {
   open: boolean;
@@ -36,8 +40,12 @@ type Props = {
   ) => Promise<{ successCount: number; failureCount: number }>;
 };
 
-
-export function BulkOfferAssignDrawer({ open, leads, onClose, onAssign }: Props) {
+export function BulkOfferAssignDrawer({
+  open,
+  leads,
+  onClose,
+  onAssign,
+}: Props) {
   const [offers, setOffers] = useState<OfferOption[]>([]);
   const [offersLoading, setOffersLoading] = useState(false);
   const [selectedOfferIds, setSelectedOfferIds] = useState<string[]>([]);
@@ -47,8 +55,12 @@ export function BulkOfferAssignDrawer({ open, leads, onClose, onAssign }: Props)
   const fetchOffers = useCallback(async () => {
     setOffersLoading(true);
     try {
-      const raw = await getExecutiveOffers() as { value?: ExecutiveOfferItem[] } | ExecutiveOfferItem[];
-      const items: ExecutiveOfferItem[] = Array.isArray(raw) ? raw : (raw?.value ?? []);
+      const raw = (await getExecutiveOffers()) as
+        | { value?: ExecutiveOfferItem[] }
+        | ExecutiveOfferItem[];
+      const items: ExecutiveOfferItem[] = Array.isArray(raw)
+        ? raw
+        : (raw?.value ?? []);
       setOffers(
         items.map((item) => ({
           id: item.id ?? "",
@@ -71,13 +83,11 @@ export function BulkOfferAssignDrawer({ open, leads, onClose, onAssign }: Props)
 
   const allOffersSelected =
     offers.length > 0 && selectedOfferIds.length === offers.length;
-  const someOffersSelected =
-    selectedOfferIds.length > 0 && !allOffersSelected;
+  const someOffersSelected = selectedOfferIds.length > 0 && !allOffersSelected;
 
   const allLeadsSelected =
     leads.length > 0 && selectedLeadIds.length === leads.length;
-  const someLeadsSelected =
-    selectedLeadIds.length > 0 && !allLeadsSelected;
+  const someLeadsSelected = selectedLeadIds.length > 0 && !allLeadsSelected;
 
   const toggleOffer = (id: string) =>
     setSelectedOfferIds((prev) =>
@@ -123,18 +133,19 @@ export function BulkOfferAssignDrawer({ open, leads, onClose, onAssign }: Props)
 
       if (result.failureCount === 0) {
         toast.success(
-          `${pluralize(selectedOfferIds.length, "Offer")} Successfully Assigned to ${pluralize(selectedLeadIds.length, "Selected Lead")}.`,
+          `${selectedOfferIds.length === 1 ? "Offer" : "Offers"} Successfully Assigned to ${pluralize(selectedLeadIds.length, "Selected Lead")}.`,
         );
         resetSelections();
         onClose();
       } else if (result.successCount > 0) {
         toast.warning(
-          `${pluralize(result.successCount, "Offer")} Successfully Assigned to ${pluralize(selectedLeadIds.length, "Selected Lead")}. ${pluralize(result.failureCount, "Offer")} ${result.failureCount === 1 ? "was" : "were"} already assigned to the selected ${result.failureCount === 1 ? "lead" : "leads"}.`,
+          `${pluralize(selectedOfferIds.length, "Offer")} assigned successfully to ${pluralize(result.successCount, "selected lead")}. 
+           The Other ${pluralize(result.failureCount, "selected lead")} ${result.failureCount === 1 ? "was" : "were"} already assigned to ${selectedOfferIds.length === 1 ? "the selected offer" : "the selected offers"}.`,
         );
         resetSelections();
       } else {
         toast.error(
-          `${selectedOfferIds.length === 1 ? "This Offer" : "These Offers"} ${result.failureCount === 1 ? "was" : "were"}  ${selectedLeadIds.length === 1 ? "already assigned to this lead" : "already assigned to these leads"}.`,
+          `${selectedOfferIds.length === 1 ? "This Offer was" : "These Offers were"} ${selectedLeadIds.length === 1 ? "already assigned to this lead" : "already assigned to these leads"}.`,
         );
       }
     } catch (error) {

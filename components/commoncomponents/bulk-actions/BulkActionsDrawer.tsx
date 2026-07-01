@@ -120,12 +120,10 @@ export function BulkActionsDrawer({
         handleClose();
       } else if (successCount > 0) {
         toast.warning(
-          `${pluralize(successCount, "Offer")} Successfully Assigned to ${pluralize(
-            selectedExecutiveIds.length,
-            "Selected Executive",
-          )}. ${pluralize(failureCount, "Offer")} ${
+          `${pluralize(selectedOfferIds.length, "Offer")} Successfully Assigned to ${pluralize( successCount, "Selected Executive",)}. 
+           The Other ${pluralize(failureCount, "Selected Executive")} ${
             failureCount === 1 ? "was" : "were"
-          } already assigned to ${selectedExecutiveIds.length === 1 ? "this executive and skipped." : "these executives and skipped."}`,
+          } already assigned to ${selectedOfferIds.length === 1 ? "the selected offer" : "the selected offers"}.`,
         );
       } else {
         toast.error(
