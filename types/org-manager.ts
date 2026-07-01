@@ -99,6 +99,7 @@ export interface ManagerOfferOverviewItem {
 };
 
 export interface ExecutiveOfferItem {
+  id?: string;
   title?: string;
   description?: string;
   status?: string;
@@ -200,3 +201,11 @@ export const EXECUTIVE_STATUS_OPTIONS = [
   { value: "Active", label: "Active" },
   { value: "Inactive", label: "Inactive" },
 ] as const;
+
+export type OfferOption = {
+  id: string;
+  title: string;
+  description: string;
+  status: string;
+  validTo: string;
+};
