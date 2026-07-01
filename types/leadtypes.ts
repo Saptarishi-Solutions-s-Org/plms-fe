@@ -162,6 +162,7 @@ export type BulkLeadActionsDrawerProps = {
   open: boolean;
   executives: ExecutiveOption[];
   leads: Lead[];
+  isLoadingLeads?: boolean;
   onClose: () => void;
   onAssign: (
     leadIds: string[],
