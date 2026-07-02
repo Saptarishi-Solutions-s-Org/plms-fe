@@ -107,7 +107,7 @@ export default function LeadDetailPage() {
 
   return (
     <>
-      <div className="h-full w-full space-y-5 p-4 sm:p-5">
+       <div className="min-h-full w-full space-y-4 p-4 sm:p-5">
         <div className="flex items-start justify-between gap-3 border-b border-slate-200 pb-4">
           <div className="flex items-center gap-4">
             <Button
@@ -143,9 +143,9 @@ export default function LeadDetailPage() {
 
         <LeadHeroCard lead={lead} />
 
-        <div className="grid grid-cols-1 items-start gap-5 lg:grid-cols-[2fr_3fr]">
+        <div className="grid grid-cols-1 items-start gap-4 lg:grid-cols-[2fr_3fr]">
           <div className="flex flex-col gap-5">
-            <div className="flex h-[400px] flex-col overflow-hidden rounded-xl border border-gray-300 bg-white lg:h-[600px]">
+            <div className="flex h-[400px] flex-col overflow-hidden rounded-xl border border-gray-300 bg-white lg:h-[560px]">
               <div className="flex h-16 shrink-0 items-center border-b border-gray-200 px-5">
                 <h2 className="text-base font-semibold text-gray-800">
                   Timeline
@@ -157,7 +157,7 @@ export default function LeadDetailPage() {
             </div>
           </div>
 
-          <div className="grid h-[600px] grid-rows-2 gap-6">
+          <div className="flex flex-col gap-4 lg:h-[560px]">
             <AddNoteForm leadId={lead.uuid} onAdded={fetchDetail} />
             <OfferCard offers={offers} />
           </div>
