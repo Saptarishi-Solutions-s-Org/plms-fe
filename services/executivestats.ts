@@ -11,3 +11,12 @@ export const getLeadStats = () =>
 
 export const getExecutiveOffers = () =>
   api(`/odata/v4/organization-executive/getExecutiveOffers()`);
+
+export const assignOfferToLead = (payload: {
+  offerId: string;
+  leadId: string;
+}) =>
+  api("/odata/v4/organization-executive/assignOfferToLead", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });

@@ -1,61 +1,43 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useState } from "react";
 
 import GlobalLoader from "@/components/commoncomponents/globalloader";
+import { BulkOfferAssignDrawer } from "@/components/commoncomponents/executive-bulk-actions/BulkOfferAssignDrawer";
 import LeadSummaryCards from "@/components/commoncomponents/leads/lead-cards";
 import LeadDialogs from "@/components/commoncomponents/leads/lead-dialogs";
 import LeadActions from "@/components/commoncomponents/leads/leadactions";
 import LeadHeader from "@/components/commoncomponents/leads/leadheader";
 import LeadTableFilters from "@/components/commoncomponents/leads/leadtable-filters";
 import LeadTable from "@/components/commoncomponents/leads/leadtable";
+import TablePaginationFooter from "@/components/commoncomponents/table-pagination-footer";
 import { useLeads } from "@/hooks/use-leads";
+import { useUrlLeadFilters } from "@/hooks/use-url-lead-filters";
+import { useUrlPagination } from "@/hooks/use-url-pagination";
 import { getUser } from "@/lib/auth";
+import { assignOfferToLead } from "@/services/executivestats";
 import { createLead, updateLead } from "@/services/leads";
-import type { Lead, LeadFilters, LeadFormData } from "@/types/leadtypes";
-import { allFilters } from "@/types/leadtypes";
-
-function normalizeFilterValue(value: string) {
-  return value.trim().toLowerCase().replace(/[\s_]+/g, "");
-}
+import { type Lead, type LeadFormData } from "@/types/leadtypes";
 
 export default function ExecutiveLeadsPage() {
-  const { leads, stats, isInitialLoading, refetch } = useLeads();
+  const { page, limit, setPage, setLimit } = useUrlPagination();
+  const { filters, setFilters } = useUrlLeadFilters();
+  const { leads, stats, pagination, isInitialLoading, refetch } = useLeads({
+    page,
+    limit,
+    search: filters.search,
+    statuses: filters.statuses,
+    priorities: filters.priorities,
+    sources: filters.sources,
+    statsScope: "all",
+  });
   const currentUser = getUser();
   const currentUserId = currentUser?.id;
 
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingLead, setEditingLead] = useState<Lead | null>(null);
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
-  const [filters, setFilters] = useState<LeadFilters>(allFilters);
-
-  const filteredLeads = useMemo(() => {
-    return leads.filter((lead) => {
-      const search = filters.search.trim().toLowerCase();
-
-      const searchMatch =
-        !search ||
-        lead.name.toLowerCase().includes(search) ||
-        lead.email.toLowerCase().includes(search);
-
-      const sourceMatch =
-        (filters.sources?.length ?? 0) === 0 ||
-        filters.sources?.some(
-          (source) =>
-            normalizeFilterValue(source) ===
-            normalizeFilterValue(lead.leadSource),
-        );
-
-      const statusMatch =
-        filters.statuses.length === 0 || filters.statuses.includes(lead.status);
-
-      const priorityMatch =
-        filters.priorities.length === 0 ||
-        filters.priorities.includes(lead.priority);
-
-      return searchMatch && sourceMatch && statusMatch && priorityMatch;
-    });
-  }, [filters, leads]);
+  const [isBulkAssignOpen, setIsBulkAssignOpen] = useState(false);
 
   const openAddForm = () => {
     setEditingLead(null);
@@ -95,6 +77,21 @@ export default function ExecutiveLeadsPage() {
     });
   };
 
+  const handleBulkAssign = async (offerIds: string[], leadIds: string[]) => {
+    const pairs = offerIds.flatMap((offerId) =>
+      leadIds.map((leadId) => ({ offerId, leadId })),
+    );
+
+    const results = await Promise.allSettled(
+      pairs.map((pair) => assignOfferToLead(pair)),
+    );
+
+    const successCount = results.filter((r) => r.status === "fulfilled").length;
+    const failureCount = results.filter((r) => r.status === "rejected").length;
+
+    return { successCount, failureCount };
+  };
+
   return (
     <>
       {isInitialLoading ? (
@@ -115,20 +112,32 @@ export default function ExecutiveLeadsPage() {
               onExport={() => undefined}
               onAddLead={openAddForm}
               showImportExport={false}
+              onBulkAssign={() => setIsBulkAssignOpen(true)}
             />
           </div>
 
           <LeadSummaryCards stats={stats} />
 
           <LeadTableFilters
+            key={JSON.stringify(filters)}
             executives={[]}
+            filters={filters}
             showAssignedToFilter={false}
             onApply={setFilters}
           />
 
+          <TablePaginationFooter
+            pagination={pagination}
+            onPageChange={setPage}
+            onLimitChange={setLimit}
+            totalLabel="leads"
+            placement="top"
+          />
+
           <LeadTable
-            leads={filteredLeads}
+            leads={leads}
             showAssignedTo={false}
+            rowOffset={(pagination.page - 1) * pagination.limit}
             emptyMessage="No leads found"
             renderActions={(lead) => (
               <LeadActions
@@ -139,6 +148,13 @@ export default function ExecutiveLeadsPage() {
             )}
           />
 
+          <TablePaginationFooter
+            pagination={pagination}
+            onPageChange={setPage}
+            onLimitChange={setLimit}
+            totalLabel="leads"
+          />
+
           <LeadDialogs
             isFormOpen={isFormOpen}
             editingLead={editingLead}
@@ -146,6 +162,13 @@ export default function ExecutiveLeadsPage() {
             onFormClose={closeForm}
             selectedLead={selectedLead}
             onDetailsClose={() => setSelectedLead(null)}
+          />
+
+          <BulkOfferAssignDrawer
+            open={isBulkAssignOpen}
+            leads={leads}
+            onClose={() => setIsBulkAssignOpen(false)}
+            onAssign={handleBulkAssign}
           />
         </div>
       )}

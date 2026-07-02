@@ -18,6 +18,7 @@ export interface LeadTableProps {
   renderActions?: (lead: Lead) => React.ReactNode;
   showAssignedTo?: boolean;
   emptyMessage?: string;
+  rowOffset?: number;
 }
 
 export default function LeadTable({
@@ -26,6 +27,7 @@ export default function LeadTable({
   renderActions,
   showAssignedTo = true,
   emptyMessage,
+  rowOffset = 0,
 }: LeadTableProps) {
   const { orgCode } = useParams<{ orgCode: string }>();
   const showActionsColumn = renderActions !== undefined;
@@ -87,13 +89,15 @@ export default function LeadTable({
           ) : (
             leads.map((lead, idx) => (
               <TableRow key={lead.uuid ?? idx}>
-                <TableCell className="text-gray-600">{idx + 1}</TableCell>
+                <TableCell className="text-gray-600">
+                  {rowOffset + idx + 1}
+                </TableCell>
                 <TableCell
                   title={lead.name}
                   className="max-w-[180px] font-medium text-gray-800 sm:max-w-[220px]"
                 >
                   <Link
-                    href={`/${orgCode}/leads/${lead.uuid}`}
+                    href={`/${orgCode}/leads/${encodeURIComponent(lead.leadCode)}`}
                     className="truncate text-gray-800 hover:text-gray-900"
                   >
                     {lead.name}

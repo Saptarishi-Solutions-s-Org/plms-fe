@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { toast } from "sonner";
 
 import GlobalLoader from "@/components/commoncomponents/globalloader";
 import { BulkLeadActionsDrawer } from "@/components/commoncomponents/lead-bulk-actions/BulkLeadActionsDrawer";
@@ -10,17 +11,26 @@ import LeadActions from "@/components/commoncomponents/leads/leadactions";
 import LeadHeader from "@/components/commoncomponents/leads/leadheader";
 import LeadTableFilters from "@/components/commoncomponents/leads/leadtable-filters";
 import LeadTable from "@/components/commoncomponents/leads/leadtable";
+import TablePaginationFooter from "@/components/commoncomponents/table-pagination-footer";
 import { useLeadExport } from "@/hooks/export";
 import { useLeads } from "@/hooks/use-leads";
-import { createLead, getExecutiveUsers, updateLead } from "@/services/leads";
+import { useUrlLeadFilters } from "@/hooks/use-url-lead-filters";
+import { useUrlPagination } from "@/hooks/use-url-pagination";
+import { createLead, getExecutiveUsers,getLeadsWithStats, updateLead } from "@/services/leads";
 import type {
   ExecutiveOption,
   Lead,
-  LeadFilters,
   LeadFormData,
   LeadPayload,
 } from "@/types/leadtypes";
-import { allFilters } from "@/types/leadtypes";
+
+const BULK_ASSIGN_PAGE_LIMIT = 100;
+
+function joinFilterValues(values?: string[]) {
+  const filteredValues = values?.filter(Boolean) ?? [];
+
+  return filteredValues.length ? filteredValues.join(",") : undefined;
+}
 
 function toLeadPayload(lead: Lead, assignedTo: string): LeadPayload {
   return {
@@ -41,15 +51,18 @@ function toLeadPayload(lead: Lead, assignedTo: string): LeadPayload {
 }
 
 export default function ManagerLeadsPage() {
-  const { leads, stats, isInitialLoading, refetch } = useLeads();
+  const { page, limit, setPage, setLimit } = useUrlPagination();
+  const { filters, setFilters } = useUrlLeadFilters();
   const { handleExport } = useLeadExport();
 
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingLead, setEditingLead] = useState<Lead | null>(null);
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
-  const [filters, setFilters] = useState<LeadFilters>(allFilters);
   const [executives, setExecutives] = useState<ExecutiveOption[]>([]);
   const [isBulkAssignOpen, setIsBulkAssignOpen] = useState(false);
+  const [bulkAssignLeads, setBulkAssignLeads] = useState<Lead[]>([]);
+  const [isBulkAssignLeadsLoading, setIsBulkAssignLeadsLoading] =
+    useState(false);
 
   useEffect(() => {
     getExecutiveUsers().then(setExecutives).catch(console.error);
@@ -59,42 +72,97 @@ export default function ManagerLeadsPage() {
     () => new Map(executives.map((executive) => [executive.id, executive.name])),
     [executives],
   );
+  const assignedToIds = useMemo(
+    () =>
+      filters.assignedTo
+        .map(
+          (name) =>
+            executives.find((executive) => executive.name === name)?.id ?? name,
+        )
+        .filter(Boolean),
+    [executives, filters.assignedTo],
+  );
+  const { leads, stats, pagination, isInitialLoading, refetch } = useLeads({
+    page,
+    limit,
+    search: filters.search,
+    statuses: filters.statuses,
+    priorities: filters.priorities,
+    sources: filters.sources,
+    assignedTo: assignedToIds,
+    statsScope: "all",
+  });
 
   const leadsById = useMemo(
-    () => new Map(leads.map((lead) => [lead.uuid, lead])),
-    [leads],
+    () =>
+      new Map(
+        [...leads, ...bulkAssignLeads].map((lead) => [lead.uuid, lead]),
+      ),
+    [bulkAssignLeads, leads],
   );
 
-  const filteredLeads = useMemo(() => {
-    const search = filters.search.trim().toLowerCase();
+  const fetchBulkAssignLeads = useCallback(async () => {
+    setIsBulkAssignLeadsLoading(true);
 
-    return leads.filter((lead) => {
-      const searchMatch =
-        !search ||
-        lead.name.toLowerCase().includes(search) ||
-        lead.email.toLowerCase().includes(search);
-
-      const statusMatch =
-        filters.statuses.length === 0 || filters.statuses.includes(lead.status);
-
-      const priorityMatch =
-        filters.priorities.length === 0 ||
-        filters.priorities.includes(lead.priority);
-
-      const assignedToMatch =
-        filters.assignedTo.length === 0 ||
-        filters.assignedTo.includes(
-          executiveNamesById.get(lead.assignedTo) ?? lead.assignedToName ?? "",
-        );
-
-      return (
-        searchMatch &&
-        statusMatch &&
-        priorityMatch &&
-        assignedToMatch
+    try {
+      const bulkLimit = Math.max(
+        BULK_ASSIGN_PAGE_LIMIT,
+        pagination.total,
+        stats.total,
+        leads.length,
+        limit,
       );
-    });
-  }, [executiveNamesById, filters, leads]);
+      const params = {
+        limit: bulkLimit,
+        search: filters.search,
+        status: joinFilterValues(filters.statuses),
+        priority: joinFilterValues(filters.priorities),
+        leadSource: joinFilterValues(filters.sources),
+        assignedTo: assignedToIds[0],
+      };
+      const firstPage = await getLeadsWithStats({
+        ...params,
+        page: 1,
+      });
+      const firstPageLeads = firstPage.leads ?? [];
+      const totalPages = firstPage.pagination?.totalPages ?? 1;
+
+      if (totalPages <= 1) {
+        setBulkAssignLeads(firstPageLeads);
+        return;
+      }
+
+      const remainingPages = await Promise.all(
+        Array.from({ length: totalPages - 1 }, (_, index) =>
+          getLeadsWithStats({
+            ...params,
+            page: index + 2,
+          }),
+        ),
+      );
+
+      setBulkAssignLeads([
+        ...firstPageLeads,
+        ...remainingPages.flatMap((pageData) => pageData.leads ?? []),
+      ]);
+    } catch (error) {
+      console.error(error);
+      setBulkAssignLeads([]);
+      toast.error("Failed to load leads for bulk assignment.");
+    } finally {
+      setIsBulkAssignLeadsLoading(false);
+    }
+  }, [
+    assignedToIds,
+    filters.priorities,
+    filters.search,
+    filters.sources,
+    filters.statuses,
+    leads.length,
+    limit,
+    pagination.total,
+    stats.total,
+  ]);
 
   const openAddForm = () => {
     setEditingLead(null);
@@ -139,7 +207,16 @@ export default function ManagerLeadsPage() {
     const assignableLeads: Lead[] = [];
 
     for (const leadId of leadIds) {
-      const lead = leadsById.get(leadId)!;
+      const lead = leadsById.get(leadId);
+
+      if (!lead) {
+        failures.push({
+          leadId,
+          message: "Lead was not found and could not be assigned.",
+        });
+        continue;
+      }
+
       if (lead.assignedTo) {
         failures.push({
           leadId,
@@ -174,6 +251,7 @@ export default function ManagerLeadsPage() {
 
     if (successCount > 0) {
       await refetch();
+      await fetchBulkAssignLeads();
     }
 
     return {
@@ -217,17 +295,34 @@ export default function ManagerLeadsPage() {
               onExport={handleExport}
               onImportComplete={refetch}
               onAddLead={openAddForm}
-              onBulkAssign={() => setIsBulkAssignOpen(true)}
+              onBulkAssign={() => {
+                setIsBulkAssignOpen(true);
+                void fetchBulkAssignLeads();
+              }}
             />
           </div>
 
           <LeadSummaryCards stats={stats} />
 
-          <LeadTableFilters executives={executives} onApply={setFilters} />
+          <LeadTableFilters
+            key={JSON.stringify(filters)}
+            executives={executives}
+            filters={filters}
+            onApply={setFilters}
+          />
+
+          <TablePaginationFooter
+            pagination={pagination}
+            onPageChange={setPage}
+            onLimitChange={setLimit}
+            totalLabel="leads"
+            placement="top"
+          />
 
           <LeadTable
-            leads={filteredLeads}
+            leads={leads}
             executives={executives}
+            rowOffset={(pagination.page - 1) * pagination.limit}
             emptyMessage="No leads found"
             renderActions={(lead) => (
               <LeadActions
@@ -238,6 +333,13 @@ export default function ManagerLeadsPage() {
                 onAssign={handleAssignLead}
               />
             )}
+          />
+
+          <TablePaginationFooter
+            pagination={pagination}
+            onPageChange={setPage}
+            onLimitChange={setLimit}
+            totalLabel="leads"
           />
 
           <LeadDialogs
@@ -252,7 +354,8 @@ export default function ManagerLeadsPage() {
           <BulkLeadActionsDrawer
             open={isBulkAssignOpen}
             executives={executives}
-            leads={leads}
+            leads={bulkAssignLeads}
+            isLoadingLeads={isBulkAssignLeadsLoading}
             onClose={() => setIsBulkAssignOpen(false)}
             onAssign={handleBulkAssignLeads}
           />

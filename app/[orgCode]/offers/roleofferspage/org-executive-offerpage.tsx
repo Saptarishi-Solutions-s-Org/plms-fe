@@ -104,7 +104,7 @@ const mapExecutiveOffer = (
   item: ExecutiveOfferItem,
   index: number,
 ): ExecutiveOfferRow => ({
-  id: `${item.title || "offer"}-${index}`,
+  id: item.id ?? `${item.title || "offer"}-${index}`,
   title: item.title || "",
   description: item.description || "",
   status: normalizeStatus(item.status),
@@ -128,6 +128,7 @@ export default function OrgExecutiveOffersPage() {
   const [offers, setOffers] = useState<ExecutiveOfferRow[]>([]);
 
   const [isLoading, setIsLoading] = useState(true);
+  const [hasLoaded, setHasLoaded] = useState(false);
 
   const [filters, setFilters] = useState(DEFAULT_FILTERS);
 
@@ -147,6 +148,7 @@ export default function OrgExecutiveOffersPage() {
       setOffers([]);
     } finally {
       setIsLoading(false);
+      setHasLoaded(true);
     }
   }, []);
 
@@ -220,8 +222,14 @@ export default function OrgExecutiveOffersPage() {
     [offers],
   );
 
-  if (isLoading) {
-    return <GlobalLoader />;
+  const isInitialLoading = isLoading && !hasLoaded;
+
+  if (isInitialLoading) {
+    return (
+    <>
+      <GlobalLoader />
+    </>
+    );
   }
 
   return (

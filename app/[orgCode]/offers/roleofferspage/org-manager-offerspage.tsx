@@ -35,7 +35,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { subscribeRealtime } from "@/lib/socket";
-import { Plus, MoreHorizontal } from "lucide-react";
+import { MoreHorizontal, ListChecks } from "lucide-react";
 import Image from "next/image";
 
 import {
@@ -112,6 +112,7 @@ export default function OrgManagerOffersPage() {
   const [globalCount, setGlobalCount] = useState(0);
 
   const [isLoading, setIsLoading] = useState(true);
+  const [hasLoaded, setHasLoaded] = useState(false);
 
   const [filters, setFilters] = useState(DEFAULT_FILTERS);
 
@@ -237,6 +238,7 @@ export default function OrgManagerOffersPage() {
       setGlobalCount(0);
     } finally {
       setIsLoading(false);
+      setHasLoaded(true);
     }
   }, []);
 
@@ -430,8 +432,14 @@ export default function OrgManagerOffersPage() {
     };
   };
 
-  if (isLoading) {
-    return <GlobalLoader />;
+  const isInitialLoading = isLoading && !hasLoaded;
+
+  if (isInitialLoading) {
+    return (
+      <>
+        <GlobalLoader />
+      </>
+    );
   }
 
   return (
@@ -453,7 +461,7 @@ export default function OrgManagerOffersPage() {
           className="w-full sm:w-auto rounded-full bg-blue-600 text-white hover:bg-blue-600 hover:text-white font-medium"
           onClick={() => setIsBulkActionsOpen(true)}
         >
-          <Plus className="mr-2 h-4 w-4" />
+          <ListChecks className="h-4 w-4" />
           Bulk Action
         </Button>
       </div>

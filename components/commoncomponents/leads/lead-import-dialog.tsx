@@ -320,7 +320,7 @@ export default function LeadImportDialog({
           Upload a CSV file containing lead data.
         </p>
         <Button
-          type="button"
+          variant="secondary"
           onClick={downloadSampleLeadCsv}
           className="text-xs font-medium text-blue-600 hover:text-blue-700"
         >
@@ -353,7 +353,7 @@ export default function LeadImportDialog({
           <span className="mt-3 flex max-w-full items-center gap-2 rounded-md bg-white px-2 py-1 text-xs text-gray-500">
             <span className="truncate">Selected: {selectedFileName}</span>
             <Button
-              type="button"
+              variant="ghost"
               aria-label="Remove selected file"
               className="shrink-0 text-gray-400 hover:text-red-500"
               onClick={(event) => {
