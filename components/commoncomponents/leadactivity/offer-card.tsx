@@ -43,17 +43,17 @@ function OfferItem({ offer }: { offer: AssignedOffer }) {
 
 export default function OfferCard({ offers }: { offers?: AssignedOffer[] }) {
   return (
-    <div className="rounded-xl border border-gray-200 bg-white">
+    <div className="flex min-h-[180px] flex-1 flex-col rounded-xl border border-gray-200 bg-white">
       <div className="border-b border-gray-100 px-5 py-4">
         <h2 className="text-sm font-semibold text-gray-800">Offers Assigned</h2>
       </div>
 
       {!offers || offers.length === 0 ? (
-        <div className="px-5 py-8 text-center">
+        <div className="flex flex-1 items-center justify-center px-5 py-8 text-center">
           <p className="text-sm text-gray-400">No offer assigned</p>
         </div>
       ) : (
-        <div className="flex max-h-64 flex-col gap-3 overflow-y-auto px-5 py-4">
+        <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto px-5 py-4">
           {offers.map((offer) => (
             <OfferItem key={offer.assignmentId} offer={offer} />
           ))}
