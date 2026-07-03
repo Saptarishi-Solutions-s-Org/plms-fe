@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 
 import GlobalLoader from "@/components/commoncomponents/globalloader";
 import { OfferCards } from "@/components/commoncomponents/offers/offercards";
+import TablePaginationFooter from "@/components/commoncomponents/table-pagination-footer";
 
 import {
   Table,
@@ -17,12 +18,15 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { MultiSelectCombobox } from "@/components/ui/multi-select-combobox";
+import { useUrlPagination } from "@/hooks/use-url-pagination";
 import { subscribeRealtime } from "@/lib/socket";
 
 import { getExecutiveOffers } from "@/services/executivestats";
 
 import { OFFER_STATUS_OPTIONS, type Offer } from "@/types/Createoffer";
 import { DISCOUNT_OPTIONS } from "@/lib/validators/offervalidation";
+import { emptyPagination } from "@/types/pagination";
+import type { PaginationMeta } from "@/types/pagination";
 import { OFFER_LIST_CHANGED } from "@/types/realtime";
 
 import {
@@ -30,13 +34,11 @@ import {
   ExecutiveOfferRow,
   formatDate,
   formatStatusLabel,
+  ExecutiveOfferFilters,
+  ExecutiveOffersEnvelope
 } from "@/types/org-manager";
 
-type ExecutiveOfferFilters = {
-  search: string;
-  discountTypes: string[];
-  statuses: string[];
-};
+
 
 const DEFAULT_FILTERS: ExecutiveOfferFilters = {
   search: "",
@@ -61,10 +63,7 @@ const STATUS_LABEL_TO_VALUE = new Map<string, string>(
   OFFER_STATUS_OPTIONS.map((option) => [option.label, option.value]),
 );
 
-type ExecutiveOffersEnvelope = {
-  value?: ExecutiveOfferItem[] | { value?: ExecutiveOfferItem[] };
-  offers?: ExecutiveOfferItem[];
-};
+
 
 const getExecutiveOfferRows = (response: unknown): ExecutiveOfferItem[] => {
   if (Array.isArray(response)) {
@@ -97,6 +96,16 @@ const getExecutiveOfferRows = (response: unknown): ExecutiveOfferItem[] => {
   return [];
 };
 
+const getExecutiveOfferPagination = (
+  response: unknown,
+): PaginationMeta | undefined => {
+  if (!response || typeof response !== "object") {
+    return undefined;
+  }
+
+  return (response as ExecutiveOffersEnvelope).pagination;
+};
+
 const normalizeStatus = (status?: string): Offer["status"] =>
   (status?.toLowerCase() || "inactive") as Offer["status"];
 
@@ -125,7 +134,11 @@ const getDiscountValue = (offer: ExecutiveOfferRow) => {
 };
 
 export default function OrgExecutiveOffersPage() {
+  const { page, limit, setPage, setLimit } = useUrlPagination();
   const [offers, setOffers] = useState<ExecutiveOfferRow[]>([]);
+  const [pagination, setPagination] = useState<PaginationMeta>(
+    emptyPagination(limit),
+  );
 
   const [isLoading, setIsLoading] = useState(true);
   const [hasLoaded, setHasLoaded] = useState(false);
@@ -134,23 +147,47 @@ export default function OrgExecutiveOffersPage() {
 
   const [draftFilters, setDraftFilters] = useState(DEFAULT_FILTERS);
 
+  const selectedStatuses = useMemo(
+    () =>
+      filters.statuses.map(
+        (status) => STATUS_LABEL_TO_VALUE.get(status) ?? status,
+      ),
+    [filters.statuses],
+  );
+
+  const selectedDiscountTypes = useMemo(
+    () =>
+      filters.discountTypes.map(
+        (type) => DISCOUNT_LABEL_TO_VALUE.get(type) ?? type,
+      ),
+    [filters.discountTypes],
+  );
+
   const fetchOffers = useCallback(async () => {
     try {
       setIsLoading(true);
 
-      const response = await getExecutiveOffers();
+      const response = await getExecutiveOffers({
+        page,
+        limit,
+        search: filters.search,
+        status: selectedStatuses.join(","),
+        discountType: selectedDiscountTypes.join(","),
+      });
 
       const data = getExecutiveOfferRows(response);
 
       setOffers(data.map(mapExecutiveOffer));
+      setPagination(getExecutiveOfferPagination(response) ?? emptyPagination(limit));
     } catch (err) {
       console.error("Failed to load executive offers", err);
       setOffers([]);
+      setPagination(emptyPagination(limit));
     } finally {
       setIsLoading(false);
       setHasLoaded(true);
     }
-  }, []);
+  }, [filters.search, limit, page, selectedDiscountTypes, selectedStatuses]);
 
   useEffect(() => {
     fetchOffers();
@@ -177,49 +214,30 @@ export default function OrgExecutiveOffersPage() {
 
   const handleApplyFilters = useCallback(() => {
     setFilters(draftFilters);
-  }, [draftFilters]);
+    setPage(1);
+  }, [draftFilters, setPage]);
 
   const handleClearFilters = useCallback(() => {
     setFilters(DEFAULT_FILTERS);
 
     setDraftFilters(DEFAULT_FILTERS);
-  }, []);
+    setPage(1);
+  }, [setPage]);
 
-  const filteredOffers = useMemo(
-    () =>
-      offers.filter((offer) => {
-        const query = filters.search.trim().toLowerCase();
+  const rowOffset = (pagination.page - 1) * pagination.limit;
 
-        const matchSearch = !query || offer.title.toLowerCase().includes(query);
-
-        const selectedStatuses = filters.statuses.map(
-          (status) => STATUS_LABEL_TO_VALUE.get(status) ?? status,
-        );
-
-        const selectedDiscountTypes = filters.discountTypes.map(
-          (type) => DISCOUNT_LABEL_TO_VALUE.get(type) ?? type,
-        );
-
-        const matchStatus =
-          selectedStatuses.length === 0 ||
-          selectedStatuses.includes(offer.status);
-
-        const matchDiscount =
-          selectedDiscountTypes.length === 0 ||
-          selectedDiscountTypes.includes(offer.discountType);
-
-        return matchSearch && matchStatus && matchDiscount;
-      }),
-    [offers, filters],
-  );
+  const hasAppliedFilters =
+    filters.search.trim() ||
+    selectedStatuses.length > 0 ||
+    selectedDiscountTypes.length > 0;
 
   const offerStats = useMemo(
     () => ({
-      total: offers.length,
+      total: pagination.total,
       active: offers.filter((offer) => offer.status === "active").length,
       inactive: offers.filter((offer) => offer.status !== "active").length,
     }),
-    [offers],
+    [offers, pagination.total],
   );
 
   const isInitialLoading = isLoading && !hasLoaded;
@@ -303,6 +321,14 @@ export default function OrgExecutiveOffersPage() {
       </div>
 
       {/* Table */}
+      <TablePaginationFooter
+        pagination={pagination}
+        onPageChange={setPage}
+        onLimitChange={setLimit}
+        placement="top"
+        totalLabel="offers"
+      />
+
       <div className="overflow-x-auto rounded-lg border border-gray-200 bg-white shadow-sm">
         <Table>
           <TableHeader className="bg-[#7677F41A]">
@@ -332,22 +358,15 @@ export default function OrgExecutiveOffersPage() {
                   colSpan={8}
                   className="py-10 text-center text-gray-500"
                 >
-                  No Offers Available
-                </TableCell>
-              </TableRow>
-            ) : filteredOffers.length === 0 ? (
-              <TableRow>
-                <TableCell
-                  colSpan={8}
-                  className="py-10 text-center text-gray-500"
-                >
-                  No Offers Match the Applied Filters
+                  {hasAppliedFilters
+                    ? "No Offers Match the Applied Filters"
+                    : "No Offers Available"}
                 </TableCell>
               </TableRow>
             ) : (
-              filteredOffers.map((offer, index) => (
+              offers.map((offer, index) => (
                 <TableRow key={offer.id || index}>
-                  <TableCell>{index + 1}</TableCell>
+                  <TableCell>{rowOffset + index + 1}</TableCell>
 
                   <TableCell className="font-medium">{offer.title}</TableCell>
 
@@ -395,6 +414,13 @@ export default function OrgExecutiveOffersPage() {
           </TableBody>
         </Table>
       </div>
+
+      <TablePaginationFooter
+        pagination={pagination}
+        onPageChange={setPage}
+        onLimitChange={setLimit}
+        totalLabel="offers"
+      />
     </div>
   );
 }

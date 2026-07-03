@@ -70,11 +70,12 @@ export default function ManagerDashboard() {
 
       const data = dashboardData as DashboardData;
       const leads = leadsData?.leads ?? [];
+      const totalLeads = leadsData?.pagination?.total ?? leads.length;
 
       setExecutivePerformance(executivePerformanceData || []);
 
       setStats({
-        total_leads: leads.length,
+        total_leads: totalLeads,
         converted_leads: data?.convertedLeads ?? 0,
         new_leads_this_week: data?.thisWeekLeads ?? 0,
         active_offers: data?.activeOffers ?? 0,

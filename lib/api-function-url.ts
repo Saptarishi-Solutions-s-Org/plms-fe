@@ -1,6 +1,13 @@
-type ODataFunctionParams = Record<string, number | string | undefined | null>;
+type ODataFunctionParams = Record<string, number | boolean | string | undefined | null>;
 
-function formatODataParam(key: string, value: number | string | undefined | null) {
+function formatODataParam(
+  key: string,
+  value: boolean | number | string | undefined | null,
+) {
+  if (typeof value === "boolean") {
+    return `${key}=${value}`;
+  }
+
   if (typeof value === "number") {
     return Number.isFinite(value) ? `${key}=${value}` : null;
   }

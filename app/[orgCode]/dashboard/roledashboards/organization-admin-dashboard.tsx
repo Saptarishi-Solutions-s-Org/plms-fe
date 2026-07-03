@@ -45,28 +45,34 @@ export default function OrganizationAdminDashboard() {
     role: [],
   });
 
-  const fetchUsers = useCallback(async () => {
-    try {
-      setLoading(true);
+  const fetchUsers = useCallback(
+    async (showLoader = true) => {
+      try {
+        if (showLoader) {
+          setLoading(true);
+        }
 
-      const data = await getOrganizationAdminDashboard();
+        const data = await getOrganizationAdminDashboard();
 
-      setuserdata(data.users);
-      setStats({
-        total_users: data.stats.total_users,
-        active_users: data.stats.active_users,
-        inactive_users: data.stats.inactive_users,
-      });
-
-    } catch (error) {
-      console.error("Error fetching users:", error);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+        setuserdata(data.users);
+        setStats({
+          total_users: data.stats.total_users,
+          active_users: data.stats.active_users,
+          inactive_users: data.stats.inactive_users,
+        });
+      } catch (error) {
+        console.error("Error fetching users:", error);
+      } finally {
+        if (showLoader) {
+          setLoading(false);
+        }
+      }
+    },
+    []
+  );
 
   useEffect(() => {
-        fetchUsers();
+    fetchUsers();
   }, [fetchUsers]);
 
   useEffect(() => {
@@ -155,7 +161,11 @@ export default function OrganizationAdminDashboard() {
 
 
         <div className="mt-10">
-          <UserTable users={filteredUsers} loading={loading} onRefresh={fetchUsers} />
+          <UserTable
+            users={filteredUsers}
+            loading={loading}
+            onRefresh={() => fetchUsers(false)}
+          />
         </div>
       </div>
 
