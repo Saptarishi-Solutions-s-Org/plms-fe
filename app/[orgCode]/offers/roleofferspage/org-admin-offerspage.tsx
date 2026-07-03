@@ -93,7 +93,6 @@ export default function OrgAdminOffersPage() {
         const formattedOffers: Offer[] = (
           offersResponse?.offers ||
           []
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         ).map((item: any) => ({
           id: item.id,
 
@@ -106,7 +105,6 @@ export default function OrgAdminOffersPage() {
           assignedUsers:
             item.managers
               ?.map(
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 (manager: any) => manager.name
               )
               .join(", ") || "",
