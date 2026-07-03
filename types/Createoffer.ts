@@ -1,4 +1,4 @@
-﻿import type { DateRange } from "@/components/commoncomponents/react-day-picker";
+import type { DateRange } from "@/components/commoncomponents/react-day-picker";
 
 export const DISCOUNT_TYPES = [
   "Fixed_Amount",
@@ -149,3 +149,12 @@ export const OFFER_STATUS_OPTIONS = [
   { value: "inactive", label: "Inactive" },
   { value: "expired", label: "Expired" },
 ] as const;
+
+export type GetOffersParams = {
+  page?: number;
+  limit?: number;
+  search?: string;
+  status?: string;
+  discountType?: string;
+  all?: boolean;
+};

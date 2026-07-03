@@ -1,6 +1,9 @@
 import { api } from "@/lib/api";
-export const getOffers = () =>
-  api(`/odata/v4/offer/getOffers()`);
+import { buildApiFunctionUrl } from "@/lib/api-function-url";
+import type { GetOffersParams } from "@/types/Createoffer";
+
+export const getOffers = (params?: GetOffersParams) =>
+  api(buildApiFunctionUrl("/odata/v4/offer/getOffers", params));
 export const getOfferSummary = () =>
   api(`/odata/v4/offer/getOfferSummary()`); 
 

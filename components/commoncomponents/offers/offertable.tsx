@@ -150,11 +150,15 @@ function DiscountSummary({ offer }: { offer: Offer }) {
 
 interface OffersTableProps {
   offers: Offer[];
-
   onToggleStatus: (id: string) => void;
+  rowOffset?: number;
 }
 
-export function OffersTable({ offers, onToggleStatus }: OffersTableProps) {
+export function OffersTable({
+  offers,
+  onToggleStatus,
+  rowOffset = 0,
+}: OffersTableProps) {
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
 
   const handleCloseMenu = useCallback(() => {
@@ -242,7 +246,7 @@ export function OffersTable({ offers, onToggleStatus }: OffersTableProps) {
                   className="hover:bg-gray-50/60"
                 >
                   <TableCell className="w-10 text-xs text-gray-600 sm:text-sm">
-                    {index + 1}
+                    {rowOffset + index + 1}
                   </TableCell>
 
                   <TableCell className="min-w-[160px] whitespace-nowrap text-xs font-medium text-gray-800 sm:text-sm">

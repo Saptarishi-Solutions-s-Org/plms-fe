@@ -1,5 +1,6 @@
 import type { ElementType } from "react";
 import { Offer } from "./Createoffer";
+import type { PaginationMeta } from "./pagination";
 
 export interface ManagerCardsProps {
   stats: {
@@ -208,4 +209,16 @@ export type OfferOption = {
   description: string;
   status: string;
   validTo: string;
+};
+
+export type ExecutiveOfferFilters = {
+  search: string;
+  discountTypes: string[];
+  statuses: string[];
+};
+
+export type ExecutiveOffersEnvelope = {
+  value?: ExecutiveOfferItem[] | { value?: ExecutiveOfferItem[] };
+  offers?: ExecutiveOfferItem[];
+  pagination?: PaginationMeta;
 };

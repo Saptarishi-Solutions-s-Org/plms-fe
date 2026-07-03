@@ -7,6 +7,7 @@ import GlobalLoader from "@/components/commoncomponents/globalloader";
 import { BulkActionsDrawer } from "@/components/commoncomponents/bulk-actions/BulkActionsDrawer";
 import { OfferCards } from "@/components/commoncomponents/offers/offercards";
 import { OfferFilters } from "@/components/commoncomponents/offers/offerfilter";
+import TablePaginationFooter from "@/components/commoncomponents/table-pagination-footer";
 
 import {
   AlertDialog,
@@ -34,6 +35,7 @@ import {
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { useUrlPagination } from "@/hooks/use-url-pagination";
 import { subscribeRealtime } from "@/lib/socket";
 import { MoreHorizontal, ListChecks } from "lucide-react";
 import Image from "next/image";
@@ -52,6 +54,8 @@ import type {
 } from "@/types/Createoffer";
 import type { Offer as BulkOffer } from "@/types/offerbulk";
 import type { BulkAssignResult } from "@/types/offerbulk";
+import { emptyPagination } from "@/types/pagination";
+import type { PaginationMeta } from "@/types/pagination";
 import { OFFER_LIST_CHANGED } from "@/types/realtime";
 
 import {
@@ -78,8 +82,69 @@ const DISCOUNT_TYPE_LABELS: Record<string, string> = {
   Conditional_Discount: "Conditional",
   Flag_Discount: "Flag Discount",
 };
+
+const formatManagerOffers = (
+  items: ManagerOfferOverviewItem[] = [],
+): ManagerOffer[] =>
+  items.map((item) => ({
+    id: item.id,
+
+    title: item.title || "",
+
+    code: item.code || "",
+
+    description: item.description || "",
+
+    assignedUsers: "",
+
+    assignedExecutives: item.assigned_executives ?? [],
+
+    isGlobal: item.is_global ?? false,
+
+    status: (item.status?.toLowerCase() || "inactive") as Offer["status"],
+
+    discountType: item.discount_type || "Fixed_Amount",
+
+    discountAmount: item.discount_amount,
+
+    discountPercentage: item.discount_percentage,
+
+    maxDiscountAmount: item.max_discount_amount,
+
+    comboDescription: item.combo_description,
+
+    buyQuantity: item.buy_quantity,
+
+    getQuantity: item.get_quantity,
+
+    minPurchaseAmount: item.min_purchase_amount,
+
+    conditionalDiscountValue: item.discount_value,
+
+    flagDiscountAmount: item.flag_discount_amount,
+
+    assignStatus: item.assignStatus,
+
+    validFrom: item.valid_from || "",
+
+    validTo: item.valid_to || "",
+
+    createdAt: item.createdat,
+
+    createdBy: "",
+
+    organization: null,
+
+    managers: [],
+  }));
+
 export default function OrgManagerOffersPage() {
+  const { page, limit, setPage, setLimit } = useUrlPagination();
   const [offers, setOffers] = useState<ManagerOffer[]>([]);
+  const [bulkOffers, setBulkOffers] = useState<ManagerOffer[]>([]);
+  const [pagination, setPagination] = useState<PaginationMeta>(
+    emptyPagination(limit),
+  );
 
   const [executives, setExecutives] = useState<ExecutiveRow[]>([]);
 
@@ -113,6 +178,8 @@ export default function OrgManagerOffersPage() {
 
   const [isLoading, setIsLoading] = useState(true);
   const [hasLoaded, setHasLoaded] = useState(false);
+  const [isBulkOffersLoading, setIsBulkOffersLoading] = useState(false);
+  const [bulkOffersError, setBulkOffersError] = useState<string | null>(null);
 
   const [filters, setFilters] = useState(DEFAULT_FILTERS);
 
@@ -131,7 +198,7 @@ export default function OrgManagerOffersPage() {
 
   const bulkActionOffers = useMemo(
     (): BulkOffer[] =>
-      offers.map((offer) => ({
+      bulkOffers.map((offer) => ({
         id: offer.id,
         title: offer.title,
         description: offer.description,
@@ -142,7 +209,7 @@ export default function OrgManagerOffersPage() {
             ? "INACTIVE"
             : "EXPIRED") as BulkOffer["status"],
       })),
-    [offers],
+    [bulkOffers],
   );
 
   const fetchOffers = useCallback(async () => {
@@ -150,13 +217,20 @@ export default function OrgManagerOffersPage() {
       setIsLoading(true);
 
       const [response, executivesResponse] = await Promise.all([
-        getManagerOfferOverview(),
+        getManagerOfferOverview({
+          page,
+          limit,
+          search: filters.search,
+          status: filters.status.join(","),
+          discountType: filters.discountType.join(","),
+        }),
         getExecutiveOverview(),
       ]);
 
       const data = response?.value || response;
 
       const stats = data?.stats || {};
+      setPagination(data?.pagination ?? emptyPagination(limit));
 
       setExecutives(
         executivesResponse?.value?.executives ||
@@ -174,63 +248,11 @@ export default function OrgManagerOffersPage() {
 
       setGlobalCount(stats.globalOffers || 0);
 
-      const formattedOffers: ManagerOffer[] = (data?.offers || []).map(
-        (item: ManagerOfferOverviewItem) => ({
-          id: item.id,
-
-          title: item.title,
-
-          code: item.code,
-
-          description: item.description,
-
-          assignedUsers: "",
-
-          assignedExecutives: item.assigned_executives ?? [],
-
-          isGlobal: item.is_global,
-
-          status: item.status?.toLowerCase() || "inactive",
-
-          discountType: item.discount_type,
-
-          discountAmount: item.discount_amount,
-
-          discountPercentage: item.discount_percentage,
-
-          maxDiscountAmount: item.max_discount_amount,
-
-          comboDescription: item.combo_description,
-
-          buyQuantity: item.buy_quantity,
-
-          getQuantity: item.get_quantity,
-
-          minPurchaseAmount: item.min_purchase_amount,
-
-          conditionalDiscountValue: item.discount_value,
-
-          flagDiscountAmount: item.flag_discount_amount,
-
-          assignStatus: item.assignStatus,
-
-          validFrom: item.valid_from,
-
-          validTo: item.valid_to,
-
-          createdAt: item.createdat,
-
-          createdBy: "",
-
-          organization: null,
-
-          managers: [],
-        }),
-      );
-      setOffers(formattedOffers);
+      setOffers(formatManagerOffers(data?.offers));
     } catch (err) {
       console.error("Failed to load offers", err);
       setOffers([]);
+      setPagination(emptyPagination(limit));
       setExecutives([]);
       setTotalCount(0);
       setActiveCount(0);
@@ -240,7 +262,7 @@ export default function OrgManagerOffersPage() {
       setIsLoading(false);
       setHasLoaded(true);
     }
-  }, []);
+  }, [filters, limit, page]);
 
   useEffect(() => {
     fetchOffers();
@@ -251,6 +273,31 @@ export default function OrgManagerOffersPage() {
       fetchOffers();
     });
   }, [fetchOffers]);
+
+  const fetchBulkOffers = useCallback(async () => {
+    try {
+      setIsBulkOffersLoading(true);
+      setBulkOffersError(null);
+
+      const response = await getManagerOfferOverview({
+        all: true,
+      });
+      const data = response?.value || response;
+
+      setBulkOffers(formatManagerOffers(data?.offers));
+    } catch {
+      setBulkOffers([]);
+      setBulkOffersError(null);
+    } finally {
+      setIsBulkOffersLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (isBulkActionsOpen) {
+      fetchBulkOffers();
+    }
+  }, [fetchBulkOffers, isBulkActionsOpen]);
 
   const handleFilterChange = useCallback(
     <K extends keyof OfferFiltersType>(key: K, value: OfferFiltersType[K]) => {
@@ -264,13 +311,15 @@ export default function OrgManagerOffersPage() {
 
   const handleApplyFilters = useCallback(() => {
     setFilters(draftFilters);
-  }, [draftFilters]);
+    setPage(1);
+  }, [draftFilters, setPage]);
 
   const handleClearFilters = useCallback(() => {
     setFilters(DEFAULT_FILTERS);
 
     setDraftFilters(DEFAULT_FILTERS);
-  }, []);
+    setPage(1);
+  }, [setPage]);
 
   const filteredOffers = useMemo(
     () =>
@@ -293,6 +342,8 @@ export default function OrgManagerOffersPage() {
       }),
     [offers, filters],
   );
+
+  const rowOffset = (pagination.page - 1) * pagination.limit;
 
   const getDiscountValue = (offer: Offer) => {
     switch (offer.discountType) {
@@ -470,6 +521,8 @@ export default function OrgManagerOffersPage() {
         open={isBulkActionsOpen}
         executives={bulkActionExecutives}
         offers={bulkActionOffers}
+        offersLoading={isBulkOffersLoading}
+        offersError={bulkOffersError}
         onClose={() => setIsBulkActionsOpen(false)}
         onAssignOffer={handleBulkAssignOffer}
       />
@@ -491,6 +544,14 @@ export default function OrgManagerOffersPage() {
       />
 
       {/* Table */}
+      <TablePaginationFooter
+        pagination={pagination}
+        onPageChange={setPage}
+        onLimitChange={setLimit}
+        placement="top"
+        totalLabel="offers"
+      />
+
       <div className="overflow-x-auto rounded-lg border border-gray-200 bg-white shadow-sm">
           <Table>
             <TableHeader className="bg-[#7677F41A]">
@@ -541,7 +602,7 @@ export default function OrgManagerOffersPage() {
               ) : (
                 filteredOffers.map((offer, index) => (
                   <TableRow key={offer.id}>
-                    <TableCell>{index + 1}</TableCell>
+                    <TableCell>{rowOffset + index + 1}</TableCell>
 
                     <TableCell className="font-medium">{offer.title}</TableCell>
 
@@ -671,6 +732,13 @@ export default function OrgManagerOffersPage() {
             </TableBody>
           </Table>
       </div>
+
+      <TablePaginationFooter
+        pagination={pagination}
+        onPageChange={setPage}
+        onLimitChange={setLimit}
+        totalLabel="offers"
+      />
 
       <AlertDialog
         open={isViewAllErrorOpen}

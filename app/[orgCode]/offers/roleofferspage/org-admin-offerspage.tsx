@@ -3,11 +3,13 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 
 import GlobalLoader from "@/components/commoncomponents/globalloader";
+import TablePaginationFooter from "@/components/commoncomponents/table-pagination-footer";
 import { OfferCards } from "@/components/commoncomponents/offers/offercards";
 import { OfferFilters } from "@/components/commoncomponents/offers/offerfilter";
 import { OffersTable } from "@/components/commoncomponents/offers/offertable";
 import { CreateOfferDialog } from "@/components/commoncomponents/offers/createoffer";
 import { Button } from "@/components/ui/button";
+import { useUrlPagination } from "@/hooks/use-url-pagination";
 import { subscribeRealtime } from "@/lib/socket";
 import {
   createOffer,
@@ -24,6 +26,8 @@ import type {
   OfferFilters as OfferFiltersType,
   OfferStatus,
 } from "@/types/Createoffer";
+import { emptyPagination } from "@/types/pagination";
+import type { PaginationMeta } from "@/types/pagination";
 
 const DEFAULT_FILTERS: OfferFiltersType = {
   search: "",
@@ -32,9 +36,13 @@ const DEFAULT_FILTERS: OfferFiltersType = {
 };
 
 export default function OrgAdminOffersPage() {
+  const { page, limit, setPage, setLimit } = useUrlPagination();
   const [offers, setOffers] = useState<Offer[]>([]);
   const [totalCount, setTotalCount] = useState(0);
   const [globalCount, setGlobalCount] = useState(0);
+  const [pagination, setPagination] = useState<PaginationMeta>(
+    emptyPagination(limit),
+  );
 
   const [isLoading, setIsLoading] =
     useState(true);
@@ -72,14 +80,20 @@ export default function OrgAdminOffersPage() {
 
         const [offersResponse, summary] =
           await Promise.all([
-            getOffers(),
+            getOffers({
+              page,
+              limit,
+              search: filters.search,
+              status: filters.status.join(","),
+              discountType: filters.discountType.join(","),
+            }),
             getOfferSummary(),
           ]);
 
         const formattedOffers: Offer[] = (
-          offersResponse?.value ||
-          offersResponse ||
+          offersResponse?.offers ||
           []
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         ).map((item: any) => ({
           id: item.id,
 
@@ -92,6 +106,7 @@ export default function OrgAdminOffersPage() {
           assignedUsers:
             item.managers
               ?.map(
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 (manager: any) => manager.name
               )
               .join(", ") || "",
@@ -157,6 +172,8 @@ export default function OrgAdminOffersPage() {
 
         setOffers(formattedOffers);
 
+        setPagination(offersResponse?.pagination ?? emptyPagination(limit));
+
         setTotalCount(summary.totalCount);
 
         setGlobalCount(summary.globalCount);
@@ -166,12 +183,13 @@ export default function OrgAdminOffersPage() {
         setOffers([]);
         setTotalCount(0);
         setGlobalCount(0);
+        setPagination(emptyPagination(limit));
       } finally {
         setIsLoading(false);
         setHasLoaded(true);
       }
     },
-    []
+    [filters, limit, page]
   );
   useEffect(() => {
     fetchOffers();
@@ -337,13 +355,15 @@ export default function OrgAdminOffersPage() {
   const handleApplyFilters =
     useCallback(() => {
       setFilters(draftFilters);
-    }, [draftFilters]);
+      setPage(1);
+    }, [draftFilters, setPage]);
 
   const handleClearFilters =
     useCallback(() => {
       setFilters(DEFAULT_FILTERS);
       setDraftFilters(DEFAULT_FILTERS);
-    }, []);
+      setPage(1);
+    }, [setPage]);
 
  const filteredOffers = useMemo(
     () =>
@@ -376,6 +396,7 @@ export default function OrgAdminOffersPage() {
       }),
     [offers, filters]
   );
+  const rowOffset = (pagination.page - 1) * pagination.limit;
   const isInitialLoading = isLoading && !hasLoaded;
 
   if (isInitialLoading) {
@@ -434,11 +455,27 @@ export default function OrgAdminOffersPage() {
 
       {/* Table */}
 
+      <TablePaginationFooter
+        pagination={pagination}
+        onPageChange={setPage}
+        onLimitChange={setLimit}
+        placement="top"
+        totalLabel="offers"
+      />
+
       <OffersTable
         offers={filteredOffers}
         onToggleStatus={
           handleToggleStatus
         }
+        rowOffset={rowOffset}
+      />
+
+      <TablePaginationFooter
+        pagination={pagination}
+        onPageChange={setPage}
+        onLimitChange={setLimit}
+        totalLabel="offers"
       />
 
       {/* Dialog */}
