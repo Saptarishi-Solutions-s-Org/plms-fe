@@ -36,6 +36,12 @@ export type UpdateOrganizationPayload = {
   id: string;
   name: string;
   is_active: boolean;
+  email: string;
+  phone: string;
+  address: string;
+  state: string;
+  country: string;
+  trial: string;
 };
 
 export type OrganizationDetail = Organization;

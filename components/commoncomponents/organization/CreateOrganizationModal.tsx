@@ -120,6 +120,12 @@ export default function CreateOrganizationModal({
         await updateOrganization({
           id: org.id,
           name: form.name,
+          email: form.email,
+          phone: form.phone,
+          address: form.address,
+          state: form.state,
+          country: form.country,
+          trial: form.trial,
           is_active: form.is_active,
         });
       } else {
@@ -168,7 +174,6 @@ export default function CreateOrganizationModal({
         </DialogHeader>
 
         <div className="space-y-4 py-2">
-          {!org && (
             <div className="space-y-1">
               <Label required>Organization Name</Label>
               <Input
@@ -181,7 +186,6 @@ export default function CreateOrganizationModal({
                 <p className="text-sm text-red-500">{errors.name}</p>
               )}
             </div>
-          )}
 
           <div className="space-y-1">
             <Label required>Email</Label>
