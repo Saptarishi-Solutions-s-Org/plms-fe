@@ -14,20 +14,26 @@ export interface Offer {
 }
  
 export interface AssignOfferToExecutivesPayload {
-  offerId: string;
+  offerIds: string[];
   executiveIds: string[];
 }
 
-export interface BulkAssignFailure {
+export interface BulkOfferAssignmentItem {
+  offerId: string;
   executiveId: string;
-  message: string;
+  assignmentId: string;
 }
 
-export interface BulkAssignResult {
+export interface BulkOfferAssignmentSkip {
   offerId: string;
-  successCount: number;
-  failureCount: number;
-  failures: BulkAssignFailure[];
+  executiveId: string;
+  reason: string;
+}
+
+export interface BulkOfferAssignmentResponse {
+  message: string;
+  assigned: BulkOfferAssignmentItem[];
+  skipped: BulkOfferAssignmentSkip[];
 }
  
 export interface BulkActionsDrawerProps {
@@ -40,8 +46,8 @@ export interface BulkActionsDrawerProps {
   executivesError?: string | null;
   onClose: () => void;
   onAssignOffer?: (
-    payload: AssignOfferToExecutivesPayload
-  ) => Promise<BulkAssignResult>;
+    payload: AssignOfferToExecutivesPayload,
+  ) => Promise<BulkOfferAssignmentResponse>;
 }
 
 export interface ExecutiveListProps {
