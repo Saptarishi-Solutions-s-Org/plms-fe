@@ -37,3 +37,20 @@ export const getOfferPagination = (response: ExecutiveOffersResponse) => {
 
   return undefined;
 };
+
+export type AssignOfferToLeadPayload = {
+  offerId: string;
+  leadId: string;
+};
+
+export type AssignOffersToLeadsPayload = {
+  offerId: string;
+  leadIds: string[];
+};
+
+export type AssignOffersToLeadsResponse = {
+  assignmentIds: string[];
+  assignedCount: number;
+  skippedCount: number;
+  message: string;
+};

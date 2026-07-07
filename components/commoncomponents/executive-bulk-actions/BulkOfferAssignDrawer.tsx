@@ -26,13 +26,14 @@ import { getExecutiveOffers } from "@/services/executivestats";
 import type { Lead } from "@/types/leadtypes";
 import {
   type ExecutiveOffersResponse,
-  getOfferItems,getOfferPagination
+  getOfferItems,
+  getOfferPagination,
 } from "@/types/leadoffer";
 import {
   formatDate,
   type OfferOption,
 } from "@/types/org-manager";
-import { DEFAULT_PAGE_LIMIT, type PaginationMeta } from "@/types/pagination";
+import { DEFAULT_PAGE_LIMIT } from "@/types/pagination";
 
 type Props = {
   open: boolean;
