@@ -2,6 +2,11 @@ import { api } from "@/lib/api";
 import { buildApiFunctionUrl } from "@/lib/api-function-url";
 import type { GetOffersParams } from "@/types/Createoffer";
 
+type GetExecutiveOffersParams = {
+  page?: number;
+  limit?: number;
+};
+
 export const getExecutiveStats = () =>
   api("/odata/v4/organization-executive/getExecutiveStats()");
 

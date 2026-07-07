@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback, useEffect, useState } from "react";
+import { toast } from "sonner";
 
 import GlobalLoader from "@/components/commoncomponents/globalloader";
 import { BulkOfferAssignDrawer } from "@/components/commoncomponents/executive-bulk-actions/BulkOfferAssignDrawer";
@@ -15,9 +16,19 @@ import { useLeads } from "@/hooks/use-leads";
 import { useUrlLeadFilters } from "@/hooks/use-url-lead-filters";
 import { useUrlPagination } from "@/hooks/use-url-pagination";
 import { getUser } from "@/lib/auth";
-import { assignOfferToLead } from "@/services/executivestats";
+import { assignOfferToLead, getExecutiveOffers } from "@/services/executivestats";
 import { createLead, updateLead } from "@/services/leads";
-import { type Lead, type LeadFormData } from "@/types/leadtypes";
+import {
+  type Lead,
+  type LeadFormData,
+  type LeadOfferOption,
+} from "@/types/leadtypes";
+import {
+  type ExecutiveOffersResponse,
+  getOfferItems,
+  getOfferPagination,
+} from "@/types/leadoffer";
+import { DEFAULT_PAGE_LIMIT } from "@/types/pagination";
 
 export default function ExecutiveLeadsPage() {
   const { page, limit, setPage, setLimit } = useUrlPagination();
@@ -38,6 +49,51 @@ export default function ExecutiveLeadsPage() {
   const [editingLead, setEditingLead] = useState<Lead | null>(null);
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
   const [isBulkAssignOpen, setIsBulkAssignOpen] = useState(false);
+  const [offerOptions, setOfferOptions] = useState<LeadOfferOption[]>([]);
+  const [isOfferOptionsLoading, setIsOfferOptionsLoading] = useState(false);
+
+  const fetchOfferOptions = useCallback(async () => {
+    setIsOfferOptionsLoading(true);
+
+    try {
+      const fetchOfferPage = (nextPage: number) =>
+        getExecutiveOffers({
+          page: nextPage,
+          limit: DEFAULT_PAGE_LIMIT,
+        }) as Promise<ExecutiveOffersResponse>;
+
+      const firstResponse = await fetchOfferPage(1);
+      const firstItems = getOfferItems(firstResponse);
+      const firstPagination = getOfferPagination(firstResponse);
+      let items = firstItems;
+
+      if (firstPagination?.totalPages && firstPagination.totalPages > 1) {
+        const remainingResponses = await Promise.all(
+          Array.from({ length: firstPagination.totalPages - 1 }, (_, index) =>
+            fetchOfferPage(index + 2),
+          ),
+        );
+
+        items = [firstItems, ...remainingResponses.map(getOfferItems)].flat();
+      }
+
+      setOfferOptions(
+        items.map((offer) => ({
+          id: offer.id ?? "",
+          title: offer.title ?? "",
+          status: offer.status ?? "inactive",
+        })),
+      );
+    } catch {
+      setOfferOptions([]);
+    } finally {
+      setIsOfferOptionsLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchOfferOptions();
+  }, [fetchOfferOptions]);
 
   const openAddForm = () => {
     setEditingLead(null);
@@ -92,6 +148,22 @@ export default function ExecutiveLeadsPage() {
     return { successCount, failureCount };
   };
 
+  const handleAssignOffer = async (lead: Lead, offerId: string) => {
+    try {
+      await assignOfferToLead({
+        offerId,
+        leadId: lead.uuid,
+      });
+
+      toast.success("Offer assigned to lead successfully.");
+    } catch (error) {
+      toast.error(
+        error instanceof Error ? error.message : "Failed to assign offer.",
+      );
+      throw error;
+    }
+  };
+
   return (
     <>
       {isInitialLoading ? (
@@ -144,6 +216,9 @@ export default function ExecutiveLeadsPage() {
                 lead={lead}
                 onEdit={openEditForm}
                 onViewDetails={handleViewDetails}
+                offerOptions={offerOptions}
+                isOfferOptionsLoading={isOfferOptionsLoading}
+                onAssignOffer={handleAssignOffer}
               />
             )}
           />

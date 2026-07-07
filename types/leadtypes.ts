@@ -73,6 +73,12 @@ export interface ExecutiveOption {
   name: string;
 }
 
+export type LeadOfferOption = {
+  id: string;
+  title: string;
+  status?: string;
+};
+
 export interface Option {
   id: string;
   name: string;
@@ -144,6 +150,9 @@ export type LeadActionsProps = {
   onViewDetails: (lead: Lead) => void;
   executives?: ExecutiveOption[];
   onAssign?: (lead: Lead, assignedTo: string) => Promise<void> | void;
+  offerOptions?: LeadOfferOption[];
+  isOfferOptionsLoading?: boolean;
+  onAssignOffer?: (lead: Lead, offerId: string) => Promise<void> | void;
 };
 
 export interface LeadSummaryCardsProps {
