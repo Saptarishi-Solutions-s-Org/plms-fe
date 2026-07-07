@@ -31,13 +31,20 @@ export default function LeadActions({
   onEdit,
   executives = [],
   onAssign,
+  offerOptions = [],
+  isOfferOptionsLoading = false,
+  onAssignOffer,
 }: LeadActionsProps) {
   const { orgCode } = useParams<{ orgCode: string }>();
   const router = useRouter();
   const [isAssignOpen, setAssignOpen] = useState(false);
+  const [isAssignOfferOpen, setAssignOfferOpen] = useState(false);
   const [assignedTo, setAssignedTo] = useState("");
+  const [selectedOfferId, setSelectedOfferId] = useState("");
   const [isAssigning, setIsAssigning] = useState(false);
+  const [isAssigningOffer, setIsAssigningOffer] = useState(false);
   const canAssign = Boolean(onAssign && !lead.assignedTo);
+  const canAssignOffer = Boolean(onAssignOffer);
   const availableExecutives = canAssign ? executives : [];
   const currentExecutiveName =
     executives.find((executive) => executive.id === lead.assignedTo)?.name ??
@@ -48,6 +55,10 @@ export default function LeadActions({
     if (isAssignOpen) setAssignedTo("");
   }, [isAssignOpen]);
 
+  useEffect(() => {
+    if (isAssignOfferOpen) setSelectedOfferId("");
+  }, [isAssignOfferOpen]);
+
   const handleAssign = async () => {
     if (!assignedTo || !onAssign) return;
 
@@ -57,6 +68,18 @@ export default function LeadActions({
       setAssignOpen(false);
     } finally {
       setIsAssigning(false);
+    }
+  };
+
+  const handleAssignOffer = async () => {
+    if (!selectedOfferId || !onAssignOffer) return;
+
+    try {
+      setIsAssigningOffer(true);
+      await onAssignOffer(lead, selectedOfferId);
+      setAssignOfferOpen(false);
+    } finally {
+      setIsAssigningOffer(false);
     }
   };
 
@@ -88,6 +111,16 @@ export default function LeadActions({
               }}
             >
               Assign To
+            </DropdownMenuItem>
+          )}
+          {canAssignOffer && (
+            <DropdownMenuItem
+              onClick={() => {
+                setSelectedOfferId("");
+                setAssignOfferOpen(true);
+              }}
+            >
+              Assign Offer
             </DropdownMenuItem>
           )}
         </DropdownMenuContent>
@@ -133,6 +166,70 @@ export default function LeadActions({
                 className="bg-blue-600 text-white hover:bg-blue-700"
               >
                 {isAssigning ? "Saving..." : "Save"}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      )}
+
+      {canAssignOffer && (
+        <Dialog open={isAssignOfferOpen} onOpenChange={setAssignOfferOpen}>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle>Assign Offer</DialogTitle>
+            </DialogHeader>
+
+            <p className="text-sm text-gray-500">
+              Select an offer to assign to {lead.name}.
+            </p>
+
+            <Select value={selectedOfferId} onValueChange={setSelectedOfferId}>
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder="Select offer" />
+              </SelectTrigger>
+              <SelectContent>
+                {isOfferOptionsLoading ? (
+                  <div className="px-3 py-2 text-sm text-gray-400">
+                    Loading offers...
+                  </div>
+                ) : offerOptions.length === 0 ? (
+                  <div className="px-3 py-2 text-sm text-gray-400">
+                    No offers found
+                  </div>
+                ) : (
+                  offerOptions.map((offer) => {
+                    const isActive = offer.status?.toLowerCase() === "active";
+
+                    return (
+                      <SelectItem
+                        key={offer.id}
+                        value={offer.id}
+                        disabled={!isActive}
+                      >
+                        {offer.title}
+                        {offer.status ? ` (${offer.status})` : ""}
+                      </SelectItem>
+                    );
+                  })
+                )}
+              </SelectContent>
+            </Select>
+
+            <DialogFooter>
+              <Button
+                variant="outline"
+                onClick={() => setAssignOfferOpen(false)}
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={handleAssignOffer}
+                disabled={
+                  !selectedOfferId || isAssigningOffer || isOfferOptionsLoading
+                }
+                className="bg-blue-600 text-white hover:bg-blue-700"
+              >
+                {isAssigningOffer ? "Assigning..." : "Assign Offer"}
               </Button>
             </DialogFooter>
           </DialogContent>

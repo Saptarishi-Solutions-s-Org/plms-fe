@@ -46,11 +46,13 @@ export default function OrganizationAdminDashboard() {
   });
 
   const fetchUsers = useCallback(
-    async (showLoader = true) => {
+    async (showLoader  = true) => {
       try {
         if (showLoader) {
-          setLoading(true);
+          if (showLoader) {
+        setLoading(true);
         }
+      }
 
         const data = await getOrganizationAdminDashboard();
 
@@ -64,8 +66,10 @@ export default function OrganizationAdminDashboard() {
         console.error("Error fetching users:", error);
       } finally {
         if (showLoader) {
-          setLoading(false);
-        }
+          if (showLoader) {
+        setLoading(false);
+          }
+    }
       }
     },
     []
@@ -79,7 +83,7 @@ export default function OrganizationAdminDashboard() {
     return subscribeRealtime<UserListChangedPayload>(
       USER_LIST_CHANGED,
       () => {
-        fetchUsers();
+        fetchUsers(false);
       }
     );
   }, [fetchUsers]);
