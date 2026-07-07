@@ -1,4 +1,6 @@
 import { api } from "@/lib/api";
+import { buildApiFunctionUrl } from "@/lib/api-function-url";
+import type { GetOffersParams } from "@/types/Createoffer";
 
 export const getManagerDashboard = () =>
   api("/odata/v4/manager-dashboard/getManagerDashboard()");
@@ -9,8 +11,13 @@ export const getLeadStatusOverview = () =>
 export const getExecutivePerformance = () =>
   api("/odata/v4/manager-dashboard/getExecutivePerformance()");
 
-export const getManagerOfferOverview = () =>
-  api("/odata/v4/manager-dashboard/getManagerOfferOverview()");
+export const getManagerOfferOverview = (params?: GetOffersParams) =>
+  api(
+    buildApiFunctionUrl(
+      "/odata/v4/manager-dashboard/getManagerOfferOverview",
+      params,
+    ),
+  );
 
 export const assignOfferToExecutive = (payload: {
   offerId: string;

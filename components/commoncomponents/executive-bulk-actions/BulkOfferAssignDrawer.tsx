@@ -25,10 +25,14 @@ import {
 import { getExecutiveOffers } from "@/services/executivestats";
 import type { Lead } from "@/types/leadtypes";
 import {
+  type ExecutiveOffersResponse,
+  getOfferItems,getOfferPagination
+} from "@/types/leadoffer";
+import {
   formatDate,
-  type ExecutiveOfferItem,
   type OfferOption,
 } from "@/types/org-manager";
+import { DEFAULT_PAGE_LIMIT, type PaginationMeta } from "@/types/pagination";
 
 type Props = {
   open: boolean;
@@ -55,12 +59,30 @@ export function BulkOfferAssignDrawer({
   const fetchOffers = useCallback(async () => {
     setOffersLoading(true);
     try {
-      const raw = (await getExecutiveOffers()) as
-        | { value?: ExecutiveOfferItem[] }
-        | ExecutiveOfferItem[];
-      const items: ExecutiveOfferItem[] = Array.isArray(raw)
-        ? raw
-        : (raw?.value ?? []);
+      const fetchOfferPage = (nextPage: number) =>
+        getExecutiveOffers({
+          page: nextPage,
+          limit: DEFAULT_PAGE_LIMIT,
+        }) as Promise<ExecutiveOffersResponse>;
+
+      const firstResponse = (await getExecutiveOffers({
+        page: 1,
+        limit: DEFAULT_PAGE_LIMIT,
+      })) as ExecutiveOffersResponse;
+      const firstItems = getOfferItems(firstResponse);
+      const firstPagination = getOfferPagination(firstResponse);
+      let items = firstItems;
+
+      if (firstPagination?.totalPages && firstPagination.totalPages > 1) {
+        const remainingResponses = await Promise.all(
+          Array.from({ length: firstPagination.totalPages - 1 }, (_, index) =>
+            fetchOfferPage(index + 2),
+          ),
+        );
+
+        items = [firstItems, ...remainingResponses.map(getOfferItems)].flat();
+      }
+
       setOffers(
         items.map((item) => ({
           id: item.id ?? "",

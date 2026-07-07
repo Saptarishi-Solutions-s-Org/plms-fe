@@ -61,7 +61,7 @@ export default function AddNoteForm({ leadId, onAdded }: AddNoteFormProps) {
       onSubmit={handleSubmit(onValid)}
       className="flex flex-col rounded-xl border border-gray-300 bg-white"
     >
-      <div className="flex h-16 shrink-0 items-center justify-between border-b border-gray-200 px-5">
+      <div className="flex h-14 items-center justify-between border-b border-gray-200 p-4">
         <h2 className="text-base font-semibold text-gray-800">
           Activity & Notes
         </h2>
@@ -75,8 +75,8 @@ export default function AddNoteForm({ leadId, onAdded }: AddNoteFormProps) {
         </Button>
       </div>
 
-      <div className="flex flex-1 flex-col gap-3 px-5 pb-3 pt-4">
-        <div className="flex w-full flex-col gap-1.5">
+      <div className="flex flex-col gap-2.5 px-5 pb-3 pt-3">
+        <div className="flex w-full flex-col gap-1">
           <Label required>Activity Type</Label>
           <Controller
             name="type"
@@ -105,18 +105,18 @@ export default function AddNoteForm({ leadId, onAdded }: AddNoteFormProps) {
           )}
         </div>
 
-        <div className="flex flex-col gap-1.5">
+        <div className="flex flex-col gap-1">
           <Label required>Notes</Label>
           <Textarea
             placeholder="Write a note or activity..."
-            className={`min-h-[100px] resize-none ${
+            className={`h-[84px] field-sizing-fixed resize-y ${
               errors.notes ? "border-red-500" : ""
             }`}
             {...register("notes")}
           />
-          {errors.notes?.message && (
-            <p className="text-sm text-red-500">{errors.notes.message}</p>
-          )}
+          <p className="min-h-5 text-sm text-red-500">
+            {errors.notes?.message}
+          </p>
         </div>
       </div>
     </form>
