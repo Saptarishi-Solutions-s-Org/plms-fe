@@ -42,6 +42,7 @@ import Image from "next/image";
 
 import {
   assignOfferToExecutive,
+  bulkAssignOffersToExecutives,
   getAvailableExecutivesForOffer,
   getExecutiveOverview,
   getManagerOfferOverview,
@@ -53,7 +54,6 @@ import type {
   OfferFilters as OfferFiltersType,
 } from "@/types/Createoffer";
 import type { Offer as BulkOffer } from "@/types/offerbulk";
-import type { BulkAssignResult } from "@/types/offerbulk";
 import { emptyPagination } from "@/types/pagination";
 import type { PaginationMeta } from "@/types/pagination";
 import { OFFER_LIST_CHANGED } from "@/types/realtime";
@@ -451,36 +451,20 @@ export default function OrgManagerOffersPage() {
   };
 
   const handleBulkAssignOffer = async ({
-    offerId,
+    offerIds,
     executiveIds,
   }: {
-    offerId: string;
+    offerIds: string[];
     executiveIds: string[];
-  }): Promise<BulkAssignResult> => {
-    const failures: BulkAssignResult["failures"] = [];
-    let successCount = 0;
+  }) => {
+    const response = await bulkAssignOffersToExecutives({
+      offerIds,
+      executiveIds,
+    });
 
-    for (const executiveId of executiveIds) {
-      try {
-        await assignOfferToExecutive({ offerId, executiveId });
-        successCount += 1;
-      } catch (error) {
-        failures.push({
-          executiveId,
-          message:
-            error instanceof Error
-              ? error.message
-              : "Failed to assign offer to executive",
-        });
-      }
-    }
+    await fetchOffers();
 
-    return {
-      offerId,
-      successCount,
-      failureCount: failures.length,
-      failures,
-    };
+    return response;
   };
 
   const isInitialLoading = isLoading && !hasLoaded;

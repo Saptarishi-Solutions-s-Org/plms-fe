@@ -61,6 +61,22 @@ export function BulkActionsDrawer({
   const pluralize = (count: number, singular: string, plural = `${singular}s`) =>
     `${count} ${count === 1 ? singular : plural}`;
 
+  const formatSkippedReason = (reason: string) => {
+    switch (reason) {
+      case "already_assigned":
+        return "already assigned to this executive";
+      default:
+        return reason.replace(/_/g, " ");
+    }
+  };
+
+  const buildSkippedMessage = (
+    skipped: Array<{ offerId: string; executiveId: string; reason: string }>,
+  ) =>
+    [...new Set(skipped.map((item) => formatSkippedReason(item.reason)))].join(
+      "; ",
+    );
+
   const handleClose = () => {
     resetSelections();
     onClose();
@@ -82,54 +98,39 @@ export function BulkActionsDrawer({
       return;
     }
 
-    const payloads = selectedOfferIds.map((offerId) => ({
-      offerId,
+    const payload = {
+      offerIds: selectedOfferIds,
       executiveIds: selectedExecutiveIds,
-    }));
+    };
 
     try {
       setIsSaving(true);
 
-      const results = [] as Array<{
-        successCount: number;
-        failureCount: number;
-        failures: Array<{ executiveId: string; message: string }>;
-      }>;
+      const result = await onAssignOffer(payload);
+      const assignedCount = result.assigned.length;
+      const skippedCount = result.skipped.length;
+      const skippedMessage = buildSkippedMessage(result.skipped);
 
-      for (const payload of payloads) {
-        const result = await onAssignOffer(payload);
-        results.push(result);
-      }
-
-      const successCount = results.reduce(
-        (count, result) => count + result.successCount,
-        0,
-      );
-      const failureCount = results.reduce(
-        (count, result) => count + result.failureCount,
-        0,
-      );
-
-      if (failureCount === 0) {
+      if (skippedCount === 0) {
         toast.success(
-          `${successCount === 1 ? "Offer" : "Offers"} Successfully Assigned to ${pluralize(
-            selectedExecutiveIds.length,
-            "Selected Executive",
-          )}.`,
+          `${selectedOfferIds.length === 1 ? "Offer" : "Offers"} Successfully Assigned to ${pluralize(selectedExecutiveIds.length, "Selected Executive")}.`,
         );
         handleClose();
-      } else if (successCount > 0) {
+      } else if (assignedCount > 0) {
         toast.warning(
-          `${pluralize(selectedOfferIds.length, "Offer")} Successfully Assigned to ${pluralize( successCount, "Selected Executive",)}. 
-           The Other ${pluralize(failureCount, "Selected Executive")} ${
-            failureCount === 1 ? "was" : "were"
-          } already assigned to ${selectedOfferIds.length === 1 ? "the selected offer" : "the selected offers"}.`,
+          `${pluralize(assignedCount, "Offer")} assigned successfully to ${pluralize(assignedCount, "selected executive")}.
+           The Other ${pluralize(skippedCount, "selected offer")} ${
+             skippedCount === 1 ? "was" : "were"
+           } ${skippedMessage || "already assigned"}.`,
         );
+        resetSelections();
       } else {
         toast.error(
-          `${failureCount === 1 ? "This Offer" : "These Offers"} ${
-            failureCount === 1 ? "was" : "were"
-          } ${selectedExecutiveIds.length === 1 ? "already assigned to this executive." : "already assigned to these executives."}`,
+          `${selectedOfferIds.length === 1 ? "This Offer was" : "These Offers were"} ${
+            selectedExecutiveIds.length === 1
+              ? skippedMessage || "already assigned to this executive"
+              : skippedMessage || "already assigned to these executives"
+          }.`,
         );
       }
     } catch (error) {
