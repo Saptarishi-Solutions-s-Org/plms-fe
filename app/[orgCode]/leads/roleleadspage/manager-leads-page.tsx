@@ -16,7 +16,13 @@ import { useLeadExport } from "@/hooks/export";
 import { useLeads } from "@/hooks/use-leads";
 import { useUrlLeadFilters } from "@/hooks/use-url-lead-filters";
 import { useUrlPagination } from "@/hooks/use-url-pagination";
-import { createLead, getExecutiveUsers,getLeadsWithStats, updateLead } from "@/services/leads";
+import {
+  bulkAssignLeads as bulkAssignLeadsRequest,
+  createLead,
+  getExecutiveUsers,
+  getLeadsWithStats,
+  updateLead,
+} from "@/services/leads";
 import type {
   ExecutiveOption,
   Lead,
@@ -228,26 +234,14 @@ export default function ManagerLeadsPage() {
       assignableLeads.push(lead);
     }
 
-    const results = await Promise.allSettled(
-      assignableLeads.map((lead) =>
-        updateLead({ id: lead.uuid, ...toLeadPayload(lead, assignedTo) }),
-      ),
-    );
-
-    results.forEach((result, index) => {
-      if (result.status === "fulfilled") {
-        successCount += 1;
-        return;
-      }
-
-      failures.push({
-        leadId: assignableLeads[index].uuid,
-        message:
-          result.reason instanceof Error
-            ? result.reason.message
-            : "Failed to assign lead.",
+    if (assignableLeads.length > 0) {
+      const result = await bulkAssignLeadsRequest({
+        leadIds: assignableLeads.map((lead) => lead.uuid),
+        assignedTo,
       });
-    });
+
+      successCount = result.assignedCount ?? assignableLeads.length;
+    }
 
     if (successCount > 0) {
       await refetch();
