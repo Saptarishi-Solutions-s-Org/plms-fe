@@ -1,11 +1,11 @@
 import { api } from "@/lib/api";
 import { buildApiFunctionUrl } from "@/lib/api-function-url";
 import type { GetOffersParams } from "@/types/Createoffer";
-
-type GetExecutiveOffersParams = {
-  page?: number;
-  limit?: number;
-};
+import type {
+  AssignOfferToLeadPayload,
+  AssignOffersToLeadsPayload,
+  AssignOffersToLeadsResponse,
+} from "@/types/leadoffer";
 
 export const getExecutiveStats = () =>
   api("/odata/v4/organization-executive/getExecutiveStats()");
@@ -24,11 +24,14 @@ export const getExecutiveOffers = (params?: GetOffersParams) =>
     ),
   );
 
-export const assignOfferToLead = (payload: {
-  offerId: string;
-  leadId: string;
-}) =>
+export const assignOfferToLead = (payload: AssignOfferToLeadPayload) =>
   api("/odata/v4/organization-executive/assignOfferToLead", {
     method: "POST",
     body: JSON.stringify(payload),
   });
+
+export const assignOffersToLeads = (payload: AssignOffersToLeadsPayload) =>
+  api("/odata/v4/organization-executive/assignOffersToLeads", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  }) as Promise<AssignOffersToLeadsResponse>;

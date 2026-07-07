@@ -16,7 +16,11 @@ import { useLeads } from "@/hooks/use-leads";
 import { useUrlLeadFilters } from "@/hooks/use-url-lead-filters";
 import { useUrlPagination } from "@/hooks/use-url-pagination";
 import { getUser } from "@/lib/auth";
-import { assignOfferToLead, getExecutiveOffers } from "@/services/executivestats";
+import {
+  assignOfferToLead,
+  assignOffersToLeads,
+  getExecutiveOffers,
+} from "@/services/executivestats";
 import { createLead, updateLead } from "@/services/leads";
 import {
   type Lead,
@@ -134,16 +138,28 @@ export default function ExecutiveLeadsPage() {
   };
 
   const handleBulkAssign = async (offerIds: string[], leadIds: string[]) => {
-    const pairs = offerIds.flatMap((offerId) =>
-      leadIds.map((leadId) => ({ offerId, leadId })),
-    );
-
     const results = await Promise.allSettled(
-      pairs.map((pair) => assignOfferToLead(pair)),
+      offerIds.map((offerId) => assignOffersToLeads({ offerId, leadIds })),
     );
 
-    const successCount = results.filter((r) => r.status === "fulfilled").length;
-    const failureCount = results.filter((r) => r.status === "rejected").length;
+    const successCount = results.reduce(
+      (count, result) =>
+        result.status === "fulfilled"
+          ? count + result.value.assignedCount
+          : count,
+      0,
+    );
+    const skippedCount = results.reduce(
+      (count, result) =>
+        result.status === "fulfilled"
+          ? count + result.value.skippedCount
+          : count,
+      0,
+    );
+    const rejectedCount = results.filter(
+      (result) => result.status === "rejected",
+    ).length;
+    const failureCount = skippedCount + rejectedCount * leadIds.length;
 
     return { successCount, failureCount };
   };
@@ -160,7 +176,6 @@ export default function ExecutiveLeadsPage() {
       toast.error(
         error instanceof Error ? error.message : "Failed to assign offer.",
       );
-      throw error;
     }
   };
 
