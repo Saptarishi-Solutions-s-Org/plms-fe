@@ -28,6 +28,15 @@ export const assignOfferToExecutive = (payload: {
     body: JSON.stringify(payload),
   });
 
+export const bulkAssignOffersToExecutives = (payload: {
+  offerIds: string[];
+  executiveIds: string[];
+}) =>
+  api("/odata/v4/manager-dashboard/bulkAssignOffersToExecutives", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+
 export const getExecutiveOverview = () =>
   api("/odata/v4/manager-dashboard/getExecutiveOverview()");  
 

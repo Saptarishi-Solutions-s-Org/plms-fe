@@ -31,6 +31,15 @@ export const updateLead = (payload: { id: string } & LeadPayload) =>
     body: JSON.stringify(payload),
   });
 
+export const bulkAssignLeads = (payload: {
+  leadIds: string[];
+  assignedTo: string;
+}) =>
+  api("/odata/v4/lead/bulkAssignLeads", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+
 export const exportLeads = () =>
   api("/odata/v4/lead/exportLeads", { method: "POST" });
 
