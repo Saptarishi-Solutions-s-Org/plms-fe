@@ -220,9 +220,9 @@ export function BulkLeadActionsDrawer({
                       />
                     </TableHead>
                     <TableHead>Lead Name</TableHead>
-                    <TableHead>Email</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Assigned To</TableHead>
+                    <TableHead className="w-72">Email</TableHead>
+                    <TableHead className="w-28">Status</TableHead>
+                    <TableHead className="w-44">Assigned To</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -280,14 +280,23 @@ export function BulkLeadActionsDrawer({
                               onClick={(e) => e.stopPropagation()}
                             />
                           </TableCell>
-                          <TableCell className="font-medium text-gray-800">
+                          <TableCell
+                            className="max-w-0 truncate font-medium text-gray-800"
+                            title={lead.name}
+                          >
                             {lead.name}
                           </TableCell>
-                          <TableCell className="text-gray-600">
+                          <TableCell
+                            className="max-w-0 truncate text-gray-600"
+                            title={lead.email}
+                          >
                             {lead.email}
                           </TableCell>
                           <TableCell>{lead.status || "-"}</TableCell>
-                          <TableCell className="text-gray-600 text-center">
+                          <TableCell
+                            className="max-w-0 truncate text-center text-gray-600"
+                            title={lead.assignedToName}
+                          >
                             {lead.assignedToName || "-"}
                           </TableCell>
                         </TableRow>
