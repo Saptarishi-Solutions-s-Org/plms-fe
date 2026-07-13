@@ -241,7 +241,7 @@ export default function LoginForm() {
 
               <div className="relative">
                 <Input
-                  placeholder="*******"
+                  placeholder="Enter Password"
                   type={showPassword ? "text" : "password"}
                   className="h-11 rounded-xl border-emerald-950/15 bg-[#fbfefb] pr-10"
                   value={password}
