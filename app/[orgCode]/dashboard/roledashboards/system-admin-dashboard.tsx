@@ -233,7 +233,7 @@ export default function SystemAdminDashboard() {
                 {modules.length ? (
                   modules.map((module) => (
                     <TableRow key={module}>
-                      <TableCell className="text-xs sm:text-sm whitespace-nowrap capitalize font-medium">
+                      <TableCell className="text-xs sm:text-sm whitespace-nowrap font-medium">
                         {module}
                       </TableCell>
 

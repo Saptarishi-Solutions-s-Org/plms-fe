@@ -239,9 +239,7 @@ export default function OrganizationDetailsPage() {
     "import",
     "export",
   ];
-
-  const format = (text: string) =>
-    text ? text.charAt(0).toUpperCase() + text.slice(1) : "";
+  
 
   const display = (value: unknown) => {
     return value ? String(value) : "No Data";
@@ -463,7 +461,7 @@ export default function OrganizationDetailsPage() {
                 key={r.id}
                 className="px-3 py-2 rounded-md bg-gray-50 text-sm font-medium"
               >
-                {format(r.name)}
+                {r.name}
               </div>
             ))}
           </CardContent>
@@ -480,7 +478,7 @@ export default function OrganizationDetailsPage() {
                 key={m.name}
                 className="px-3 py-2 rounded-md bg-gray-50 text-sm font-medium"
               >
-                {format(m.name)}
+                {m.name}
               </div>
             ))}
           </CardContent>
@@ -512,7 +510,7 @@ export default function OrganizationDetailsPage() {
             <SelectContent>
               {rolesList.map((r) => (
                 <SelectItem key={r} value={r}>
-                  {format(r)}
+                  {r}
                 </SelectItem>
               ))}
             </SelectContent>
@@ -537,7 +535,7 @@ export default function OrganizationDetailsPage() {
                   moduleKeys.map((module) => (
                     <TableRow key={module}>
                       <TableCell className="capitalize font-medium">
-                        {format(module)}
+                        {module}
                       </TableCell>
 
                       {permissionList.map((perm) => {
