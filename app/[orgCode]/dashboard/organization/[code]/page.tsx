@@ -552,19 +552,8 @@ export default function OrganizationDetailsPage() {
                           <TableCell key={perm} className="text-center">
                             <Checkbox
                               checked={checked}
-                              disabled={
-                                !isEditingPermissions ||
-                                !selectedRoleIsAdmin ||
-                                !permissionId ||
-                                isSavingPermissions
-                              }
-                              onCheckedChange={(nextChecked) => {
-                                if (!permission) return;
-                                handlePermissionChange(
-                                  permission,
-                                  nextChecked === true,
-                                );
-                              }}
+                              className="pointer-events-none"
+                              tabIndex={-1}
                             />
                           </TableCell>
                         );
@@ -621,7 +610,7 @@ export default function OrganizationDetailsPage() {
                   moduleKeys.map((module) => (
                     <TableRow key={module}>
                       <TableCell className="capitalize font-medium">
-                        {format(module)}
+                        {module}
                       </TableCell>
 
                       {permissionList.map((perm) => {
