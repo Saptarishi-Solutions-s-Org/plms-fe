@@ -239,7 +239,7 @@ export default function OrganizationDetailsPage() {
     "import",
     "export",
   ];
-  
+
 
   const display = (value: unknown) => {
     return value ? String(value) : "No Data";
@@ -396,7 +396,7 @@ export default function OrganizationDetailsPage() {
               <span
                 className={`h-2.5 w-2.5 rounded-full animate-pulse ${
                   organization.is_active ? "bg-green-500" : "bg-red-500"
-                }`}
+                  }`}
               />
             </div>
           </div>
@@ -486,7 +486,7 @@ export default function OrganizationDetailsPage() {
       </div>
 
       <Card>
-        <CardHeader className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle>Organization Permissions</CardTitle>
 
           {canEditAdminPermissions && (
@@ -496,7 +496,7 @@ export default function OrganizationDetailsPage() {
               size="sm"
               onClick={openPermissionEditor}
             >
-              <Pencil className="h-4 w-4" />
+              <Pencil className="mr-2 h-4 w-4" />
               Edit
             </Button>
           )}
