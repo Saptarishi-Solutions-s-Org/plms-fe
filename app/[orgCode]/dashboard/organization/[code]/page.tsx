@@ -8,6 +8,13 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
   Table,
   TableBody,
   TableCell,
@@ -22,11 +29,21 @@ import {
   SelectContent,
   SelectItem,
 } from "@/components/ui/select";
+import { ActionConfirmationDialog } from "@/components/commoncomponents/action-confirmation-dialog";
 
-import { Building2, Plus, MoreHorizontal, RefreshCw } from "lucide-react";
+import {
+  Building2,
+  MoreHorizontal,
+  Pencil,
+  Plus,
+  RefreshCw,
+  Save,
+  X,
+} from "lucide-react";
 import { toast } from "sonner";
 
 import { getOrganizationByCode } from "@/services/organization";
+import { updateOrganizationAdminPermissions } from "@/services/systemAdmin";
 import { getAdminUsers } from "@/services/user";
 import UserModal from "@/components/commoncomponents/user/userModal";
 
@@ -45,9 +62,14 @@ import type {
   OrganizationAdminUser,
   OrganizationDetailResponse,
   OrganizationPermission,
+  OrganizationPermissionMatrix,
   OrganizationRoleMatrix,
 } from "@/types/organization";
+import type { UpdateAdminPermission } from "@/types/system-admin";
 import { toISTDate } from "@/lib/time";
+import { getUser, type AuthUser } from "@/lib/auth";
+
+const normalize = (value?: string | null) => value?.toLowerCase().trim() || "";
 
 export default function OrganizationDetailsPage() {
   const { code } = useParams();
@@ -56,7 +78,19 @@ export default function OrganizationDetailsPage() {
   const [data, setData] = useState<OrganizationDetailResponse | null>(null);
   const [isInitialLoading, setIsInitialLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [isEditingPermissions, setIsEditingPermissions] = useState(false);
+  const [isSavingPermissions, setIsSavingPermissions] = useState(false);
+  const [showPermissionConfirmation, setShowPermissionConfirmation] =
+    useState(false);
+  const [
+    pendingAdminPermissionChanges,
+    setPendingAdminPermissionChanges,
+  ] = useState<UpdateAdminPermission[]>([]);
   const [selectedRole, setSelectedRole] = useState("");
+  const [permissionDraft, setPermissionDraft] = useState<
+    Record<string, boolean>
+  >({});
+  const [user, setUser] = useState<AuthUser | null>(() => getUser());
 
   const [users, setUsers] = useState<OrganizationAdminUser[]>([]);
   const [openUser, setOpenUser] = useState(false);
@@ -104,6 +138,16 @@ export default function OrganizationDetailsPage() {
   }, [loadOrganization]);
 
   useEffect(() => {
+    const handleAuthChanged = () => {
+      setUser(getUser());
+    };
+
+    window.addEventListener("LMA-auth-changed", handleAuthChanged);
+    return () =>
+      window.removeEventListener("LMA-auth-changed", handleAuthChanged);
+  }, []);
+
+  useEffect(() => {
     return subscribeRealtime<OrganizationDetailChangedPayload>(
       ORGANIZATION_DETAIL_CHANGED,
       (event) => {
@@ -142,6 +186,21 @@ export default function OrganizationDetailsPage() {
     );
   }, [permissions]);
 
+  const permissionMatrix = useMemo<OrganizationPermissionMatrix>(() => {
+    return permissions.reduce<OrganizationPermissionMatrix>(
+      (matrix, permission: OrganizationPermission) => {
+        if (!matrix[permission.role]) matrix[permission.role] = {};
+        if (!matrix[permission.role][permission.module]) {
+          matrix[permission.role][permission.module] = {};
+        }
+        matrix[permission.role][permission.module][permission.permission] =
+          permission;
+        return matrix;
+      },
+      {},
+    );
+  }, [permissions]);
+
   const rolesList = useMemo(() => Object.keys(roleMatrix), [roleMatrix]);
 
   useEffect(() => {
@@ -151,7 +210,26 @@ export default function OrganizationDetailsPage() {
   }, [rolesList, selectedRole]);
 
   const currentRole = roleMatrix[selectedRole] || {};
+  const currentRolePermissions = permissionMatrix[selectedRole] || {};
   const moduleKeys = Object.keys(currentRole);
+  const selectedOrganizationRole = roles.find(
+    (role) => normalize(role.name) === normalize(selectedRole),
+  );
+  const selectedOrganizationRoleId =
+    selectedOrganizationRole?.id ||
+    permissions.find((permission) => normalize(permission.role) === "admin")
+      ?.orgRoleId;
+  const ROLE_UPDATE_PERMISSIONS = ["*", "update", "edit", "updation"];
+  const rolesPermissions = Object.entries(user?.permissions || {})
+    .filter(([module]) => ["roles", "role"].includes(normalize(module)))
+    .flatMap(([, perms]) => perms ?? []);
+  const canUpdateRoles =
+    normalize(user?.role) === "system admin" &&
+    rolesPermissions.some((permission) =>
+      ROLE_UPDATE_PERMISSIONS.includes(normalize(permission)),
+    );
+  const selectedRoleIsAdmin = normalize(selectedRole) === "admin";
+  const canEditAdminPermissions = canUpdateRoles && selectedRoleIsAdmin;
 
   const permissionList = [
     "create",
@@ -161,10 +239,140 @@ export default function OrganizationDetailsPage() {
     "import",
     "export",
   ];
-  
+
 
   const display = (value: unknown) => {
     return value ? String(value) : "No Data";
+  };
+
+  const getPermissionId = useCallback(
+    (permission?: OrganizationPermission) => {
+      const rawId = permission?.orgRoleModulePermissionId;
+      if (rawId === null || rawId === undefined) return undefined;
+      const idStr = String(rawId).trim();
+      return idStr ? idStr : undefined;
+    },
+    [],
+  );
+
+  const resetPermissionDraft = useCallback(() => {
+    const draft = permissions.reduce<Record<string, boolean>>(
+      (nextDraft, permission) => {
+        const permissionId = getPermissionId(permission);
+
+        if (normalize(permission.role) === "admin" && permissionId) {
+          nextDraft[permissionId] = permission.access;
+        }
+
+        return nextDraft;
+      },
+      {},
+    );
+
+    setPermissionDraft(draft);
+  }, [getPermissionId, permissions]);
+
+  useEffect(() => {
+    resetPermissionDraft();
+  }, [resetPermissionDraft]);
+
+  useEffect(() => {
+    setIsEditingPermissions(false);
+    setShowPermissionConfirmation(false);
+    setPendingAdminPermissionChanges([]);
+    resetPermissionDraft();
+  }, [resetPermissionDraft, selectedRole]);
+
+  const openPermissionEditor = () => {
+    setPendingAdminPermissionChanges([]);
+    setShowPermissionConfirmation(false);
+    setIsEditingPermissions(true);
+    resetPermissionDraft();
+  };
+
+  const closePermissionEditor = () => {
+    if (isSavingPermissions) return;
+    setIsEditingPermissions(false);
+    setShowPermissionConfirmation(false);
+    setPendingAdminPermissionChanges([]);
+    resetPermissionDraft();
+  };
+
+  const handlePermissionChange = (
+    permission: OrganizationPermission,
+    checked: boolean,
+  ) => {
+    const permissionId = getPermissionId(permission);
+    if (!permissionId) return;
+
+    setPermissionDraft((current) => ({
+      ...current,
+      [permissionId]: checked,
+    }));
+  };
+
+  const handleSavePermissions = () => {
+    if (!organization?.id || !selectedOrganizationRoleId) {
+      toast.error("Admin organization role id is missing");
+      return;
+    }
+
+    const changedPermissions = permissions
+      .filter((permission) => {
+        const permissionId = getPermissionId(permission);
+        return (
+          normalize(permission.role) === "admin" &&
+          permissionId &&
+          permissionDraft[permissionId] !== permission.access
+        );
+      })
+      .map((permission) => {
+        const permissionId = getPermissionId(permission);
+        return {
+          orgRoleModulePermissionId: permissionId as string,
+          access: permissionDraft[permissionId as string],
+        };
+      });
+
+    if (!changedPermissions.length) {
+      closePermissionEditor();
+      return;
+    }
+
+    setPendingAdminPermissionChanges(changedPermissions);
+    setShowPermissionConfirmation(true);
+  };
+
+  const confirmSavePermissions = async () => {
+    if (!organization?.id || !selectedOrganizationRoleId) {
+      toast.error("Admin organization role id is missing");
+      return;
+    }
+
+    setIsSavingPermissions(true);
+
+    try {
+      const result = await updateOrganizationAdminPermissions({
+        organizationId: organization.id,
+        orgRoleId: selectedOrganizationRoleId,
+        permissions: pendingAdminPermissionChanges,
+      });
+
+      toast.success(
+        result.updatedCount > 0
+          ? "Admin permissions updated"
+          : "No permissions changed",
+      );
+      setShowPermissionConfirmation(false);
+      setPendingAdminPermissionChanges([]);
+      setIsEditingPermissions(false);
+      await loadOrganization("realtime");
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to update admin permissions");
+    } finally {
+      setIsSavingPermissions(false);
+    }
   };
 
   if (isInitialLoading) return <GlobalLoader />;
@@ -188,7 +396,7 @@ export default function OrganizationDetailsPage() {
               <span
                 className={`h-2.5 w-2.5 rounded-full animate-pulse ${
                   organization.is_active ? "bg-green-500" : "bg-red-500"
-                }`}
+                  }`}
               />
             </div>
           </div>
@@ -278,8 +486,20 @@ export default function OrganizationDetailsPage() {
       </div>
 
       <Card>
-        <CardHeader>
+        <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle>Organization Permissions</CardTitle>
+
+          {canEditAdminPermissions && (
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={openPermissionEditor}
+            >
+              <Pencil className="mr-2 h-4 w-4" />
+              Edit
+            </Button>
+          )}
         </CardHeader>
 
         <CardContent className="space-y-4">
@@ -318,13 +538,26 @@ export default function OrganizationDetailsPage() {
                         {module}
                       </TableCell>
 
-                      {permissionList.map((perm) => (
-                        <TableCell key={perm} className="text-center">
-                          <Checkbox
-                            checked={currentRole?.[module]?.[perm] || false}
-                          />
-                        </TableCell>
-                      ))}
+                      {permissionList.map((perm) => {
+                        const permission =
+                          currentRolePermissions[module]?.[perm];
+                        const permissionId = getPermissionId(permission);
+                        const checked = permissionId
+                          ? (permissionDraft[permissionId] ??
+                            permission?.access ??
+                            false)
+                          : currentRole?.[module]?.[perm] || false;
+
+                        return (
+                          <TableCell key={perm} className="text-center">
+                            <Checkbox
+                              checked={checked}
+                              className="pointer-events-none"
+                              tabIndex={-1}
+                            />
+                          </TableCell>
+                        );
+                      })}
                     </TableRow>
                   ))
                 ) : (
@@ -342,6 +575,126 @@ export default function OrganizationDetailsPage() {
           </div>
         </CardContent>
       </Card>
+
+      <Dialog
+        open={isEditingPermissions}
+        onOpenChange={(open) => {
+          if (!open) closePermissionEditor();
+        }}
+      >
+        <DialogContent className="sm:max-w-5xl">
+          <DialogHeader>
+            <DialogTitle>Update Admin Permissions</DialogTitle>
+          </DialogHeader>
+
+          <div className="max-h-[65vh] overflow-auto rounded-lg border border-gray-200 bg-white shadow-sm">
+            <Table>
+              <TableHeader className="bg-[#7677F41A] border-b border-gray-200">
+                <TableRow>
+                  <TableHead className="text-xs sm:text-sm whitespace-nowrap">
+                    Feature
+                  </TableHead>
+                  {permissionList.map((permission) => (
+                    <TableHead
+                      key={permission}
+                      className="text-xs sm:text-sm whitespace-nowrap text-center capitalize"
+                    >
+                      {permission}
+                    </TableHead>
+                  ))}
+                </TableRow>
+              </TableHeader>
+
+              <TableBody>
+                {moduleKeys.length ? (
+                  moduleKeys.map((module) => (
+                    <TableRow key={module}>
+                      <TableCell className="capitalize font-medium">
+                        {module}
+                      </TableCell>
+
+                      {permissionList.map((perm) => {
+                        const permission =
+                          currentRolePermissions[module]?.[perm];
+                        const permissionId = permission
+                          ? getPermissionId(permission)
+                          : undefined;
+                        const checked = permissionId
+                          ? (permissionDraft[permissionId] ??
+                            permission?.access ??
+                            false)
+                          : currentRole?.[module]?.[perm] || false;
+
+                        return (
+                          <TableCell key={perm} className="text-center">
+                            {permission ? (
+                              <Checkbox
+                                checked={checked}
+                                disabled={isSavingPermissions || !permissionId}
+                                onCheckedChange={(nextChecked) => {
+                                  if (!permission) return;
+                                  handlePermissionChange(
+                                    permission,
+                                    nextChecked === true,
+                                  );
+                                }}
+                              />
+                            ) : (
+                              <span className="text-muted-foreground">-</span>
+                            )}
+                          </TableCell>
+                        );
+                      })}
+                    </TableRow>
+                  ))
+                ) : (
+                  <TableRow>
+                    <TableCell
+                      colSpan={permissionList.length + 1}
+                      className="text-center py-6"
+                    >
+                      No permissions configured
+                    </TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
+          </div>
+
+          <DialogFooter>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={closePermissionEditor}
+              disabled={isSavingPermissions}
+            >
+              <X className="h-4 w-4" />
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              onClick={handleSavePermissions}
+              disabled={isSavingPermissions || !moduleKeys.length}
+            >
+              <Save className="h-4 w-4" />
+              {isSavingPermissions ? "Saving" : "Save"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <ActionConfirmationDialog
+        open={showPermissionConfirmation}
+        onOpenChange={(open) => {
+          if (!open) setShowPermissionConfirmation(false);
+        }}
+        onConfirm={confirmSavePermissions}
+        title="Change permissions?"
+        description="Are you sure you want to change these permissions?"
+        confirmText="Yes, change"
+        cancelText="No"
+        isLoading={isSavingPermissions}
+      />
 
       <Card>
         <CardHeader>

@@ -56,9 +56,16 @@ export type OrganizationModule = {
 };
 
 export type OrganizationPermission = {
+  organizationId?: string;
+  orgRoleId?: string;
+  roleId?: string;
   role: string;
+  moduleId?: string;
   module: string;
+  permissionId?: string;
   permission: string;
+  rmpId?: string;
+  orgRoleModulePermissionId?: string;
   access: boolean;
 };
 
@@ -87,4 +94,9 @@ export type OrganizationAdminUser = {
 export type OrganizationRoleMatrix = Record<
   string,
   Record<string, Record<string, boolean>>
+>;
+
+export type OrganizationPermissionMatrix = Record<
+  string,
+  Record<string, Record<string, OrganizationPermission>>
 >;
