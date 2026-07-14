@@ -240,10 +240,10 @@ export default function SystemAdminDashboard() {
                       {PERMISSIONS.map((permission) => (
                         <TableCell key={permission} className="text-center">
                           <Checkbox
-                            checked={
+                            checked={Boolean(
                               currentRole?.modules[module]?.[permission] ||
                               false
-                            }
+                            )}
                           />
                         </TableCell>
                       ))}
