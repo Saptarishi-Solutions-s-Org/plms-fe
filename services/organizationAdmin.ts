@@ -3,6 +3,9 @@ import { api } from "@/lib/api";
 export const getOrganizationAdminDashboard = () =>
   api("/odata/v4/organization-admin/getAllUsers()");
 
+export const getOrganizationAdminPermissions = () =>
+  api("/odata/v4/organization-admin/getPermissions()");
+
 
 export const getReportingManagers = () =>
   api("/odata/v4/organization-admin/getAllManagers()");

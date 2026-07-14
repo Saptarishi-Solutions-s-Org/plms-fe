@@ -5,6 +5,7 @@ import {
   Gift,
   Users,
   FilePen,
+  ShieldCheck,
 } from "lucide-react";
 
 import { MenuGroup } from "@/types/menu";
@@ -36,6 +37,14 @@ export const MENU_CONFIG: MenuGroup[] = [
         modules: ["organization"],
         permissions: ["view"],
         roles: ["System Admin"],
+      },
+      {
+        href: "/permissions",
+        icon: ShieldCheck,
+        label: "Permissions",
+        modules: ["user"],
+        permissions: ["view"],
+        roles: ["Admin"],
       },
       {
         href: "/executives",
