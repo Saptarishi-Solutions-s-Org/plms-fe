@@ -84,6 +84,11 @@ export type OrganizationAdminUser = {
   is_active: boolean;
 };
 
+export type OrganizationAdminPermissionsResponse = {
+  roles: OrganizationRole[];
+  permissions: OrganizationPermission[];
+};
+
 export type OrganizationRoleMatrix = Record<
   string,
   Record<string, Record<string, boolean>>
