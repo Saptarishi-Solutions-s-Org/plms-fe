@@ -29,10 +29,10 @@ const STATUS_BADGE: Record<string, string> = {
 
 const RecentLeadsCard = ({ title, leads, onViewAll }: RecentLeadsProps) => {
   return (
-    <Card className="w-full h-[420px] rounded-[2rem] border border-gray-200 shadow-md flex flex-col">
+    <Card className="flex h-[420px] w-full flex-col rounded-lg border border-gray-200 shadow-sm">
       {/* Header */}
-      <CardHeader className="flex flex-row items-start justify-between gap-4 space-y-0 px-6 pt-6">
-        <CardTitle className="text-[1.7rem] font-bold tracking-tight text-slate-900">
+      <CardHeader className="flex flex-row items-start justify-between gap-4 space-y-0 px-5 pt-5">
+        <CardTitle className="text-lg font-semibold text-gray-900">
           {title}
         </CardTitle>
 
@@ -40,7 +40,7 @@ const RecentLeadsCard = ({ title, leads, onViewAll }: RecentLeadsProps) => {
           <Button
             type="button"
             onClick={onViewAll}
-            className="bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold px-5 py-2 rounded-xl transition"
+            className="rounded-full bg-blue-600 px-4 text-sm font-semibold text-white hover:bg-blue-700"
           >
             <>
               View all
@@ -50,8 +50,8 @@ const RecentLeadsCard = ({ title, leads, onViewAll }: RecentLeadsProps) => {
         )}
       </CardHeader>
 
-      <CardContent className="px-5 pb-5 flex-1 overflow-hidden">
-        <div className="h-full overflow-hidden rounded-lg border border-2 bg-white">
+      <CardContent className="flex-1 overflow-hidden px-5 pb-5">
+        <div className="h-full overflow-hidden rounded-lg border border-gray-200 bg-white">
           <Table>
             <TableHeader className="bg-[#7677F41A] table w-full table-fixed ">
               <TableRow className="hover:bg-transparent">

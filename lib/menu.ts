@@ -70,6 +70,7 @@ export const MENU_CONFIG: MenuGroup[] = [
         roles: [
           "Executive",
           "Manager",
+          "Admin"
         ],
       },
 

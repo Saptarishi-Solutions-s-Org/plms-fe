@@ -3,13 +3,15 @@
 import Link from "next/link";
 import { ArrowLeft, BriefcaseBusiness, Download, Users } from "lucide-react";
 import { endOfDay, startOfDay } from "date-fns";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { getUser } from "@/lib/auth";
+import TablePaginationFooter from "@/components/commoncomponents/table-pagination-footer";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardTitle } from "@/components/ui/card";
 import { DateRangeFilter } from "@/components/commoncomponents/daterange";
 import type { DateRange } from "@/components/commoncomponents/react-day-picker";
 import { useExecutiveLeadsExport } from "@/hooks/export";
+import { useUrlPagination } from "@/hooks/use-url-pagination";
 
 import {
   Table,
@@ -26,6 +28,7 @@ import type {
   LeadWithStatsApiRow,
   LeadsWithStatsResponse,
 } from "@/types/org-reports";
+import { createPaginationMeta } from "@/types/pagination";
 import { getLeadsWithStats } from "@/services/leads";
 
 
@@ -84,10 +87,27 @@ export default function ExecutiveLeadsPage({
   summary,
   leads,
 }: ExecutiveLeadsProps) {
+  const { page, limit, setPage, setLimit } = useUrlPagination();
   const [leadRows, setLeadRows] = useState(leads || []);
   const [dateRange, setDateRange] = useState<DateRange>();
   const [appliedDateRange, setAppliedDateRange] = useState<DateRange>();
   const { handleExport } = useExecutiveLeadsExport(leadRows);
+
+  const pagination = useMemo(
+    () =>
+      createPaginationMeta({
+        page,
+        limit,
+        total: leadRows.length,
+      }),
+    [leadRows.length, limit, page],
+  );
+
+  const paginatedLeadRows = useMemo(() => {
+    const startIndex = (pagination.page - 1) * pagination.limit;
+
+    return leadRows.slice(startIndex, startIndex + pagination.limit);
+  }, [leadRows, pagination.limit, pagination.page]);
 
   const [leadSummary, setLeadSummary] = useState(
     summary || {
@@ -126,6 +146,23 @@ export default function ExecutiveLeadsPage({
     fetchLeadStats();
   }, [appliedDateRange, executiveId]);
 
+  useEffect(() => {
+    if (page > pagination.totalPages) {
+      setPage(pagination.totalPages);
+    }
+  }, [page, pagination.totalPages, setPage]);
+
+  const handleClearDateRange = () => {
+    setDateRange(undefined);
+    setAppliedDateRange(undefined);
+    setPage(1);
+  };
+
+  const handleApplyDateRange = () => {
+    setAppliedDateRange(dateRange);
+    setPage(1);
+  };
+
   const summaryCards = [
     {
       label: "Total Created",
@@ -148,8 +185,8 @@ export default function ExecutiveLeadsPage({
   ];
 
   return (
-    <div className="min-h-screen w-full bg-slate-50 px-4 py-4 sm:px-6">
-      <div className="flex w-full flex-col gap-6">
+    <div className="w-full h-full p-4 sm:p-5 space-y-5">
+      <div className="flex w-full flex-col gap-5">
         <header className="flex flex-col gap-3 border-b border-slate-200 pb-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-4">
             <Button
@@ -167,9 +204,12 @@ export default function ExecutiveLeadsPage({
             </Button>
             <div className="h-6 w-px bg-slate-200" />
             <div>
-              <h1 className="text-xl font-bold text-slate-900">
+              <h1 className="text-lg font-semibold text-gray-900 sm:text-2xl">
                 Report Details
               </h1>
+              <p className="text-xs text-gray-500 sm:text-sm">
+                Review executive lead activity and performance
+              </p>
             </div>
           </div>
         </header>
@@ -198,7 +238,7 @@ export default function ExecutiveLeadsPage({
         <section className="w-full">
           <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div>
-              <h2 className="text-[1.7rem] font-bold tracking-tight text-slate-900">
+              <h2 className="text-lg font-semibold text-gray-900 sm:text-xl">
                 Detailed Breakdown - Leads Created
               </h2>
               <p className="mt-1 text-sm text-slate-500">
@@ -210,37 +250,42 @@ export default function ExecutiveLeadsPage({
                 value={dateRange}
                 onChange={setDateRange}
                 placeholder="Select date range"
-                className="h-10 w-full justify-between rounded-xl bg-white px-3 font-normal sm:w-52"
+                className="h-10 w-full justify-between rounded-md bg-white px-3 font-normal sm:w-52"
               />
               <Button
                 type="button"
                 variant="outline"
-                onClick={() => {
-                  setDateRange(undefined);
-                  setAppliedDateRange(undefined);
-                }}
-                className="h-10 rounded-xl px-4"
+                onClick={handleClearDateRange}
+                className="h-10 rounded-md px-4"
               >
                 Clear
               </Button>
               <Button
                 type="button"
-                onClick={() => setAppliedDateRange(dateRange)}
+                onClick={handleApplyDateRange}
                 aria-pressed={appliedDateRange === dateRange}
-                className="h-10 rounded-xl bg-blue-600 px-4 text-white hover:bg-blue-700"
+                className="h-10 rounded-md bg-blue-600 px-4 text-white hover:bg-blue-700"
               >
                 Apply
               </Button>
               <Button
                 type="button"
                 onClick={handleExport}
-                className="h-10 rounded-xl bg-green-600 px-4 text-white hover:bg-green-700"
+                className="h-10 rounded-md bg-green-600 px-4 text-white hover:bg-green-700"
               >
                 <Download className="size-4" />
                 Export
               </Button>
             </div>
           </div>
+
+          <TablePaginationFooter
+            pagination={pagination}
+            onPageChange={setPage}
+            onLimitChange={setLimit}
+            totalLabel="leads"
+            placement="top"
+          />
 
           <div className="overflow-x-auto rounded-lg border border-gray-200 bg-white shadow-sm">
             <Table>
@@ -275,10 +320,10 @@ export default function ExecutiveLeadsPage({
                     </TableCell>
                   </TableRow>
                 ) : (
-                  leadRows.map((lead, index) => (
+                  paginatedLeadRows.map((lead, index) => (
                     <TableRow key={lead.id || `${lead.leadName}-${index}`}>
                       <TableCell className="w-[80px] text-gray-600">
-                        {index + 1}
+                        {(pagination.page - 1) * pagination.limit + index + 1}
                       </TableCell>
                       <TableCell
                         title={lead.leadName}
@@ -300,6 +345,13 @@ export default function ExecutiveLeadsPage({
                 )}
               </TableBody>
             </Table>
+
+            <TablePaginationFooter
+              pagination={pagination}
+              onPageChange={setPage}
+              onLimitChange={setLimit}
+              totalLabel="leads"
+            />
           </div>
         </section>
       </div>

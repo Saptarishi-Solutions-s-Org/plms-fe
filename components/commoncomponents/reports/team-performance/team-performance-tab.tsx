@@ -21,6 +21,7 @@ import {
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardTitle } from "@/components/ui/card";
+import TablePaginationFooter from "@/components/commoncomponents/table-pagination-footer";
 import { Input } from "@/components/ui/input";
 import { Progress } from "@/components/ui/progress";
 import {
@@ -32,8 +33,10 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { useExecutiveExport } from "@/hooks/export";
+import { useUrlPagination } from "@/hooks/use-url-pagination";
 import { getExecutiveUsers } from "@/services/leads";
 import { getExecutivePerformance } from "@/services/managerdashboard";
+import { createPaginationMeta } from "@/types/pagination";
 
 const fallbackStatIcons = [Users, Award, FileText, CheckCircle, Percent];
 const fallbackStatColors = [
@@ -84,6 +87,7 @@ export default function TeamPerformanceTab({
   rows,
   orgCode,
 }: TeamPerformanceProps) {
+  const { page, limit, setPage, setLimit } = useUrlPagination();
   const [executives, setExecutives] = useState(rows);
   const [loading, setLoading] = useState(false);
   const [search, setSearch] = useState("");
@@ -153,12 +157,38 @@ export default function TeamPerformanceTab({
   const handleClearSearch = () => {
     setSearch("");
     setAppliedSearch("");
+    setPage(1);
   };
 
   const performanceRows = useMemo(() => {
     return [...filteredRows].sort(sortByPerformance);
   }, [filteredRows]);
+  const pagination = useMemo(
+    () =>
+      createPaginationMeta({
+        page,
+        limit,
+        total: performanceRows.length,
+      }),
+    [limit, page, performanceRows.length],
+  );
+  const paginatedPerformanceRows = useMemo(() => {
+    const startIndex = (pagination.page - 1) * pagination.limit;
+
+    return performanceRows.slice(startIndex, startIndex + pagination.limit);
+  }, [pagination.limit, pagination.page, performanceRows]);
   const { handleExport } = useExecutiveExport(performanceRows);
+
+  useEffect(() => {
+    if (page > pagination.totalPages) {
+      setPage(pagination.totalPages);
+    }
+  }, [page, pagination.totalPages, setPage]);
+
+  const handleApplySearch = () => {
+    setAppliedSearch(search);
+    setPage(1);
+  };
 
   const displayStats = useMemo(() => {
     if (stats.length > 0) {
@@ -218,7 +248,7 @@ export default function TeamPerformanceTab({
   }, [executives, stats]);
 
   return (
-    <div className="w-full space-y-6">
+    <div className="w-full space-y-5">
       <section className="grid w-full grid-cols-[repeat(auto-fit,minmax(240px,1fr))] gap-4">
         {displayStats.map(({ label, value, Icon, color }) => {
           const isTextValue = label === "Top Performer";
@@ -257,7 +287,7 @@ export default function TeamPerformanceTab({
       <section className="w-full">
         <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h2 className="text-[1.7rem] font-bold tracking-tight text-slate-900">
+              <h2 className="text-lg font-semibold text-gray-900 sm:text-xl">
               Team Breakdown
             </h2>
             <p className="mt-1 text-sm text-slate-500">
@@ -272,37 +302,45 @@ export default function TeamPerformanceTab({
                 value={search}
                 onChange={(event) => setSearch(event.target.value)}
                 onKeyDown={(event) =>
-                  event.key === "Enter" && setAppliedSearch(search)
+                  event.key === "Enter" && handleApplySearch()
                 }
                 placeholder="Search executive..."
-                className="h-10 rounded-xl border-slate-200 bg-white pl-9 text-sm"
+                className="h-10 rounded-md border-gray-200 bg-white pl-9 text-sm"
               />
             </div>
             <Button
               type="button"
               variant="outline"
               onClick={handleClearSearch}
-              className="h-10 rounded-xl px-4"
+              className="h-10 rounded-md px-4"
             >
               Clear
             </Button>
             <Button
               type="button"
-              onClick={() => setAppliedSearch(search)}
-              className="h-10 rounded-xl bg-blue-600 px-4 text-white hover:bg-blue-700"
+              onClick={handleApplySearch}
+              className="h-10 rounded-md bg-blue-600 px-4 text-white hover:bg-blue-700"
             >
               Apply
             </Button>
             <Button
               type="button"
               onClick={handleExport}
-              className="h-10 rounded-xl bg-green-600 px-4 text-white hover:bg-green-700"
+              className="h-10 rounded-md bg-green-600 px-4 text-white hover:bg-green-700"
             >
               <Download className="size-4" />
               Export
             </Button>
           </div>
         </div>
+
+        <TablePaginationFooter
+          pagination={pagination}
+          onPageChange={setPage}
+          onLimitChange={setLimit}
+          totalLabel="executives"
+          placement="top"
+        />
 
         <div className="overflow-x-auto rounded-lg border border-gray-200 bg-white shadow-sm">
           <Table>
@@ -339,7 +377,7 @@ export default function TeamPerformanceTab({
               )}
 
               {!loading &&
-                performanceRows.map((row) => (
+                paginatedPerformanceRows.map((row) => (
                   <TableRow key={row.executiveId || row.executiveName}>
                     <TableCell className="w-[180px]">
                       <p
@@ -405,6 +443,13 @@ export default function TeamPerformanceTab({
               )}
             </TableBody>
           </Table>
+
+          <TablePaginationFooter
+            pagination={pagination}
+            onPageChange={setPage}
+            onLimitChange={setLimit}
+            totalLabel="executives"
+          />
         </div>
       </section>
     </div>

@@ -23,10 +23,10 @@ const CommonOverview = ({
   const max = data.length ? Math.max(...data.map((row) => row.value), 1) : 1;
 
   return (
-    <Card className="w-full h-[420px] rounded-[2rem] border border-gray-200 bg-white shadow-md flex flex-col">
-      <CardHeader className="flex flex-row items-start justify-between gap-4 space-y-0 px-6 pt-6">
+    <Card className="flex h-[420px] w-full flex-col rounded-lg border border-gray-200 bg-white shadow-sm">
+      <CardHeader className="flex flex-row items-start justify-between gap-4 space-y-0 px-5 pt-5">
         <div className="space-y-1">
-          <CardTitle className="text-[1.7rem] font-bold tracking-tight text-slate-900">
+          <CardTitle className="text-lg font-semibold text-gray-900">
             {title}
           </CardTitle>
           {subtitle && <p className="text-sm text-slate-500">{subtitle}</p>}
@@ -35,7 +35,7 @@ const CommonOverview = ({
           <Button
             type="button"
             onClick={onViewDetails}
-            className="bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold px-5 py-2 rounded-xl transition"
+            className="rounded-full bg-blue-600 px-4 text-sm font-semibold text-white hover:bg-blue-700"
           >
             <>
               View All
@@ -45,16 +45,16 @@ const CommonOverview = ({
         )}
       </CardHeader>
 
-      <CardContent className="flex-1 space-y-6 px-6 pb-6 pt-2 overflow-y-auto custom-scrollbar">
+      <CardContent className="custom-scrollbar flex-1 space-y-5 overflow-y-auto px-5 pb-5 pt-2">
         {data.length > 0 ? (
           data.map((row, index) => (
             <div key={row.label} className="space-y-1.5">
               <div className="flex items-center justify-between gap-3">
-                <p className="text-lg font-semibold text-slate-800">
+                <p className="text-sm font-medium text-gray-700">
                   {row.label}
                 </p>
                 <p
-                  className={`text-lg font-bold ${
+                  className={`text-sm font-semibold ${
                     index === data.length - 1
                       ? "text-emerald-600"
                       : "text-slate-900"
