@@ -106,9 +106,6 @@ export default function PermissionsPage() {
     "export",
   ];
 
-  const format = (text: string) =>
-    text ? text.charAt(0).toUpperCase() + text.slice(1) : "";
-
   if (isInitialLoading) return <GlobalLoader />;
   if (!data) return <div className="p-6">No data</div>;
 
@@ -145,7 +142,7 @@ export default function PermissionsPage() {
             <SelectContent>
               {rolesList.map((r) => (
                 <SelectItem key={r} value={r}>
-                  {format(r)}
+                  {r}
                 </SelectItem>
               ))}
             </SelectContent>
@@ -170,7 +167,7 @@ export default function PermissionsPage() {
                   moduleKeys.map((module) => (
                     <TableRow key={module}>
                       <TableCell className="capitalize font-medium">
-                        {format(module)}
+                        {module}
                       </TableCell>
 
                       {permissionList.map((perm) => (
