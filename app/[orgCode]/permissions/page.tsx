@@ -106,9 +106,6 @@ export default function PermissionsPage() {
     "export",
   ];
 
-  // const format = (text: string) =>
-  //   text ? text.charAt(0).toUpperCase() + text.slice(1) : "";
-
   if (isInitialLoading) return <GlobalLoader />;
   if (!data) return <div className="p-6">No data</div>;
 
