@@ -82,10 +82,8 @@ export default function OrganizationDetailsPage() {
   const [isSavingPermissions, setIsSavingPermissions] = useState(false);
   const [showPermissionConfirmation, setShowPermissionConfirmation] =
     useState(false);
-  const [
-    pendingAdminPermissionChanges,
-    setPendingAdminPermissionChanges,
-  ] = useState<UpdateAdminPermission[]>([]);
+  const [pendingAdminPermissionChanges, setPendingAdminPermissionChanges] =
+    useState<UpdateAdminPermission[]>([]);
   const [selectedRole, setSelectedRole] = useState("");
   const [permissionDraft, setPermissionDraft] = useState<
     Record<string, boolean>
@@ -211,7 +209,15 @@ export default function OrganizationDetailsPage() {
 
   const currentRole = roleMatrix[selectedRole] || {};
   const currentRolePermissions = permissionMatrix[selectedRole] || {};
-  const moduleKeys = Object.keys(currentRole);
+  const activeModuleNames = useMemo(
+    () => new Set(modules.map((m) => m.name.toLowerCase().trim())),
+    [modules],
+  );
+  const moduleKeys = useMemo(() => {
+    return Object.keys(currentRole).filter((m) =>
+      activeModuleNames.has(m.toLowerCase().trim()),
+    );
+  }, [currentRole, activeModuleNames]);
   const selectedOrganizationRole = roles.find(
     (role) => normalize(role.name) === normalize(selectedRole),
   );
@@ -220,12 +226,12 @@ export default function OrganizationDetailsPage() {
     permissions.find((permission) => normalize(permission.role) === "admin")
       ?.orgRoleId;
   const ROLE_UPDATE_PERMISSIONS = ["*", "update", "edit", "updation"];
-  const rolesPermissions = Object.entries(user?.permissions || {})
-    .filter(([module]) => ["roles", "role"].includes(normalize(module)))
+  const permissionModulePermissions = Object.entries(user?.permissions || {})
+    .filter(([module]) => ["permission", "permissions"].includes(normalize(module)))
     .flatMap(([, perms]) => perms ?? []);
   const canUpdateRoles =
     normalize(user?.role) === "system admin" &&
-    rolesPermissions.some((permission) =>
+    permissionModulePermissions.some((permission) =>
       ROLE_UPDATE_PERMISSIONS.includes(normalize(permission)),
     );
   const selectedRoleIsAdmin = normalize(selectedRole) === "admin";
@@ -240,20 +246,16 @@ export default function OrganizationDetailsPage() {
     "export",
   ];
 
-
   const display = (value: unknown) => {
     return value ? String(value) : "No Data";
   };
 
-  const getPermissionId = useCallback(
-    (permission?: OrganizationPermission) => {
-      const rawId = permission?.orgRoleModulePermissionId;
-      if (rawId === null || rawId === undefined) return undefined;
-      const idStr = String(rawId).trim();
-      return idStr ? idStr : undefined;
-    },
-    [],
-  );
+  const getPermissionId = useCallback((permission?: OrganizationPermission) => {
+    const rawId = permission?.orgRoleModulePermissionId;
+    if (rawId === null || rawId === undefined) return undefined;
+    const idStr = String(rawId).trim();
+    return idStr ? idStr : undefined;
+  }, []);
 
   const resetPermissionDraft = useCallback(() => {
     const draft = permissions.reduce<Record<string, boolean>>(
@@ -396,7 +398,7 @@ export default function OrganizationDetailsPage() {
               <span
                 className={`h-2.5 w-2.5 rounded-full animate-pulse ${
                   organization.is_active ? "bg-green-500" : "bg-red-500"
-                  }`}
+                }`}
               />
             </div>
           </div>
