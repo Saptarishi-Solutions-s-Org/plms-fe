@@ -5,6 +5,7 @@ import {
   Gift,
   Users,
   FilePen,
+  ShieldCheck,
 } from "lucide-react";
 
 import { MenuGroup } from "@/types/menu";
@@ -38,30 +39,36 @@ export const MENU_CONFIG: MenuGroup[] = [
         roles: ["System Admin"],
       },
       {
+        href: "/dashboard/default-templates",
+        icon: ShieldCheck,
+        label: "Default Templates",
+        modules: ["permission"],
+        permissions: ["view"],
+        roles: ["System Admin"],
+      },
+      {
+        href: "/permissions",
+        icon: ShieldCheck,
+        label: "Permissions",
+        modules: ["permission"],
+        permissions: ["view"],
+        roles: ["Admin"],
+      },
+      {
         href: "/executives",
         icon: Users,
         label: "Executives",
         modules: ["lead"],
         permissions: ["view"],
-        roles: [
-          "Manager",
-        ],
+        roles: ["Manager"],
       },
       {
         href: "/leads",
         icon: UserCheck,
         label: "Leads",
         modules: ["lead"],
-        permissions: [
-          "view",
-          "create",
-          "update",
-          "delete",
-        ],
-        roles: [
-          "Executive",
-          "Manager",
-        ],
+        permissions: ["view", "create", "update", "delete"],
+        roles: ["Executive", "Manager"],
       },
 
       // Manager → View only
@@ -79,14 +86,9 @@ export const MENU_CONFIG: MenuGroup[] = [
         icon: FilePen,
         label: "Reports",
         modules: ["lead"],
-        permissions: [
-          "view",
-        ],
-        roles: [
-          "Manager",
-        ],
+        permissions: ["view"],
+        roles: ["Manager"],
       },
-
 
       // Admin → Full access
       {
@@ -94,16 +96,9 @@ export const MENU_CONFIG: MenuGroup[] = [
         icon: Gift,
         label: "Offers",
         modules: ["offers"],
-        permissions: [
-          "view",
-          "create",
-          "update",
-          "delete",
-        ],
+        permissions: ["view", "create", "update", "delete"],
         roles: ["Admin"],
       },
-
-      
 
       {
         href: "/offers",
@@ -113,8 +108,6 @@ export const MENU_CONFIG: MenuGroup[] = [
         permissions: ["view"],
         roles: ["Executive"],
       },
-
     ],
   },
 ];
-

@@ -3,6 +3,9 @@ import { api } from "@/lib/api";
 export const getOrganizationAdminDashboard = () =>
   api("/odata/v4/organization-admin/getAllUsers()");
 
+export const getOrganizationAdminPermissions = () =>
+  api("/odata/v4/organization-admin/getPermissions()");
+
 
 export const getReportingManagers = () =>
   api("/odata/v4/organization-admin/getAllManagers()");
@@ -73,5 +76,15 @@ export const activateUser = async (userId: string) => {
     body: JSON.stringify({
       userId,
     }),
+  });
+};
+
+export const updateRolePermissions = async (payload: {
+  orgRoleId: string;
+  permissions: { orgRoleModulePermissionId: string; access: boolean }[];
+}) => {
+  return await api("/odata/v4/organization-admin/updateRolePermissions", {
+    method: "POST",
+    body: JSON.stringify(payload),
   });
 };

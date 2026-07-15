@@ -185,7 +185,7 @@ export default function SetPasswordPage() {
               </label>
               <div className="relative">
                 <Input
-                  placeholder="*******"
+                  placeholder="Enter Password"
                   type={showPassword ? "text" : "password"}
                   className="h-11 rounded-xl border-emerald-950/15 bg-[#fbfefb] pr-10"
                   value={form.password}
@@ -215,7 +215,7 @@ export default function SetPasswordPage() {
               </label>
               <div className="relative">
                 <Input
-                  placeholder="*******"
+                  placeholder="Enter Password"
                   type={showConfirm ? "text" : "password"}
                   className="h-11 rounded-xl border-emerald-950/15 bg-[#fbfefb] pr-10"
                   value={form.confirmPassword}
