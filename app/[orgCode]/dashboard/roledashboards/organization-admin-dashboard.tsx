@@ -1,3 +1,5 @@
+"use client";
+
 import AdminCards from "@/components/orgadmindashboard/cards";
 import AdminFilters from "@/components/orgadmindashboard/filters";
 import UserTable from "@/components/orgadmindashboard/userstable";
@@ -23,10 +25,13 @@ import {
   type UserListChangedPayload,
 } from "@/types/realtime";
 
+import TablePaginationFooter from "@/components/commoncomponents/table-pagination-footer";
+import { useUrlPagination } from "@/hooks/use-url-pagination";
+import { useUrlUserFilters } from "@/hooks/useurluser-filters";
+import { emptyPagination } from "@/types/pagination";
+import type { PaginationMeta } from "@/types/pagination";
 
 export default function OrganizationAdminDashboard() {
-
-
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(true);
 
@@ -37,24 +42,26 @@ export default function OrganizationAdminDashboard() {
     inactive_users: 0,
   });
 
-  const [filters, setFilters] = useState<{
-    status: string[];
-    role: string[];
-  }>({
-    status: [],
-    role: [],
-  });
+  const { page, limit, setPage, setLimit } = useUrlPagination();
+  const { filters } = useUrlUserFilters();
+
+  const [pagination, setPagination] = useState<PaginationMeta>(
+    emptyPagination(limit),
+  );
 
   const fetchUsers = useCallback(
-    async (showLoader  = true) => {
+    async (showLoader = true) => {
       try {
         if (showLoader) {
-          if (showLoader) {
-        setLoading(true);
+          setLoading(true);
         }
-      }
 
-        const data = await getOrganizationAdminDashboard();
+        const data = await getOrganizationAdminDashboard({
+          page,
+          limit,
+          status: filters.status.join(","),
+          role: filters.role.join(","),
+        });
 
         setuserdata(data.users);
         setStats({
@@ -62,17 +69,20 @@ export default function OrganizationAdminDashboard() {
           active_users: data.stats.active_users,
           inactive_users: data.stats.inactive_users,
         });
+        if (data.pagination) {
+          setPagination(data.pagination);
+        } else {
+          setPagination(emptyPagination(limit));
+        }
       } catch (error) {
         console.error("Error fetching users:", error);
       } finally {
         if (showLoader) {
-          if (showLoader) {
-        setLoading(false);
-          }
-    }
+          setLoading(false);
+        }
       }
     },
-    []
+    [page, limit, filters.status, filters.role]
   );
 
   useEffect(() => {
@@ -88,29 +98,12 @@ export default function OrganizationAdminDashboard() {
     );
   }, [fetchUsers]);
 
-  const filteredUsers = userdata.filter((user) => {
-
-    const userStatus = user.is_active ? "Active" : "Inactive";
-
-    const statusMatch =
-      filters.status.length === 0 ||
-      filters.status.includes(userStatus);
-
-    const roleMatch =
-      filters.role.length === 0 ||
-      filters.role.some(
-        (role) => role.toLowerCase() === user.role_name?.toLowerCase()
-      );
-
-    return statusMatch && roleMatch;
-  });
+  const rowOffset = (pagination.page - 1) * pagination.limit;
 
   return (
     <div className="w-full h-full p-5 ">
-
       <div className="w-full h-full flex flex-col">
         <div className="w-full flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 h-auto sm:h-20">
-
           {/* Heading Section */}
           <div className="flex flex-col">
             <h1 className="text-xl sm:text-2xl font-semibold">
@@ -149,7 +142,6 @@ export default function OrganizationAdminDashboard() {
               />
             </DialogContent>
           </Dialog>
-
         </div>
 
         <div className="mt-5">
@@ -158,21 +150,26 @@ export default function OrganizationAdminDashboard() {
 
         <div className="mt-10">
           <div className="flex">
-            <AdminFilters onApply={setFilters} />
+            <AdminFilters />
           </div>
-
         </div>
-
 
         <div className="mt-10">
           <UserTable
-            users={filteredUsers}
+            users={userdata}
             loading={loading}
             onRefresh={() => fetchUsers(false)}
+            rowOffset={rowOffset}
           />
+          <div className="mt-4 border-t pt-4">
+            <TablePaginationFooter
+              pagination={pagination}
+              onPageChange={setPage}
+              onLimitChange={setLimit}
+            />
+          </div>
         </div>
       </div>
-
     </div>
   )
 }
