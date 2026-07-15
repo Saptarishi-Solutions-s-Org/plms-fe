@@ -11,13 +11,13 @@ export default function OverviewTab({
   sourceConversionRateData,
 }: OverviewTabProps) {
   return (
-    <div className="w-full space-y-6">
+    <div className="w-full space-y-5">
       <div className="w-full overflow-x-auto">
         <ReportStats stats={stats} />
       </div>
 
       <section className="grid w-full grid-cols-1 gap-5 lg:grid-cols-2">
-        <div className="w-full min-w-0 overflow-hidden rounded-[2rem]">
+        <div className="w-full min-w-0 overflow-hidden rounded-lg">
           <LeadSourceDistribution
             title="Lead Source Distribution"
             subtitle="Lead volume by origin"
@@ -25,7 +25,7 @@ export default function OverviewTab({
           />
         </div>
 
-        <div className="w-full min-w-0 overflow-hidden rounded-[2rem]">
+        <div className="w-full min-w-0 overflow-hidden rounded-lg">
           <SourceVsConversionRate
             title="Source vs Conversion Rate"
             data={sourceConversionRateData}

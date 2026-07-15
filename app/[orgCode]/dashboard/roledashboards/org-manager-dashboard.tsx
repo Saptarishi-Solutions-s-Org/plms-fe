@@ -136,22 +136,22 @@ export default function ManagerDashboard() {
       {loading ? (
         <GlobalLoader />
       ) : (
-        <div className="w-full min-h-screen px-4 py-4 sm:px-5 sm:py-5">
-          <div className="flex w-full flex-col gap-6">
+        <div className="w-full h-full p-4 sm:p-5 space-y-5">
+          <div className="flex w-full flex-col gap-5">
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
               <div>
-                <h1 className="text-xl font-semibold sm:text-2xl lg:text-3xl">
+                <h1 className="text-lg font-semibold text-gray-900 sm:text-2xl">
                   Manager Dashboard
                 </h1>
 
-                <p className="text-xs sm:text-sm text-gray-600">
+                <p className="text-xs text-gray-500 sm:text-sm">
                   Monitor real-time performance metrics and pipeline health.
                 </p>
               </div>
             </div>
 
             {/* Cards */}
-            <div className="mt-4 sm:mt-5">
+            <div>
               <ManagerCards stats={stats} />
             </div>
 

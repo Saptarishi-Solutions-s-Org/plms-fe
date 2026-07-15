@@ -33,17 +33,15 @@ const ManagerCards = ({ stats }: ManagerCardsProps) => {
   ];
 
   return (
-    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4 auto-rows-fr">
+    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
       {cards.map(({ title, value, Icon, color }) => (
         <Card
           key={title}
-          className="h-[170px] rounded-[2rem] border border-gray-200 p-4 shadow-md flex flex-col justify-between"
+          className="p-4"
         >
           <div className="flex items-center justify-between">
             <CardTitle className="text-sm text-gray-500">{title}</CardTitle>
-            <div
-              className={`flex h-8 w-8 items-center justify-center rounded-full text-white ${color}`}
-            >
+            <div className={`flex h-8 w-8 items-center justify-center rounded-full text-white ${color}`}>
               <Icon className="h-4 w-4" />
             </div>
           </div>

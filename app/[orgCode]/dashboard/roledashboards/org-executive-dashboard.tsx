@@ -59,7 +59,7 @@ export default function ExecutiveDashboard() {
         const leadsData = leadsRes?.value || leadsRes;
 
         setRecentLeads(
-          (leadsData || []).map((lead: any) => ({
+          (leadsData || []).map((lead: RecentLead) => ({
             leadId: lead.leadId,
             leadName: lead.leadName,
             status: lead.status,
@@ -81,6 +81,8 @@ export default function ExecutiveDashboard() {
       }
     };
     useEffect(() => {
+      // The initial dashboard request synchronizes this page with the API.
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       fetchDashboardData();
     }, []);
 
@@ -97,20 +99,20 @@ export default function ExecutiveDashboard() {
     }, []);
 
   return (
-    <div className="w-full space-y-4 px-3 py-4 sm:px-5 sm:py-6 lg:px-6">
+    <div className="w-full h-full p-4 sm:p-5 space-y-5">
       {/* Page Header */}
       <div>
-        <h1 className="text-xl font-bold text-slate-900 sm:text-2xl lg:text-3xl">
+        <h1 className="text-lg font-semibold text-gray-900 sm:text-2xl">
           Executive Dashboard
         </h1>
 
-        <p className="mt-1 text-sm text-slate-500 sm:text-base">
+        <p className="text-xs text-gray-500 sm:text-sm">
           Personal performance metrics overview.
         </p>
       </div>
 
       <ExecutiveCards stats={stats} />
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
+      <div className="grid grid-cols-1 gap-5 lg:grid-cols-12">
         <div className="min-w-0 overflow-hidden lg:col-span-5">
           <RecentLeadsCard
             title="Recent Leads"
@@ -131,4 +133,3 @@ export default function ExecutiveDashboard() {
     </div>
   );
 }
- 
