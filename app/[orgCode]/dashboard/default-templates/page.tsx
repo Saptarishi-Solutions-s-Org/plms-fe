@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { RefreshCw, Shield, LayoutGrid, Award } from "lucide-react";
+import { RefreshCw, Shield, LayoutGrid, Award, Ban } from "lucide-react";
 import { toast } from "sonner";
 
 import GlobalLoader from "@/components/commoncomponents/globalloader";
@@ -23,6 +23,41 @@ import {
   SelectItem,
 } from "@/components/ui/select";
 import { getDefaultTemplates } from "@/services/systemAdmin";
+
+const BLOCKED_PERMISSIONS: Record<string, Record<string, string[]>> = {
+  Admin: {
+    lead: ["import", "delete"],
+    "lead activity": ["import", "export", "delete"],
+    offers: ["import", "delete"],
+    permission: ["create", "import", "export", "delete"],
+    reports: ["create", "update", "import", "delete"],
+    user: ["import", "delete"],
+  },
+  Manager: {
+    lead: ["delete"],
+    "lead activity": ["import", "export", "delete"],
+    offers: ["import", "delete"],
+    permission: ["create", "view", "update", "delete", "import", "export"],
+    reports: ["create", "update", "import", "delete"],
+    user: ["import", "delete"],
+  },
+  Executive: {
+    lead: ["delete"],
+    "lead activity": ["import", "export", "delete"],
+    offers: ["create", "update", "import", "delete"],
+    permission: ["create", "view", "update", "delete", "import", "export"],
+    reports: ["create", "update", "import", "delete"],
+    user: ["create", "view", "update", "delete", "import", "export"],
+  },
+};
+
+const getBlockedList = (roleName: string) => {
+  const norm = roleName.toLowerCase().trim();
+  if (norm === "admin") return BLOCKED_PERMISSIONS.Admin;
+  if (norm === "manager") return BLOCKED_PERMISSIONS.Manager;
+  if (norm === "executive") return BLOCKED_PERMISSIONS.Executive;
+  return undefined;
+};
 
 type ModuleTemplate = {
   id: string;
@@ -251,6 +286,15 @@ export default function DefaultTemplatesPage() {
             </Select>
           </div>
 
+          {getBlockedList(selectedRole) && (
+            <div className="flex items-center gap-2 text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded-lg p-3">
+              <Ban className="h-4.5 w-4.5 text-amber-600 shrink-0" />
+              <span>
+                Note: Options marked with a 🚫 symbol are system-critical restrictions.
+              </span>
+            </div>
+          )}
+
           <div className="rounded-lg border border-gray-200 overflow-hidden">
             <Table>
               <TableHeader className="bg-[#7677F41A] border-b border-gray-200">
@@ -268,15 +312,28 @@ export default function DefaultTemplatesPage() {
                   matrixModules.map((module) => (
                     <TableRow key={module}>
                       <TableCell className="capitalize font-medium">{module}</TableCell>
-                      {permissionList.map((perm) => (
-                        <TableCell key={perm} className="text-center">
-                          <Checkbox
-                            checked={roleMatrix[module]?.[perm] || false}
-                            className="pointer-events-none"
-                            tabIndex={-1}
-                          />
-                        </TableCell>
-                      ))}
+                      {permissionList.map((perm) => {
+                        const blockedRules = getBlockedList(selectedRole);
+                        const isBlocked = blockedRules?.[module.toLowerCase()]?.includes(perm);
+
+                        if (isBlocked) {
+                          return (
+                            <TableCell key={perm} className="text-center py-2.5">
+                              <Ban className="h-4 w-4 text-red-400 mx-auto" />
+                            </TableCell>
+                          );
+                        }
+
+                        return (
+                          <TableCell key={perm} className="text-center">
+                            <Checkbox
+                              checked={roleMatrix[module]?.[perm] || false}
+                              className="pointer-events-none"
+                              tabIndex={-1}
+                            />
+                          </TableCell>
+                        );
+                      })}
                     </TableRow>
                   ))
                 ) : (

@@ -41,10 +41,38 @@ import {
   X,
   Award,
   LayoutGrid,
+  Ban,
 } from "lucide-react";
 import { toast } from "sonner";
 
 import { getOrganizationByCode } from "@/services/organization";
+
+const BLOCKED_PERMISSIONS: Record<string, Record<string, string[]>> = {
+  Admin: {
+    lead: ["import", "delete"],
+    "lead activity": ["import", "export", "delete"],
+    offers: ["import", "delete"],
+    permission: ["create", "import", "export", "delete"],
+    reports: ["create", "update", "import", "delete"],
+    user: ["import", "delete"],
+  },
+  Manager: {
+    lead: ["delete"],
+    "lead activity": ["import", "export", "delete"],
+    offers: ["import", "delete"],
+    permission: ["create", "view", "update", "delete", "import", "export"],
+    reports: ["create", "update", "import", "delete"],
+    user: ["import", "delete"],
+  },
+  Executive: {
+    lead: ["delete"],
+    "lead activity": ["import", "export", "delete"],
+    offers: ["create", "update", "import", "delete"],
+    permission: ["create", "view", "update", "delete", "import", "export"],
+    reports: ["create", "update", "import", "delete"],
+    user: ["create", "view", "update", "delete", "import", "export"],
+  },
+};
 import { updateOrganizationAdminPermissions } from "@/services/systemAdmin";
 import { getAdminUsers } from "@/services/user";
 import UserModal from "@/components/commoncomponents/user/userModal";
@@ -591,6 +619,15 @@ export default function OrganizationDetailsPage() {
             </SelectContent>
           </Select>
 
+          {canEditAdminPermissions && (
+            <div className="flex items-center gap-2 text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded-lg p-3">
+              <Ban className="h-4.5 w-4.5 text-amber-600 shrink-0" />
+              <span>
+                Note: Options marked with a 🚫 symbol are system-critical restrictions and cannot be modified.
+              </span>
+            </div>
+          )}
+
           <div className="rounded-lg border border-gray-200 bg-white shadow-sm overflow-x-auto">
             <Table>
               <TableHeader className="bg-[#7677F41A] border-b border-gray-200">
@@ -618,10 +655,21 @@ export default function OrganizationDetailsPage() {
                           currentRolePermissions[module]?.[perm];
                         const permissionId = getPermissionId(permission);
                         const checked = permissionId
-                          ? (permissionDraft[permissionId] ??
-                            permission?.access ??
-                            false)
+                          ? (permission?.access ?? false)
                           : currentRole?.[module]?.[perm] || false;
+
+                        const isBlocked =
+                          BLOCKED_PERMISSIONS[selectedRole]?.[
+                            module.toLowerCase()
+                          ]?.includes(perm);
+
+                        if (isBlocked) {
+                          return (
+                            <TableCell key={perm} className="text-center py-2.5">
+                              <Ban className="h-4 w-4 text-red-400 mx-auto" />
+                            </TableCell>
+                          );
+                        }
 
                         return (
                           <TableCell key={perm} className="text-center">
@@ -662,6 +710,13 @@ export default function OrganizationDetailsPage() {
             <DialogTitle>Update Admin Permissions</DialogTitle>
           </DialogHeader>
 
+          <div className="flex items-center gap-2 text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded-lg p-3">
+            <Ban className="h-4.5 w-4.5 text-amber-600 shrink-0" />
+            <span>
+              Note: Options marked with a 🚫 symbol are system-critical restrictions and cannot be modified.
+            </span>
+          </div>
+
           <div className="max-h-[65vh] overflow-auto rounded-lg border border-gray-200 bg-white shadow-sm">
             <Table>
               <TableHeader className="bg-[#7677F41A] border-b border-gray-200">
@@ -699,6 +754,19 @@ export default function OrganizationDetailsPage() {
                             permission?.access ??
                             false)
                           : currentRole?.[module]?.[perm] || false;
+
+                        const isBlocked =
+                          BLOCKED_PERMISSIONS[selectedRole]?.[
+                            module.toLowerCase()
+                          ]?.includes(perm);
+
+                        if (isBlocked) {
+                          return (
+                            <TableCell key={perm} className="text-center py-2.5">
+                              <Ban className="h-4 w-4 text-red-400 mx-auto" />
+                            </TableCell>
+                          );
+                        }
 
                         return (
                           <TableCell key={perm} className="text-center">
@@ -739,20 +807,12 @@ export default function OrganizationDetailsPage() {
           <DialogFooter>
             <Button
               type="button"
-              variant="outline"
-              onClick={closePermissionEditor}
-              disabled={isSavingPermissions}
-            >
-              <X className="h-4 w-4" />
-              Cancel
-            </Button>
-            <Button
-              type="button"
               onClick={handleSavePermissions}
               disabled={isSavingPermissions || !moduleKeys.length}
+              className="bg-blue-600 hover:bg-blue-700 text-white font-medium px-4 py-2 rounded-md transition"
             >
-              <Save className="h-4 w-4" />
-              {isSavingPermissions ? "Saving" : "Save"}
+              <Save className="mr-2 h-4 w-4" />
+              {isSavingPermissions ? "Saving..." : "Save Changes"}
             </Button>
           </DialogFooter>
         </DialogContent>

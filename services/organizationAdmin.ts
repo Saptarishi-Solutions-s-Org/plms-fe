@@ -78,3 +78,13 @@ export const activateUser = async (userId: string) => {
     }),
   });
 };
+
+export const updateRolePermissions = async (payload: {
+  orgRoleId: string;
+  permissions: { orgRoleModulePermissionId: string; access: boolean }[];
+}) => {
+  return await api("/odata/v4/organization-admin/updateRolePermissions", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+};

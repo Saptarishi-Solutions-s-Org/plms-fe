@@ -50,7 +50,7 @@ export const MENU_CONFIG: MenuGroup[] = [
         href: "/permissions",
         icon: ShieldCheck,
         label: "Permissions",
-        modules: ["user"],
+        modules: ["permission"],
         permissions: ["view"],
         roles: ["Admin"],
       },
@@ -60,25 +60,15 @@ export const MENU_CONFIG: MenuGroup[] = [
         label: "Executives",
         modules: ["lead"],
         permissions: ["view"],
-        roles: [
-          "Manager",
-        ],
+        roles: ["Manager"],
       },
       {
         href: "/leads",
         icon: UserCheck,
         label: "Leads",
         modules: ["lead"],
-        permissions: [
-          "view",
-          "create",
-          "update",
-          "delete",
-        ],
-        roles: [
-          "Executive",
-          "Manager",
-        ],
+        permissions: ["view", "create", "update", "delete"],
+        roles: ["Executive", "Manager"],
       },
 
       // Manager → View only
@@ -96,14 +86,9 @@ export const MENU_CONFIG: MenuGroup[] = [
         icon: FilePen,
         label: "Reports",
         modules: ["lead"],
-        permissions: [
-          "view",
-        ],
-        roles: [
-          "Manager",
-        ],
+        permissions: ["view"],
+        roles: ["Manager"],
       },
-
 
       // Admin → Full access
       {
@@ -111,16 +96,9 @@ export const MENU_CONFIG: MenuGroup[] = [
         icon: Gift,
         label: "Offers",
         modules: ["offers"],
-        permissions: [
-          "view",
-          "create",
-          "update",
-          "delete",
-        ],
+        permissions: ["view", "create", "update", "delete"],
         roles: ["Admin"],
       },
-
-      
 
       {
         href: "/offers",
@@ -130,8 +108,6 @@ export const MENU_CONFIG: MenuGroup[] = [
         permissions: ["view"],
         roles: ["Executive"],
       },
-
     ],
   },
 ];
-
