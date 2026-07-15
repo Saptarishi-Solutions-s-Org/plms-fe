@@ -156,16 +156,23 @@ export default function SystemAdminDashboard() {
         </CardHeader>
         <CardContent>
           {data.usersPerOrg?.length ? (
-            <div className="space-y-3">
-              {data.usersPerOrg.map((org) => (
-                <div
-                  key={org.orgId}
-                  className="flex justify-between border-b pb-2 text-sm"
-                >
-                  <span>{org.name}</span>
-                  <span className="font-medium">{org.count}</span>
-                </div>
-              ))}
+            <div className="rounded-lg border border-gray-200 overflow-hidden bg-white shadow-sm">
+              <Table>
+                <TableHeader className="bg-[#7677F41A] border-b border-gray-200">
+                  <TableRow>
+                    <TableHead>Organization Name</TableHead>
+                    <TableHead className="text-right w-36">User Count</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {data.usersPerOrg.map((org) => (
+                    <TableRow key={org.orgId}>
+                      <TableCell className="font-medium">{org.name}</TableCell>
+                      <TableCell className="text-right font-semibold">{org.count}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
             </div>
           ) : (
             <div className="text-center text-sm text-muted-foreground py-4">

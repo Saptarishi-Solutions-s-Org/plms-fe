@@ -156,7 +156,7 @@ export default function DefaultTemplatesPage() {
           <CardContent>
             <div className="rounded-lg border border-gray-200 overflow-hidden">
               <Table>
-                <TableHeader className="bg-gray-50">
+                <TableHeader className="bg-[#7677F41A] border-b border-gray-200">
                   <TableRow>
                     <TableHead>Module Name</TableHead>
                     <TableHead className="text-center w-24">Default</TableHead>
@@ -196,7 +196,7 @@ export default function DefaultTemplatesPage() {
           <CardContent>
             <div className="rounded-lg border border-gray-200 overflow-hidden">
               <Table>
-                <TableHeader className="bg-gray-50">
+                <TableHeader className="bg-[#7677F41A] border-b border-gray-200">
                   <TableRow>
                     <TableHead>Role Name</TableHead>
                     <TableHead className="text-center w-24">Default</TableHead>

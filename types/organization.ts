@@ -74,6 +74,8 @@ export type OrganizationDetailResponse = {
   users?: OrganizationAdminUser[];
   modules: OrganizationModule[];
   roles: OrganizationRole[];
+  allModules?: OrganizationModule[];
+  allRoles?: OrganizationRole[];
   permissions: OrganizationPermission[];
 };
 

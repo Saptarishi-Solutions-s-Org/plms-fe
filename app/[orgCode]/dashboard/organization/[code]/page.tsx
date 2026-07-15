@@ -39,6 +39,8 @@ import {
   RefreshCw,
   Save,
   X,
+  Award,
+  LayoutGrid,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -451,38 +453,109 @@ export default function OrganizationDetailsPage() {
         </CardContent>
       </Card>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <Card className="hover:shadow-lg transition">
-          <CardHeader>
-            <CardTitle>Organization Roles</CardTitle>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Organization Roles */}
+        <Card className="hover:shadow-md transition">
+          <CardHeader className="flex flex-row items-center gap-3">
+            <div className="p-2 rounded-lg bg-green-100 text-green-600">
+              <Award className="h-5 w-5" />
+            </div>
+            <CardTitle className="text-lg">Organization Roles</CardTitle>
           </CardHeader>
-
-          <CardContent className="space-y-2">
-            {roles.map((r) => (
-              <div
-                key={r.id}
-                className="px-3 py-2 rounded-md bg-gray-50 text-sm font-medium"
-              >
-                {r.name}
-              </div>
-            ))}
+          <CardContent>
+            <div className="rounded-lg border border-gray-200 overflow-hidden">
+              <Table>
+                <TableHeader className="bg-[#7677F41A] border-b border-gray-200">
+                  <TableRow>
+                    <TableHead>Role Name</TableHead>
+                    <TableHead className="text-center w-24">Active</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {(() => {
+                    const rolesToRender = data?.allRoles?.length ? data.allRoles : roles;
+                    return rolesToRender.length ? (
+                      rolesToRender.map((r) => {
+                        const isActive = data?.allRoles?.length
+                          ? roles.some((activeRole) => activeRole.name === r.name)
+                          : true;
+                        return (
+                          <TableRow key={r.id}>
+                            <TableCell className="font-medium capitalize">{r.name}</TableCell>
+                            <TableCell className="text-center">
+                              <Checkbox
+                                checked={isActive}
+                                className="pointer-events-none"
+                                tabIndex={-1}
+                              />
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })
+                    ) : (
+                      <TableRow>
+                        <TableCell colSpan={2} className="text-center py-4">
+                          No roles configured
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })()}
+                </TableBody>
+              </Table>
+            </div>
           </CardContent>
         </Card>
 
-        <Card className="hover:shadow-lg transition">
-          <CardHeader>
-            <CardTitle>Organization Modules</CardTitle>
+        {/* Organization Modules */}
+        <Card className="hover:shadow-md transition">
+          <CardHeader className="flex flex-row items-center gap-3">
+            <div className="p-2 rounded-lg bg-blue-100 text-blue-600">
+              <LayoutGrid className="h-5 w-5" />
+            </div>
+            <CardTitle className="text-lg">Organization Modules</CardTitle>
           </CardHeader>
-
-          <CardContent className="space-y-2">
-            {modules.map((m) => (
-              <div
-                key={m.name}
-                className="px-3 py-2 rounded-md bg-gray-50 text-sm font-medium"
-              >
-                {m.name}
-              </div>
-            ))}
+          <CardContent>
+            <div className="rounded-lg border border-gray-200 overflow-hidden">
+              <Table>
+                <TableHeader className="bg-[#7677F41A] border-b border-gray-200">
+                  <TableRow>
+                    <TableHead>Module Name</TableHead>
+                    <TableHead className="text-center w-24">Enabled</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {(() => {
+                    const modulesToRender = data?.allModules?.length ? data.allModules : modules;
+                    return modulesToRender.length ? (
+                      modulesToRender.map((m) => {
+                        const isEnabled = data?.allModules?.length
+                          ? modules.some((activeModule) => activeModule.name === m.name)
+                          : true;
+                        const key = m.name;
+                        return (
+                          <TableRow key={key}>
+                            <TableCell className="font-medium capitalize">{m.name}</TableCell>
+                            <TableCell className="text-center">
+                              <Checkbox
+                                checked={isEnabled}
+                                className="pointer-events-none"
+                                tabIndex={-1}
+                              />
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })
+                    ) : (
+                      <TableRow>
+                        <TableCell colSpan={2} className="text-center py-4">
+                          No modules enabled
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })()}
+                </TableBody>
+              </Table>
+            </div>
           </CardContent>
         </Card>
       </div>
