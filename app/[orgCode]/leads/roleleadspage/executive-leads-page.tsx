@@ -13,7 +13,7 @@ import LeadTableFilters from "@/components/commoncomponents/leads/leadtable-filt
 import LeadTable from "@/components/commoncomponents/leads/leadtable";
 import TablePaginationFooter from "@/components/commoncomponents/table-pagination-footer";
 import { useLeads } from "@/hooks/use-leads";
-import { useUrlLeadFilters } from "@/hooks/use-url-lead-filters";
+import { useUrlLeadFilters } from "@/hooks/useurllead-filters";
 import { useUrlPagination } from "@/hooks/use-url-pagination";
 import { getUser } from "@/lib/auth";
 import {

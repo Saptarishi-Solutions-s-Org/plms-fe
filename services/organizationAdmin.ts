@@ -1,7 +1,15 @@
 import { api } from "@/lib/api";
+import { buildApiFunctionUrl } from "@/lib/api-function-url";
 
-export const getOrganizationAdminDashboard = () =>
-  api("/odata/v4/organization-admin/getAllUsers()");
+export type GetUsersParams = {
+  page?: number;
+  limit?: number;
+  status?: string;
+  role?: string;
+};
+
+export const getOrganizationAdminDashboard = (params?: GetUsersParams) =>
+  api(buildApiFunctionUrl("/odata/v4/organization-admin/getAllUsers", params));
 
 export const getOrganizationAdminPermissions = () =>
   api("/odata/v4/organization-admin/getPermissions()");

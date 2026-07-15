@@ -1,28 +1,32 @@
 "use client";
 
-import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { MultiSelectCombobox } from "../ui/multi-select-combobox";
-
-type Props = {
-  onApply: (filters: { status: string[]; role: string[] }) => void;
-};
+import { useUrlUserFilters } from "@/hooks/useurluser-filters";
+import { useEffect, useState } from "react";
 
 const statusOptions = ["Active", "Inactive"];
 const roleOptions = ["Manager", "Executive"];
 
-const AdminFilters = ({ onApply }: Props) => {
-  const [selectedStatus, setSelectedStatus] = useState<string[]>([]);
-  const [selectedRole, setSelectedRole] = useState<string[]>([]);
+const AdminFilters = () => {
+  const { filters, setFilters } = useUrlUserFilters();
+
+  const [selectedStatus, setSelectedStatus] = useState<string[]>(filters.status);
+  const [selectedRole, setSelectedRole] = useState<string[]>(filters.role);
+
+  useEffect(() => {
+    setSelectedStatus(filters.status);
+    setSelectedRole(filters.role);
+  }, [filters.status, filters.role]);
 
   const handleClear = () => {
     setSelectedStatus([]);
     setSelectedRole([]);
-    onApply({ status: [], role: [] });
+    setFilters({ status: [], role: [] });
   };
 
   const handleApply = () => {
-    onApply({
+    setFilters({
       status: selectedStatus,
       role: selectedRole,
     });
@@ -38,7 +42,6 @@ const AdminFilters = ({ onApply }: Props) => {
           onSelectionChange={setSelectedStatus}
           placeholder="Filter by status"
           width="w-full sm:w-50"
-
         />
 
         <MultiSelectCombobox
@@ -47,16 +50,15 @@ const AdminFilters = ({ onApply }: Props) => {
           onSelectionChange={setSelectedRole}
           placeholder="Filter by role"
           width="w-full sm:w-50"
-
         />
 
         <div className="flex gap-2">
           <Button variant="outline" onClick={handleClear}>
-            Clear   
+            Clear
           </Button>
 
           <Button onClick={handleApply} className="bg-blue-600  text-white  hover:bg-blue-700">
-            Apply 
+            Apply
           </Button>
         </div>
       </div>

@@ -19,11 +19,12 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { MultiSelectCombobox } from "@/components/ui/multi-select-combobox";
 import { useUrlPagination } from "@/hooks/use-url-pagination";
+import { useUrlOfferFilters } from "@/hooks/useurloffer";
 import { subscribeRealtime } from "@/lib/socket";
 
 import { getExecutiveOffers } from "@/services/executivestats";
 
-import { OFFER_STATUS_OPTIONS, type Offer } from "@/types/Createoffer";
+import { OFFER_STATUS_OPTIONS, type Offer, type OfferFilters } from "@/types/Createoffer";
 import { DISCOUNT_OPTIONS } from "@/lib/validators/offervalidation";
 import { emptyPagination } from "@/types/pagination";
 import type { PaginationMeta } from "@/types/pagination";
@@ -34,16 +35,15 @@ import {
   ExecutiveOfferRow,
   formatDate,
   formatStatusLabel,
-  ExecutiveOfferFilters,
   ExecutiveOffersEnvelope
 } from "@/types/org-manager";
 
 
 
-const DEFAULT_FILTERS: ExecutiveOfferFilters = {
+const DEFAULT_FILTERS: OfferFilters = {
   search: "",
-  discountTypes: [],
-  statuses: [],
+  discountType: [],
+  status: [],
 };
 
 const DISCOUNT_TYPE_LABELS: Record<string, string> = {
@@ -143,24 +143,27 @@ export default function OrgExecutiveOffersPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [hasLoaded, setHasLoaded] = useState(false);
 
-  const [filters, setFilters] = useState(DEFAULT_FILTERS);
+  const { filters, setFilters } = useUrlOfferFilters();
 
-  const [draftFilters, setDraftFilters] = useState(DEFAULT_FILTERS);
+  const [draftFilters, setDraftFilters] = useState(filters);
+  useEffect(() => {
+    setDraftFilters(filters);
+  }, [filters]);
 
   const selectedStatuses = useMemo(
     () =>
-      filters.statuses.map(
-        (status) => STATUS_LABEL_TO_VALUE.get(status) ?? status,
+      filters.status.map(
+        (s) => STATUS_LABEL_TO_VALUE.get(s) ?? s,
       ),
-    [filters.statuses],
+    [filters.status],
   );
 
   const selectedDiscountTypes = useMemo(
     () =>
-      filters.discountTypes.map(
+      filters.discountType.map(
         (type) => DISCOUNT_LABEL_TO_VALUE.get(type) ?? type,
       ),
-    [filters.discountTypes],
+    [filters.discountType],
   );
 
   const fetchOffers = useCallback(async () => {
@@ -200,9 +203,9 @@ export default function OrgExecutiveOffersPage() {
   }, [fetchOffers]);
 
   const handleFilterChange = useCallback(
-    <K extends keyof ExecutiveOfferFilters>(
+    <K extends keyof OfferFilters>(
       key: K,
-      value: ExecutiveOfferFilters[K],
+      value: OfferFilters[K],
     ) => {
       setDraftFilters((prev) => ({
         ...prev,
@@ -214,15 +217,12 @@ export default function OrgExecutiveOffersPage() {
 
   const handleApplyFilters = useCallback(() => {
     setFilters(draftFilters);
-    setPage(1);
-  }, [draftFilters, setPage]);
+  }, [draftFilters, setFilters]);
 
   const handleClearFilters = useCallback(() => {
     setFilters(DEFAULT_FILTERS);
-
     setDraftFilters(DEFAULT_FILTERS);
-    setPage(1);
-  }, [setPage]);
+  }, [setFilters]);
 
   const rowOffset = (pagination.page - 1) * pagination.limit;
 
@@ -244,9 +244,9 @@ export default function OrgExecutiveOffersPage() {
 
   if (isInitialLoading) {
     return (
-    <>
-      <GlobalLoader />
-    </>
+      <>
+        <GlobalLoader />
+      </>
     );
   }
 
@@ -290,9 +290,9 @@ export default function OrgExecutiveOffersPage() {
 
         <MultiSelectCombobox
           options={DISCOUNT_OPTIONS.map((option) => option.label)}
-          selectedValues={draftFilters.discountTypes}
+          selectedValues={draftFilters.discountType}
           onSelectionChange={(values) =>
-            handleFilterChange("discountTypes", values)
+            handleFilterChange("discountType", values as OfferFilters["discountType"])
           }
           placeholder="All Offer Types"
           width="w-full sm:w-56"
@@ -300,8 +300,8 @@ export default function OrgExecutiveOffersPage() {
 
         <MultiSelectCombobox
           options={OFFER_STATUS_OPTIONS.map((option) => option.label)}
-          selectedValues={draftFilters.statuses}
-          onSelectionChange={(values) => handleFilterChange("statuses", values)}
+          selectedValues={draftFilters.status}
+          onSelectionChange={(values) => handleFilterChange("status", values as OfferFilters["status"])}
           placeholder="All Status"
           width="w-full sm:w-44"
         />
@@ -386,28 +386,27 @@ export default function OrgExecutiveOffersPage() {
                   <TableCell>{formatDate(offer.validTo)}</TableCell>
 
                   <TableCell>
-                      <Badge
-                        variant="outline"
-                        className={
-                          offer.status === "active"
-                            ? "border-green-200 bg-green-50 text-green-700"
-                            : offer.status === "expired"
-                              ? "border-red-200 bg-red-50 text-red-700"
-                              : "border-gray-200 bg-gray-50 text-gray-600"
-                        }
-                      >
-                        <span
-                          className={`mr-1.5 h-1.5 w-1.5 rounded-full ${
-                            offer.status === "active"
-                              ? "bg-green-500"
-                              : offer.status === "expired"
-                                ? "bg-red-500"
-                                : "bg-gray-500"
+                    <Badge
+                      variant="outline"
+                      className={
+                        offer.status === "active"
+                          ? "border-green-200 bg-green-50 text-green-700"
+                          : offer.status === "expired"
+                            ? "border-red-200 bg-red-50 text-red-700"
+                            : "border-gray-200 bg-gray-50 text-gray-600"
+                      }
+                    >
+                      <span
+                        className={`mr-1.5 h-1.5 w-1.5 rounded-full ${offer.status === "active"
+                          ? "bg-green-500"
+                          : offer.status === "expired"
+                            ? "bg-red-500"
+                            : "bg-gray-500"
                           }`}
-                        />
-                        {formatStatusLabel(offer.status)}
-                      </Badge>
-                    </TableCell>
+                      />
+                      {formatStatusLabel(offer.status)}
+                    </Badge>
+                  </TableCell>
                 </TableRow>
               ))
             )}

@@ -38,6 +38,12 @@ export async function api(path: string, options: RequestInit = {}) {
   const data = await parseResponse(res);
 
   if (!res.ok) {
+    if (res.status === 403) {
+      if (typeof window !== "undefined" && window.location.pathname !== "/not-authorized") {
+        window.location.replace("/not-authorized");
+      }
+    }
+
     throw new Error(
       data?.error?.message || data?.message || "Something went wrong",
     );

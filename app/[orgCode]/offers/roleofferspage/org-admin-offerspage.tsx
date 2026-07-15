@@ -10,6 +10,7 @@ import { OffersTable } from "@/components/commoncomponents/offers/offertable";
 import { CreateOfferDialog } from "@/components/commoncomponents/offers/createoffer";
 import { Button } from "@/components/ui/button";
 import { useUrlPagination } from "@/hooks/use-url-pagination";
+import { useUrlOfferFilters } from "@/hooks/useurloffer";
 import { subscribeRealtime } from "@/lib/socket";
 import {
   createOffer,
@@ -52,11 +53,12 @@ export default function OrgAdminOffersPage() {
   const [createOpen, setCreateOpen] =
     useState(false);
 
-  const [filters, setFilters] =
-    useState(DEFAULT_FILTERS);
+  const { filters, setFilters } = useUrlOfferFilters();
 
-  const [draftFilters, setDraftFilters] =
-    useState(DEFAULT_FILTERS);
+  const [draftFilters, setDraftFilters] = useState(filters);
+  useEffect(() => {
+    setDraftFilters(filters);
+  }, [filters]);
   const activeCount = useMemo(
     () =>
       offers.filter(
@@ -159,9 +161,9 @@ export default function OrgAdminOffersPage() {
           organization:
             item.organization_id
               ? {
-                  id: item.organization_id,
-                  name: "",
-                }
+                id: item.organization_id,
+                name: "",
+              }
               : null,
 
           managers:
@@ -296,7 +298,7 @@ export default function OrgAdminOffersPage() {
     },
     [fetchOffers]
   );
- const handleToggleStatus = useCallback(
+  const handleToggleStatus = useCallback(
     async (id: string) => {
       const offer = offers.find(
         (offer) => offer.id === id
@@ -316,9 +318,9 @@ export default function OrgAdminOffersPage() {
         prev.map((offer) =>
           offer.id === id
             ? {
-                ...offer,
-                status: newStatus,
-              }
+              ...offer,
+              status: newStatus,
+            }
             : offer
         )
       );
@@ -330,9 +332,9 @@ export default function OrgAdminOffersPage() {
           prev.map((offer) =>
             offer.id === id
               ? {
-                  ...offer,
-                  status: previousStatus,
-                }
+                ...offer,
+                status: previousStatus,
+              }
               : offer
           )
         );
@@ -353,54 +355,21 @@ export default function OrgAdminOffersPage() {
   const handleApplyFilters =
     useCallback(() => {
       setFilters(draftFilters);
-      setPage(1);
-    }, [draftFilters, setPage]);
+    }, [draftFilters, setFilters]);
 
   const handleClearFilters =
     useCallback(() => {
       setFilters(DEFAULT_FILTERS);
       setDraftFilters(DEFAULT_FILTERS);
-      setPage(1);
-    }, [setPage]);
+    }, [setFilters]);
 
- const filteredOffers = useMemo(
-    () =>
-      offers.filter((offer) => {
-        const query =
-          filters.search.toLowerCase();
-
-        const matchSearch =
-          !query ||
-          offer.title
-            .toLowerCase()
-            .includes(query) ||
-          offer.code
-            .toLowerCase()
-            .includes(query);
-
-        const matchStatus =
-          filters.status.length === 0 ||
-          filters.status.includes(offer.status);
-
-        const matchDiscount =
-          filters.discountType.length === 0 ||
-          filters.discountType.includes(offer.discountType);
-
-        return (
-          matchSearch &&
-          matchStatus &&
-          matchDiscount
-        );
-      }),
-    [offers, filters]
-  );
   const rowOffset = (pagination.page - 1) * pagination.limit;
   const isInitialLoading = isLoading && !hasLoaded;
 
   if (isInitialLoading) {
     return (
       <>
-      <GlobalLoader />
+        <GlobalLoader />
       </>
     );
   }
@@ -462,7 +431,7 @@ export default function OrgAdminOffersPage() {
       />
 
       <OffersTable
-        offers={filteredOffers}
+        offers={offers}
         onToggleStatus={
           handleToggleStatus
         }

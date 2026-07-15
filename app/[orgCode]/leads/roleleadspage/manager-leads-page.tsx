@@ -14,7 +14,7 @@ import LeadTable from "@/components/commoncomponents/leads/leadtable";
 import TablePaginationFooter from "@/components/commoncomponents/table-pagination-footer";
 import { useLeadExport } from "@/hooks/export";
 import { useLeads } from "@/hooks/use-leads";
-import { useUrlLeadFilters } from "@/hooks/use-url-lead-filters";
+import { useUrlLeadFilters } from "@/hooks/useurllead-filters";
 import { useUrlPagination } from "@/hooks/use-url-pagination";
 import {
   bulkAssignLeads as bulkAssignLeadsRequest,
