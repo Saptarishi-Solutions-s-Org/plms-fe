@@ -199,6 +199,8 @@ export default function ExecutiveLeadsPage() {
               onExport={() => undefined}
               onAddLead={openAddForm}
               showImportExport={false}
+              showImport
+              onImportComplete={refetch}
               onBulkAssign={() => setIsBulkAssignOpen(true)}
             />
           </div>

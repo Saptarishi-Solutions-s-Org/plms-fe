@@ -258,13 +258,13 @@ export default function OrgReports() {
   };
 
   return (
-    <div className="min-h-screen w-full bg-slate-50 px-4 py-4 sm:px-5 sm:py-5">
-      <div className="flex w-full flex-col gap-6">
+    <div className="w-full h-full p-4 sm:p-5 space-y-5">
+      <div className="flex w-full flex-col gap-5">
         <div>
-          <h1 className="text-xl font-semibold sm:text-2xl lg:text-3xl">
+          <h1 className="text-lg font-semibold text-gray-900 sm:text-2xl">
             Reports
           </h1>
-          <p className="text-xs sm:text-sm text-gray-600">
+          <p className="text-xs text-gray-500 sm:text-sm">
             Analyzing team performance for the current cycle
           </p>
         </div>
@@ -272,7 +272,7 @@ export default function OrgReports() {
         <Tabs
           value={activeTab}
           onValueChange={handleTabChange}
-          className="w-full items-stretch gap-6"
+          className="w-full items-stretch gap-5"
         >
           <div className="w-full border-b border-slate-200">
             <TabsList
@@ -281,13 +281,13 @@ export default function OrgReports() {
             >
               <TabsTrigger
                 value="overview"
-                className="h-11 px-5 text-sm font-bold data-[state=active]:text-blue-600 data-[state=active]:after:bg-blue-600"
+                className="h-11 px-5 text-sm font-semibold data-[state=active]:text-blue-600 data-[state=active]:after:bg-blue-600"
               >
                 Overview
               </TabsTrigger>
               <TabsTrigger
                 value="team-performance"
-                className="h-11 px-5 text-sm font-bold data-[state=active]:text-blue-600 data-[state=active]:after:bg-blue-600"
+                className="h-11 px-5 text-sm font-semibold data-[state=active]:text-blue-600 data-[state=active]:after:bg-blue-600"
               >
                 Team Performance
               </TabsTrigger>
