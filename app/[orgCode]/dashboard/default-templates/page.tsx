@@ -168,7 +168,7 @@ export default function DefaultTemplatesPage() {
                       <TableRow key={m.id}>
                         <TableCell className="font-medium capitalize">{m.name}</TableCell>
                         <TableCell className="text-center">
-                          <Checkbox checked={m.default} disabled />
+                          <Checkbox checked={m.default} className="pointer-events-none" tabIndex={-1} />
                         </TableCell>
                       </TableRow>
                     ))
@@ -208,7 +208,7 @@ export default function DefaultTemplatesPage() {
                       <TableRow key={r.id}>
                         <TableCell className="font-medium capitalize">{r.name}</TableCell>
                         <TableCell className="text-center">
-                          <Checkbox checked={r.default} disabled />
+                          <Checkbox checked={r.default} className="pointer-events-none" tabIndex={-1} />
                         </TableCell>
                       </TableRow>
                     ))
@@ -272,7 +272,8 @@ export default function DefaultTemplatesPage() {
                         <TableCell key={perm} className="text-center">
                           <Checkbox
                             checked={roleMatrix[module]?.[perm] || false}
-                            disabled
+                            className="pointer-events-none"
+                            tabIndex={-1}
                           />
                         </TableCell>
                       ))}

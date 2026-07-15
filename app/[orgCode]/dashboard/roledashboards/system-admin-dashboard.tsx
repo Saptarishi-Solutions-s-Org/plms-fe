@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { Building2, RefreshCw, Users } from "lucide-react";
+import { Building2, RefreshCw, Users, LayoutDashboard, Shield } from "lucide-react";
 import { toast } from "sonner";
 
 import GlobalLoader from "@/components/commoncomponents/globalloader";
@@ -95,52 +95,37 @@ export default function SystemAdminDashboard() {
 
   return (
     <div className="space-y-6 p-6">
-      <section className="w-full rounded-xl bg-gradient-to-r from-blue-700 via-indigo-700 to-purple-700 px-4 sm:px-6 py-6 sm:py-8 shadow-lg">
-        <div className="flex items-start justify-between gap-4">
+      {/* Title Header */}
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
+        <div className="flex items-center gap-3">
+          <div className="p-3 rounded-xl bg-blue-100 text-blue-600">
+            <LayoutDashboard className="h-6 w-6" />
+          </div>
           <div>
-            <h1 className="text-xl sm:text-2xl font-semibold text-white tracking-wide">
-              Welcome back, {user.name}
-            </h1>
-            <p className="text-xs sm:text-sm text-blue-100 mt-1 tracking-wide">
-              Here&apos;s what&apos;s happening in your Application today
+            <h1 className="text-2xl font-semibold">System Admin Dashboard</h1>
+            <p className="text-sm text-muted-foreground">
+              Welcome back, {user.name} | Org Code: {user.orgCode} ({user.orgName})
             </p>
           </div>
-
-          {isRefreshing && (
-            <div className="flex items-center gap-2 rounded-md bg-white/10 px-3 py-1.5 text-xs font-medium text-white">
-              <RefreshCw className="h-3.5 w-3.5 animate-spin" />
-              Refreshing
-            </div>
-          )}
         </div>
 
-        <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 mt-3 text-xs sm:text-sm font-medium text-white">
-          <div className="flex items-center gap-2">
-            <span className="relative flex h-2.5 w-2.5 sm:h-3 sm:w-3">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-300 opacity-75" />
-              <span className="relative inline-flex rounded-full h-2.5 w-2.5 sm:h-3 sm:w-3 bg-green-400" />
-            </span>
-            <span>Org Code : {user.orgCode}</span>
+        {isRefreshing && (
+          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+            <RefreshCw className="h-4 w-4 animate-spin" />
+            Refreshing
           </div>
-          <span className="hidden sm:block opacity-70">/</span>
-          <div className="flex items-center gap-2">
-            <span className="relative flex h-2.5 w-2.5 sm:h-3 sm:w-3">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-300 opacity-75" />
-              <span className="relative inline-flex rounded-full h-2.5 w-2.5 sm:h-3 sm:w-3 bg-blue-400" />
-            </span>
-            <span className="capitalize">Org Name : {user.orgName}</span>
-          </div>
-        </div>
-      </section>
+        )}
+      </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <Card className="hover:shadow-lg transition">
+      {/* Metric Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <Card className="hover:shadow-md transition">
           <CardContent className="flex items-center gap-4 p-5">
-            <div className="p-3 rounded-xl bg-blue-100">
-              <Building2 className="w-5 h-5 text-blue-600" />
+            <div className="p-3 rounded-xl bg-blue-100 text-blue-600">
+              <Building2 className="w-5 h-5" />
             </div>
             <div>
-              <p className="text-sm text-muted-foreground">Organizations</p>
+              <p className="text-sm text-muted-foreground font-medium">Organizations</p>
               <p className="text-2xl font-semibold">
                 {data.totalOrganizations}
               </p>
@@ -148,22 +133,26 @@ export default function SystemAdminDashboard() {
           </CardContent>
         </Card>
 
-        <Card className="hover:shadow-lg transition">
+        <Card className="hover:shadow-md transition">
           <CardContent className="flex items-center gap-4 p-5">
-            <div className="p-3 rounded-xl bg-green-100">
-              <Users className="w-5 h-5 text-green-600" />
+            <div className="p-3 rounded-xl bg-green-100 text-green-600">
+              <Users className="w-5 h-5" />
             </div>
             <div>
-              <p className="text-sm text-muted-foreground">Users</p>
+              <p className="text-sm text-muted-foreground font-medium">Users</p>
               <p className="text-2xl font-semibold">{data.totalUsers}</p>
             </div>
           </CardContent>
         </Card>
       </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Users per Organization</CardTitle>
+      {/* Users per Org list */}
+      <Card className="hover:shadow-md transition">
+        <CardHeader className="flex flex-row items-center gap-3">
+          <div className="p-2 rounded-lg bg-indigo-100 text-indigo-600">
+            <Building2 className="h-5 w-5" />
+          </div>
+          <CardTitle className="text-lg">Users per Organization</CardTitle>
         </CardHeader>
         <CardContent>
           {data.usersPerOrg?.length ? (
@@ -186,29 +175,30 @@ export default function SystemAdminDashboard() {
         </CardContent>
       </Card>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Select Active Role</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <Select value={selectedRole} onValueChange={setSelectedRole}>
-            <SelectTrigger className="w-64">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {data.roles.map((role) => (
-                <SelectItem key={role.orgRoleId} value={role.orgRoleId}>
-                  {role.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>Permissions Matrix</CardTitle>
+      {/* Matrix Card (Merged with dropdown) */}
+      <Card className="hover:shadow-md transition">
+        <CardHeader className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <div className="p-2 rounded-lg bg-purple-100 text-purple-600">
+              <Shield className="h-5 w-5" />
+            </div>
+            <CardTitle className="text-lg">Permissions Matrix</CardTitle>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="text-sm font-medium text-muted-foreground">Select Active Role:</span>
+            <Select value={selectedRole} onValueChange={setSelectedRole}>
+              <SelectTrigger className="w-64 bg-white">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {data.roles.map((role) => (
+                  <SelectItem key={role.orgRoleId} value={role.orgRoleId}>
+                    {role.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
         </CardHeader>
         <CardContent>
           <div className="rounded-lg border border-gray-200 bg-white shadow-sm overflow-x-auto">
@@ -244,6 +234,8 @@ export default function SystemAdminDashboard() {
                               currentRole?.modules[module]?.[permission] ||
                               false
                             )}
+                            className="pointer-events-none"
+                            tabIndex={-1}
                           />
                         </TableCell>
                       ))}
