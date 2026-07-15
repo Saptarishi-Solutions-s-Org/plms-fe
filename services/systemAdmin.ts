@@ -14,3 +14,6 @@ export const updateOrganizationAdminPermissions = (
     method: "POST",
     body: JSON.stringify(payload),
   });
+
+export const getDefaultTemplates = () =>
+  api("/odata/v4/system-admin/getDefaultTemplates()");

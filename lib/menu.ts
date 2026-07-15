@@ -39,6 +39,14 @@ export const MENU_CONFIG: MenuGroup[] = [
         roles: ["System Admin"],
       },
       {
+        href: "/dashboard/default-templates",
+        icon: ShieldCheck,
+        label: "Default Templates",
+        modules: ["permission"],
+        permissions: ["view"],
+        roles: ["System Admin"],
+      },
+      {
         href: "/permissions",
         icon: ShieldCheck,
         label: "Permissions",
