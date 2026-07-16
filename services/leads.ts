@@ -20,31 +20,11 @@ export type GetLeadsWithStatsParams = {
 export const getLeadsWithStats = (params?: GetLeadsWithStatsParams) =>
   api(buildApiFunctionUrl("/odata/v4/lead/getLeadsWithStats", params));
 
-export const getExecutiveUsers = async (): Promise<ExecutiveOption[]> => {
-  const response = await api("/odata/v4/lead/getExecutiveUsers()");
+export const getAllOrganizationLeads = (params?: GetLeadsWithStatsParams) =>
+  api(buildApiFunctionUrl("/odata/v4/lead/getAllOrganizationLeads", params));
 
-  if (Array.isArray(response)) {
-    return response;
-  }
-
-  if (!response) {
-    return [];
-  }
-
-  if (Array.isArray((response as any).executives)) {
-    return (response as any).executives;
-  }
-
-  if (Array.isArray((response as any).items)) {
-    return (response as any).items;
-  }
-
-  if (Array.isArray((response as any).results)) {
-    return (response as any).results;
-  }
-
-  return [];
-};
+export const getExecutiveUsers = () =>
+  api("/odata/v4/lead/getExecutiveUsers()");
 
 export const createLead = (payload: LeadPayload) =>
   api("/odata/v4/lead/createLead", {
@@ -77,6 +57,12 @@ export const addLeadActivity = (leadId: string, data: AddActivityFormData) =>
   api("/odata/v4/lead/addLeadActivity", {
     method: "POST",
     body: JSON.stringify({ leadId, ...data }),
+  });
+
+export const updateLeadActivity = (id: string, notes: string) =>
+  api("/odata/v4/lead/updateLeadActivity", {
+    method: "POST",
+    body: JSON.stringify({ id, notes }),
   });
 
 export const importLeads = (rows: LeadImportRow[]) =>

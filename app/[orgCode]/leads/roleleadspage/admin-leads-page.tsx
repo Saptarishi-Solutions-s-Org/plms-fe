@@ -25,6 +25,9 @@ import type {
 } from "@/types/leadtypes";
 import type { UserDetails } from "@/types/organizationadmindashboard/dashboardtypes";
 
+import { type AuthUser, getUser } from "@/lib/auth";
+import { canAccess } from "@/lib/permissions";
+
 function toLeadPayload(lead: Lead, assignedTo: string): LeadPayload {
   return {
     name: lead.name,
@@ -44,6 +47,18 @@ function toLeadPayload(lead: Lead, assignedTo: string): LeadPayload {
 }
 
 export default function AdminLeadsPage() {
+  const [user, setUser] = useState<AuthUser | null>(() => getUser());
+
+  useEffect(() => {
+    const syncUser = () => setUser(getUser());
+    window.addEventListener("LMA-auth-changed", syncUser);
+    return () => window.removeEventListener("LMA-auth-changed", syncUser);
+  }, []);
+  const canCreateLead = useMemo(() => canAccess(user, ["lead"], ["create"]), [user]);
+  const canExportLead = useMemo(() => canAccess(user, ["lead"], ["export"]), [user]);
+  const canImportLead = useMemo(() => canAccess(user, ["lead"], ["import"]), [user]);
+  const canUpdateLead = useMemo(() => canAccess(user, ["lead"], ["update"]), [user]);
+
   const { page, limit, setPage, setLimit } = useUrlPagination();
   const { filters, setFilters } = useUrlLeadFilters();
   const { handleExport } = useLeadExport();
@@ -99,6 +114,7 @@ export default function AdminLeadsPage() {
     sources: filters.sources,
     assignedTo: assigneeIds,
     statsScope: "all",
+    fetchAllAsAdmin: true,
   });
 
   const openAddForm = () => {
@@ -169,6 +185,9 @@ export default function AdminLeadsPage() {
           onExport={handleExport}
           onAddLead={openAddForm}
           showImport={false}
+          showExport={canExportLead}
+          showCreate={canCreateLead}
+          showBulkAssign={canUpdateLead}
         />
       </div>
 
@@ -197,10 +216,9 @@ export default function AdminLeadsPage() {
         renderActions={(lead) => (
           <LeadActions
             lead={lead}
-            onEdit={openEditForm}
+            onEdit={canUpdateLead ? openEditForm : undefined}
             onViewDetails={handleViewDetails}
             executives={assignees}
-            onAssign={handleAssignLead}
           />
         )}
       />

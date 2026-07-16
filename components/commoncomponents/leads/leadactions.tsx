@@ -102,7 +102,9 @@ export default function LeadActions({
           >
             View Details
           </DropdownMenuItem>
-          <DropdownMenuItem onClick={() => onEdit(lead)}>Edit</DropdownMenuItem>
+          {onEdit && (
+            <DropdownMenuItem onClick={() => onEdit(lead)}>Edit</DropdownMenuItem>
+          )}
           {canAssign && (
             <DropdownMenuItem
               onClick={() => {
