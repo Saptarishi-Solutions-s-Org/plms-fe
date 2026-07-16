@@ -40,7 +40,7 @@ import { useManagerOfferExport } from "@/hooks/export";
 import { useUrlPagination } from "@/hooks/use-url-pagination";
 import { useUrlOfferFilters } from "@/hooks/useurloffer";
 import { subscribeRealtime } from "@/lib/socket";
-import { MoreHorizontal, ListChecks, Download, Plus } from "lucide-react";
+import { MoreHorizontal, ListChecks, Download, Plus, Pencil } from "lucide-react";
 import Image from "next/image";
 
 import {
@@ -50,7 +50,11 @@ import {
   getExecutiveOverview,
   getManagerOfferOverview,
 } from "@/services/managerdashboard";
-import { createManagerOffer, getExecutivesByOffer } from "@/services/offers";
+import {
+  createManagerOffer,
+  getExecutivesByOffer,
+  updateManagerOffer,
+} from "@/services/offers";
 
 import type { OfferPayload } from "@/lib/validators/offervalidation";
 
@@ -165,6 +169,7 @@ export default function OrgManagerOffersPage() {
 
   const [isBulkActionsOpen, setIsBulkActionsOpen] = useState(false);
   const [createOpen, setCreateOpen] = useState(false);
+  const [editingOffer, setEditingOffer] = useState<ManagerOffer | null>(null);
 
   const [isViewAllErrorOpen, setIsViewAllErrorOpen] = useState(false);
   const [selectedOffer, setSelectedOffer] = useState<ManagerOffer | null>(null);
@@ -384,8 +389,9 @@ export default function OrgManagerOffersPage() {
   const handleActionsMenuOpenChange = async (
     offerId: string,
     open: boolean,
+    status?: string,
   ) => {
-    if (!open) return;
+    if (!open || status !== "active") return;
 
     setAvailableExecutivesLoadingOfferId(offerId);
 
@@ -435,51 +441,55 @@ export default function OrgManagerOffersPage() {
     }
   };
 
+  const buildManagerOfferApiPayload = (data: OfferPayload) => ({
+    ...(data.id && { id: data.id }),
+
+    title: data.title,
+    description: data.description,
+    discount_type: data.discount_type,
+    valid_from: data.valid_from,
+    valid_to: data.valid_to,
+
+    ...(data.discount_amount !== undefined && {
+      discount_amount: data.discount_amount,
+    }),
+
+    ...(data.discount_percentage !== undefined && {
+      discount_percentage: data.discount_percentage,
+    }),
+
+    ...(data.max_discount_amount !== undefined && {
+      max_discount_amount: data.max_discount_amount,
+    }),
+
+    ...(data.combo_description !== undefined && {
+      combo_description: data.combo_description,
+    }),
+
+    ...(data.buy_quantity !== undefined && {
+      buy_quantity: data.buy_quantity,
+    }),
+
+    ...(data.get_quantity !== undefined && {
+      get_quantity: data.get_quantity,
+    }),
+
+    ...(data.min_purchase_amount !== undefined && {
+      min_purchase_amount: data.min_purchase_amount,
+    }),
+
+    ...(data.discount_value !== undefined && {
+      discount_value: data.discount_value,
+    }),
+
+    ...(data.flag_discount_amount !== undefined && {
+      flag_discount_amount: data.flag_discount_amount,
+    }),
+  });
+
   const handleCreateOffer = async (data: OfferPayload) => {
     try {
-      await createManagerOffer({
-        title: data.title,
-        description: data.description,
-        discount_type: data.discount_type,
-        valid_from: data.valid_from,
-        valid_to: data.valid_to,
-
-        ...(data.discount_amount !== undefined && {
-          discount_amount: data.discount_amount,
-        }),
-
-        ...(data.discount_percentage !== undefined && {
-          discount_percentage: data.discount_percentage,
-        }),
-
-        ...(data.max_discount_amount !== undefined && {
-          max_discount_amount: data.max_discount_amount,
-        }),
-
-        ...(data.combo_description !== undefined && {
-          combo_description: data.combo_description,
-        }),
-
-        ...(data.buy_quantity !== undefined && {
-          buy_quantity: data.buy_quantity,
-        }),
-
-        ...(data.get_quantity !== undefined && {
-          get_quantity: data.get_quantity,
-        }),
-
-        ...(data.min_purchase_amount !== undefined && {
-          min_purchase_amount: data.min_purchase_amount,
-        }),
-
-        ...(data.discount_value !== undefined && {
-          discount_value: data.discount_value,
-        }),
-
-        ...(data.flag_discount_amount !== undefined && {
-          flag_discount_amount: data.flag_discount_amount,
-        }),
-      });
+      await createManagerOffer(buildManagerOfferApiPayload(data));
 
       await fetchOffers();
 
@@ -490,6 +500,34 @@ export default function OrgManagerOffersPage() {
         error: "Failed to create offer",
       };
     }
+  };
+
+  const handleUpdateOffer = async (data: OfferPayload) => {
+    try {
+      await updateManagerOffer(buildManagerOfferApiPayload(data));
+
+      await fetchOffers();
+
+      return { success: true as const };
+    } catch {
+      return {
+        success: false as const,
+        error: "Failed to update offer",
+      };
+    }
+  };
+
+  const handleSubmitOffer = (data: OfferPayload) =>
+    data.id ? handleUpdateOffer(data) : handleCreateOffer(data);
+
+  const handleEditOffer = (offer: ManagerOffer) => {
+    setEditingOffer(offer);
+    setCreateOpen(true);
+  };
+
+  const handleDialogOpenChange = (open: boolean) => {
+    setCreateOpen(open);
+    if (!open) setEditingOffer(null);
   };
 
   const handleBulkAssignOffer = async ({
@@ -565,8 +603,9 @@ export default function OrgManagerOffersPage() {
 
       <CreateOfferDialog
         open={createOpen}
-        onOpenChange={setCreateOpen}
-        onSubmit={handleCreateOffer}
+        onOpenChange={handleDialogOpenChange}
+        onSubmit={handleSubmitOffer}
+        offer={editingOffer}
         scope="manager"
       />
 
@@ -723,16 +762,20 @@ export default function OrgManagerOffersPage() {
                   <TableCell className="text-center">
                     <DropdownMenu
                       onOpenChange={(open) =>
-                        handleActionsMenuOpenChange(offer.id, open)
+                        handleActionsMenuOpenChange(
+                          offer.id,
+                          open,
+                          offer.status,
+                        )
                       }
                     >
                       <DropdownMenuTrigger asChild>
                         <Button
                           variant="ghost"
                           size="icon"
-                          disabled={offer.status !== "active"}
+                          disabled={offer.status === "expired"}
                           className={
-                            offer.status !== "active"
+                            offer.status === "expired"
                               ? "cursor-not-allowed opacity-100"
                               : ""
                           }
@@ -745,32 +788,47 @@ export default function OrgManagerOffersPage() {
                         align="end"
                         className="max-h-60 overflow-y-auto"
                       >
-                        <div className="px-2 py-1.5 text-xs font-semibold text-gray-500">
-                          Assign To
-                        </div>
+                        <DropdownMenuItem
+                          onClick={() => handleEditOffer(offer)}
+                        >
+                          <Pencil className="mr-2 h-4 w-4" />
+                          Edit
+                        </DropdownMenuItem>
 
-                        {availableExecutivesLoadingOfferId === offer.id ? (
-                          <DropdownMenuItem disabled>
-                            Loading executives...
-                          </DropdownMenuItem>
-                        ) : (availableExecutivesByOffer[offer.id] ?? [])
-                          .length === 0 ? (
-                          <DropdownMenuItem disabled>
-                            No Eligible Executives
-                          </DropdownMenuItem>
-                        ) : (
-                          availableExecutivesByOffer[offer.id].map(
-                            (executive) => (
-                              <DropdownMenuItem
-                                key={executive.id}
-                                onClick={() =>
-                                  handleAssignOffer(offer.id, executive.id)
-                                }
-                              >
-                                {executive.name}
+                        {offer.status === "active" && (
+                          <>
+                            <div className="px-2 py-1.5 text-xs font-semibold text-gray-500">
+                              Assign To
+                            </div>
+
+                            {availableExecutivesLoadingOfferId ===
+                            offer.id ? (
+                              <DropdownMenuItem disabled>
+                                Loading executives...
                               </DropdownMenuItem>
-                            ),
-                          )
+                            ) : (availableExecutivesByOffer[offer.id] ?? [])
+                                .length === 0 ? (
+                              <DropdownMenuItem disabled>
+                                No Eligible Executives
+                              </DropdownMenuItem>
+                            ) : (
+                              availableExecutivesByOffer[offer.id].map(
+                                (executive) => (
+                                  <DropdownMenuItem
+                                    key={executive.id}
+                                    onClick={() =>
+                                      handleAssignOffer(
+                                        offer.id,
+                                        executive.id,
+                                      )
+                                    }
+                                  >
+                                    {executive.name}
+                                  </DropdownMenuItem>
+                                ),
+                              )
+                            )}
+                          </>
                         )}
                       </DropdownMenuContent>
                     </DropdownMenu>
