@@ -87,7 +87,7 @@ export default function ManagerLeadsPage() {
     useState(false);
 
   useEffect(() => {
-    getExecutiveUsers().then(setExecutives).catch(console.error);
+    getExecutiveUsers().then((res: any) => setExecutives(res.users ?? [])).catch(console.error);
   }, []);
 
   const executiveNamesById = useMemo(
