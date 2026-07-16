@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 
 import GlobalLoader from "@/components/commoncomponents/globalloader";
@@ -15,7 +15,8 @@ import TablePaginationFooter from "@/components/commoncomponents/table-paginatio
 import { useLeads } from "@/hooks/use-leads";
 import { useUrlLeadFilters } from "@/hooks/useurllead-filters";
 import { useUrlPagination } from "@/hooks/use-url-pagination";
-import { getUser } from "@/lib/auth";
+import { type AuthUser, getUser } from "@/lib/auth";
+import { canAccess } from "@/lib/permissions";
 import {
   assignOfferToLead,
   assignOffersToLeads,
@@ -46,8 +47,19 @@ export default function ExecutiveLeadsPage() {
     sources: filters.sources,
     statsScope: "all",
   });
-  const currentUser = getUser();
+  const [currentUser, setCurrentUser] = useState<AuthUser | null>(() => getUser());
+
+  useEffect(() => {
+    const syncUser = () => setCurrentUser(getUser());
+    window.addEventListener("LMA-auth-changed", syncUser);
+    return () => window.removeEventListener("LMA-auth-changed", syncUser);
+  }, []);
   const currentUserId = currentUser?.id;
+
+  const canCreateLead = useMemo(() => canAccess(currentUser, ["lead"], ["create"]), [currentUser]);
+  const canExportLead = useMemo(() => canAccess(currentUser, ["lead"], ["export"]), [currentUser]);
+  const canImportLead = useMemo(() => canAccess(currentUser, ["lead"], ["import"]), [currentUser]);
+  const canUpdateLead = useMemo(() => canAccess(currentUser, ["lead"], ["update"]), [currentUser]);
 
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingLead, setEditingLead] = useState<Lead | null>(null);
@@ -199,7 +211,10 @@ export default function ExecutiveLeadsPage() {
               onExport={() => undefined}
               onAddLead={openAddForm}
               showImportExport={false}
-              showImport
+              showImport={canImportLead}
+              showExport={canExportLead}
+              showCreate={canCreateLead}
+              showBulkAssign={canUpdateLead}
               onImportComplete={refetch}
               onBulkAssign={() => setIsBulkAssignOpen(true)}
             />
@@ -231,7 +246,7 @@ export default function ExecutiveLeadsPage() {
             renderActions={(lead) => (
               <LeadActions
                 lead={lead}
-                onEdit={openEditForm}
+                onEdit={canUpdateLead ? openEditForm : undefined}
                 onViewDetails={handleViewDetails}
                 offerOptions={offerOptions}
                 isOfferOptionsLoading={isOfferOptionsLoading}

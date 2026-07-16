@@ -37,8 +37,13 @@ export const bulkAssignOffersToExecutives = (payload: {
     body: JSON.stringify(payload),
   });
 
-export const getExecutiveOverview = () =>
-  api("/odata/v4/manager-dashboard/getExecutiveOverview()");  
+export type GetExecutiveOverviewParams = {
+  page?: number;
+  limit?: number;
+  search?: string;
+  status?: string;
+  managerId?: string;
+};
 
 export const createManagerExecutive = (payload: {
   name: string;
@@ -55,6 +60,13 @@ export const createManagerExecutive = (payload: {
     body: JSON.stringify(payload),
   });
 
+export const getExecutiveOverview = (params?: GetExecutiveOverviewParams) =>
+  api(
+    buildApiFunctionUrl(
+      "/odata/v4/manager-dashboard/getExecutiveOverview",
+      params,
+    ),
+  );
 
 export const getAvailableExecutivesForOffer = (offerId: string) =>
   api(

@@ -68,7 +68,7 @@ export const MENU_CONFIG: MenuGroup[] = [
         label: "Leads",
         modules: ["lead"],
         permissions: ["view", "create", "update", "delete"],
-        roles: ["Executive", "Manager"],
+        roles: ["Executive", "Manager","Admin"],
       },
 
       // Manager → View only

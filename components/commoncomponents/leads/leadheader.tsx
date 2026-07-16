@@ -15,6 +15,8 @@ export default function LeadHeader({
   showImportExport = true,
   showImport,
   showExport,
+  showCreate = true,
+  showBulkAssign = true,
 }: LeadHeaderProps) {
   const [isImportOpen, setImportOpen] = useState(false);
 
@@ -24,7 +26,7 @@ export default function LeadHeader({
   return (
     <>
       <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
-        {onBulkAssign && (
+        {onBulkAssign && showBulkAssign && (
           <Button
             type="button"
             variant="outline"
@@ -36,7 +38,7 @@ export default function LeadHeader({
           </Button>
         )}
 
-        {shouldShowExport && (
+        {showExport && (
           <Button
             type="button"
             variant="outline"
@@ -48,7 +50,7 @@ export default function LeadHeader({
           </Button>
         )}
 
-        {shouldShowImport && (
+        {showImport && (
           <Button
             type="button"
             variant="outline"
@@ -60,16 +62,18 @@ export default function LeadHeader({
           </Button>
         )}
 
-        <Button
-          onClick={onAddLead}
-          className="flex h-9 w-full items-center justify-center gap-1.5 rounded-full bg-blue-600 px-4 text-sm font-semibold text-white hover:bg-blue-700 sm:w-auto"
-        >
-          <Plus className="h-4 w-4" />
-          Add New Lead
-        </Button>
+        {showCreate && (
+          <Button
+            onClick={onAddLead}
+            className="flex h-9 w-full items-center justify-center gap-1.5 rounded-full bg-blue-600 px-4 text-sm font-semibold text-white hover:bg-blue-700 sm:w-auto"
+          >
+            <Plus className="h-4 w-4" />
+            Add New Lead
+          </Button>
+        )}
       </div>
 
-      {shouldShowImport && (
+      {showImport && (
         <LeadImportDialog
           open={isImportOpen}
           onOpenChange={setImportOpen}

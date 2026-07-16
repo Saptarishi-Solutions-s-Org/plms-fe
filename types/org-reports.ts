@@ -20,6 +20,7 @@ export interface ExecutiveUserRecord {
 
 export interface ExecutivePerformanceRecord {
   id?: string;
+  name?: string;
   executiveId?: string;
   executiveName?: string;
   total?: number;

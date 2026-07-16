@@ -1,4 +1,9 @@
 import { exportLeads } from "@/services/leads";
+import {
+  exportOffersAdmin,
+  exportOffersExecutive,
+  exportOffersManager,
+} from "@/services/offers";
 import type { ExecutiveLeadRow, TeamPerformanceRow } from "@/types/org-reports";
 import { format } from "date-fns";
 
@@ -11,46 +16,86 @@ const getReportFilename = (reportName: string) => {
   return `${reportName}_${month}_${year}_${time}.csv`;
 };
 
-export function useLeadExport() {
-  const handleExport = async () => {
-    try {
-      const rows = await exportLeads();
+async function exportRowsAsCsv(
+  fetchRows: () => Promise<Record<string, unknown>[] | null | undefined>,
+  filenamePrefix: string,
+  emptyMessage: string,
+) {
+  try {
+    const rows = await fetchRows();
 
-      if (!rows?.length) {
-        window.alert("There are no leads to export.");
-        return;
-      }
-
-      const headers = Object.keys(rows[0]);
-
-      const csvLines = [
-        headers.join(","),
-        ...rows.map((row: Record<string, unknown>) =>
-          headers
-            .map((header) => {
-              const value = String(row[header] ?? "").replace(/"/g, '""');
-              return /[,"\n]/.test(value) ? `"${value}"` : value;
-            })
-            .join(","),
-        ),
-      ];
-
-      const blob = new Blob([csvLines.join("\n")], {
-        type: "text/csv;charset=utf-8;",
-      });
-
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement("a");
-
-      link.href = url;
-      link.download = getReportFilename("LeadsReport");
-      link.click();
-
-      URL.revokeObjectURL(url);
-    } catch {
-      window.alert("Export failed. Please try again.");
+    if (!rows?.length) {
+      window.alert(emptyMessage);
+      return;
     }
-  };
+
+    const headers = Object.keys(rows[0]);
+
+    const csvLines = [
+      headers.join(","),
+      ...rows.map((row) =>
+        headers
+          .map((header) => {
+            const value = String(row[header] ?? "").replace(/"/g, '""');
+            return /[,"\n]/.test(value) ? `"${value}"` : value;
+          })
+          .join(","),
+      ),
+    ];
+
+    const blob = new Blob([csvLines.join("\n")], {
+      type: "text/csv;charset=utf-8;",
+    });
+
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+
+    link.href = url;
+    link.download = getReportFilename(filenamePrefix);
+    link.click();
+
+    URL.revokeObjectURL(url);
+  } catch {
+    window.alert("Export failed. Please try again.");
+  }
+}
+
+export function useLeadExport() {
+  const handleExport = () =>
+    exportRowsAsCsv(exportLeads, "LeadsReport", "There are no leads to export.");
+
+  return { handleExport };
+}
+
+export function useOfferExport() {
+  const handleExport = () =>
+    exportRowsAsCsv(
+      exportOffersAdmin,
+      "OffersReport",
+      "There are no offers to export.",
+    );
+
+  return { handleExport };
+}
+
+export function useManagerOfferExport() {
+  const handleExport = () =>
+    exportRowsAsCsv(
+      exportOffersManager,
+      "OffersReport",
+      "There are no offers to export.",
+    );
+
+  return { handleExport };
+}
+
+export function useExecutiveOfferExport() {
+  const handleExport = () =>
+    exportRowsAsCsv(
+      exportOffersExecutive,
+      "OffersReport",
+      "There are no offers to export.",
+    );
 
   return { handleExport };
 }
