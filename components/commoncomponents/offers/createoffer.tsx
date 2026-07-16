@@ -34,11 +34,13 @@ import type { DateRange } from "@/components/commoncomponents/react-day-picker";
 import {
   offerFormSchema,
   buildOfferPayload,
+  mapOfferToFormData,
   DISCOUNT_OPTIONS,
   type Manager,
   type OfferPayload,
   type OfferFormData,
 } from "@/lib/validators/offervalidation";
+import type { Offer } from "@/types/Createoffer";
 
 const EMPTY_FORM: OfferFormData = {
   offerName: "",
@@ -111,13 +113,16 @@ interface CreateOfferDialogProps {
   onSubmit: (
     data: OfferPayload,
   ) => Promise<{ success: boolean; error?: string }>;
+  offer?: Offer | null;
 }
 
 export function CreateOfferDialog({
   open,
   onOpenChange,
   onSubmit,
+  offer = null,
 }: CreateOfferDialogProps) {
+  const isEditing = Boolean(offer);
   const [managers, setManagers] = useState<Manager[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState("");
@@ -134,6 +139,11 @@ export function CreateOfferDialog({
     resolver: zodResolver(offerFormSchema),
     defaultValues: EMPTY_FORM,
   });
+
+  useEffect(() => {
+    if (!open) return;
+    reset(offer ? mapOfferToFormData(offer) : EMPTY_FORM);
+  }, [open, offer, reset]);
 
   const isGlobal = watch("isGlobal");
   const selectedManagerIds = watch("managerIds");
@@ -211,9 +221,11 @@ export function CreateOfferDialog({
     setIsSubmitting(true);
     setSubmitError("");
     try {
-      const result = await onSubmit(buildOfferPayload(data));
+      const result = await onSubmit(
+        buildOfferPayload(data, offer?.id),
+      );
       if (result.success) {
-        toast.success("Offer created");
+        toast.success(isEditing ? "Offer updated" : "Offer created");
         handleOpenChange(false);
       } else {
         setSubmitError(
@@ -239,10 +251,12 @@ export function CreateOfferDialog({
             </div>
             <div>
               <DialogTitle className="text-lg font-semibold text-blue-600 leading-tight">
-                Create Offer
+                {isEditing ? "Edit Offer" : "Create Offer"}
               </DialogTitle>
               <DialogDescription className="text-xs text-muted-foreground mt-0.5">
-                Fill in all required fields to create a new promotional offer
+                {isEditing
+                  ? "Update the details of this promotional offer"
+                  : "Fill in all required fields to create a new promotional offer"}
               </DialogDescription>
             </div>
           </div>
@@ -611,6 +625,8 @@ export function CreateOfferDialog({
                   <Spinner className="size-4" />
                   Saving…
                 </span>
+              ) : isEditing ? (
+                "Update Offer"
               ) : (
                 "Save Offer"
               )}
