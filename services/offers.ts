@@ -19,6 +19,12 @@ export const updateOffer = (data: Record<string, unknown>) =>
     body: JSON.stringify(data),
   });
 
+export const createManagerOffer = (data: Record<string, unknown>) =>
+  api(`/odata/v4/offer/createManagerOffer`, {
+    method: "POST",
+    body: JSON.stringify(data),
+  });
+
 export const exportOffersAdmin = () =>
   api(`/odata/v4/offer/exportOffersAdmin`, { method: "POST" });
 

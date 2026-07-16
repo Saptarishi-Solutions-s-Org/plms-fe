@@ -5,6 +5,7 @@ import { toast } from "sonner";
 
 import GlobalLoader from "@/components/commoncomponents/globalloader";
 import { BulkActionsDrawer } from "@/components/commoncomponents/bulk-actions/BulkActionsDrawer";
+import { CreateOfferDialog } from "@/components/commoncomponents/offers/createoffer";
 import { OfferCards } from "@/components/commoncomponents/offers/offercards";
 import { OfferFilters } from "@/components/commoncomponents/offers/offerfilter";
 import TablePaginationFooter from "@/components/commoncomponents/table-pagination-footer";
@@ -39,7 +40,7 @@ import { useManagerOfferExport } from "@/hooks/export";
 import { useUrlPagination } from "@/hooks/use-url-pagination";
 import { useUrlOfferFilters } from "@/hooks/useurloffer";
 import { subscribeRealtime } from "@/lib/socket";
-import { MoreHorizontal, ListChecks, Download } from "lucide-react";
+import { MoreHorizontal, ListChecks, Download, Plus } from "lucide-react";
 import Image from "next/image";
 
 import {
@@ -49,7 +50,9 @@ import {
   getExecutiveOverview,
   getManagerOfferOverview,
 } from "@/services/managerdashboard";
-import { getExecutivesByOffer } from "@/services/offers";
+import { createManagerOffer, getExecutivesByOffer } from "@/services/offers";
+
+import type { OfferPayload } from "@/lib/validators/offervalidation";
 
 import type {
   Offer,
@@ -161,6 +164,7 @@ export default function OrgManagerOffersPage() {
   ] = useState<string | null>(null);
 
   const [isBulkActionsOpen, setIsBulkActionsOpen] = useState(false);
+  const [createOpen, setCreateOpen] = useState(false);
 
   const [isViewAllErrorOpen, setIsViewAllErrorOpen] = useState(false);
   const [selectedOffer, setSelectedOffer] = useState<ManagerOffer | null>(null);
@@ -431,6 +435,63 @@ export default function OrgManagerOffersPage() {
     }
   };
 
+  const handleCreateOffer = async (data: OfferPayload) => {
+    try {
+      await createManagerOffer({
+        title: data.title,
+        description: data.description,
+        discount_type: data.discount_type,
+        valid_from: data.valid_from,
+        valid_to: data.valid_to,
+
+        ...(data.discount_amount !== undefined && {
+          discount_amount: data.discount_amount,
+        }),
+
+        ...(data.discount_percentage !== undefined && {
+          discount_percentage: data.discount_percentage,
+        }),
+
+        ...(data.max_discount_amount !== undefined && {
+          max_discount_amount: data.max_discount_amount,
+        }),
+
+        ...(data.combo_description !== undefined && {
+          combo_description: data.combo_description,
+        }),
+
+        ...(data.buy_quantity !== undefined && {
+          buy_quantity: data.buy_quantity,
+        }),
+
+        ...(data.get_quantity !== undefined && {
+          get_quantity: data.get_quantity,
+        }),
+
+        ...(data.min_purchase_amount !== undefined && {
+          min_purchase_amount: data.min_purchase_amount,
+        }),
+
+        ...(data.discount_value !== undefined && {
+          discount_value: data.discount_value,
+        }),
+
+        ...(data.flag_discount_amount !== undefined && {
+          flag_discount_amount: data.flag_discount_amount,
+        }),
+      });
+
+      await fetchOffers();
+
+      return { success: true as const };
+    } catch {
+      return {
+        success: false as const,
+        error: "Failed to create offer",
+      };
+    }
+  };
+
   const handleBulkAssignOffer = async ({
     offerIds,
     executiveIds,
@@ -491,8 +552,23 @@ export default function OrgManagerOffersPage() {
             <ListChecks className="h-4 w-4" />
             Bulk Action
           </Button>
+
+          <Button
+            onClick={() => setCreateOpen(true)}
+            className="flex h-9 w-full items-center justify-center gap-1.5 rounded-full bg-blue-600 px-4 text-white hover:bg-blue-700 sm:w-auto"
+          >
+            <Plus className="h-4 w-4" />
+            Create Offer
+          </Button>
         </div>
       </div>
+
+      <CreateOfferDialog
+        open={createOpen}
+        onOpenChange={setCreateOpen}
+        onSubmit={handleCreateOffer}
+        scope="manager"
+      />
 
       <BulkActionsDrawer
         open={isBulkActionsOpen}

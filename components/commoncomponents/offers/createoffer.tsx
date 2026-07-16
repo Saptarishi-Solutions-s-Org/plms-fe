@@ -33,6 +33,7 @@ import type { DateRange } from "@/components/commoncomponents/react-day-picker";
 
 import {
   offerFormSchema,
+  managerOfferFormSchema,
   buildOfferPayload,
   mapOfferToFormData,
   DISCOUNT_OPTIONS,
@@ -114,6 +115,7 @@ interface CreateOfferDialogProps {
     data: OfferPayload,
   ) => Promise<{ success: boolean; error?: string }>;
   offer?: Offer | null;
+  scope?: "admin" | "manager";
 }
 
 export function CreateOfferDialog({
@@ -121,8 +123,10 @@ export function CreateOfferDialog({
   onOpenChange,
   onSubmit,
   offer = null,
+  scope = "admin",
 }: CreateOfferDialogProps) {
   const isEditing = Boolean(offer);
+  const isManagerScope = scope === "manager";
   const [managers, setManagers] = useState<Manager[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState("");
@@ -136,7 +140,9 @@ export function CreateOfferDialog({
     setValue,
     formState: { errors },
   } = useForm<OfferFormData>({
-    resolver: zodResolver(offerFormSchema),
+    resolver: zodResolver(
+      isManagerScope ? managerOfferFormSchema : offerFormSchema,
+    ),
     defaultValues: EMPTY_FORM,
   });
 
@@ -177,7 +183,7 @@ export function CreateOfferDialog({
     let isMounted = true;
 
     const loadManagers = async () => {
-      if (!open) return;
+      if (!open || isManagerScope) return;
       const managerList = await fetchManagers();
       if (isMounted) {
         setManagers(managerList);
@@ -189,7 +195,7 @@ export function CreateOfferDialog({
     return () => {
       isMounted = false;
     };
-  }, [open]);
+  }, [open, isManagerScope]);
 
   const handleOpenChange = (next: boolean) => {
     if (!next && isSubmitting) return;
@@ -283,44 +289,49 @@ export function CreateOfferDialog({
               )}
 
               {/* Offer Scope */}
+              {!isManagerScope && (
+                <div>
+                  <h3 className="mb-3 text-sm font-semibold text-blue-600">
+                    Offer Scope
+                  </h3>
+                  <Controller
+                    name="isGlobal"
+                    control={control}
+                    render={({ field }) => (
+                      <div
+                        className={`flex items-center justify-between rounded-xl border p-3.5 transition-colors
+                      ${field.value ? "border-blue-200 bg-blue-50/60" : "border-input bg-muted/30"}`}
+                      >
+                        <div className="flex items-center gap-2.5">
+                          <GlobeIcon
+                            className={`size-4 ${field.value ? "text-blue-600" : "text-muted-foreground"}`}
+                          />
+                          <span className="text-sm font-medium">
+                            {field.value
+                              ? "Global — visible to all users"
+                              : "Assign to specific managers"}
+                          </span>
+                        </div>
+                        <Switch
+                          checked={field.value}
+                          onCheckedChange={(checked) => {
+                            field.onChange(checked);
+                            setValue("managerIds", []);
+                          }}
+                          disabled={isSubmitting}
+                          className="data-[state=checked]:bg-blue-600"
+                        />
+                      </div>
+                    )}
+                  />
+                </div>
+              )}
+
+              {/* Offer Details */}
               <div>
                 <h3 className="mb-3 text-sm font-semibold text-blue-600">
                   Offer Details
                 </h3>
-                <Controller
-                  name="isGlobal"
-                  control={control}
-                  render={({ field }) => (
-                    <div
-                      className={`flex items-center justify-between rounded-xl border p-3.5 transition-colors
-                      ${field.value ? "border-blue-200 bg-blue-50/60" : "border-input bg-muted/30"}`}
-                    >
-                      <div className="flex items-center gap-2.5">
-                        <GlobeIcon
-                          className={`size-4 ${field.value ? "text-blue-600" : "text-muted-foreground"}`}
-                        />
-                        <span className="text-sm font-medium">
-                          {field.value
-                            ? "Global — visible to all users"
-                            : "Assign to specific managers"}
-                        </span>
-                      </div>
-                      <Switch
-                        checked={field.value}
-                        onCheckedChange={(checked) => {
-                          field.onChange(checked);
-                          setValue("managerIds", []);
-                        }}
-                        disabled={isSubmitting}
-                        className="data-[state=checked]:bg-blue-600"
-                      />
-                    </div>
-                  )}
-                />
-              </div>
-
-              {/* Offer Details */}
-              <div>
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                   <FieldWrapper
                     label="Offer Name"
@@ -365,7 +376,7 @@ export function CreateOfferDialog({
                     />
                   </FieldWrapper>
 
-                  {!isGlobal && (
+                  {!isGlobal && !isManagerScope && (
                     <FieldWrapper
                       label="Managers"
                       required
