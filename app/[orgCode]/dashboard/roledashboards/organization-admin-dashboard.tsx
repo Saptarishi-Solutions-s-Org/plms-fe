@@ -18,6 +18,8 @@ import {
 import { useEffect, useState, useCallback } from "react";
 import AddLeadForm from "@/components/orgadmindashboard/userform";
 import { getOrganizationAdminDashboard } from "@/services/organizationAdmin";
+import { canAccess } from "@/lib/permissions";
+import { useCurrentUser } from "@/hooks/use-current-user";
 import { AdminCardsProps, UserDetails } from "@/types/organizationadmindashboard/dashboardtypes";
 import { subscribeRealtime } from "@/lib/socket";
 import {
@@ -44,6 +46,9 @@ export default function OrganizationAdminDashboard() {
 
   const { page, limit, setPage, setLimit } = useUrlPagination();
   const { filters } = useUrlUserFilters();
+  const currentUser = useCurrentUser();
+  const canCreateUsers = canAccess(currentUser, ["user"], ["create"]);
+  const canExportUsers = canAccess(currentUser, ["user"], ["export"]);
 
   const [pagination, setPagination] = useState<PaginationMeta>(
     emptyPagination(limit),
@@ -194,43 +199,46 @@ export default function OrganizationAdminDashboard() {
 
           {/* Button + Dialog */}
           <div className="w-full flex flex-col sm:flex-row sm:items-center sm:justify-end gap-4 h-auto sm:h-20">
-            <Dialog open={open} onOpenChange={setOpen}>
-              <DialogTrigger asChild>
-                <Button
-                  variant="outline"
-                  size="lg"
-                  className="w-full sm:w-auto rounded-full bg-blue-500 text-white hover:bg-blue-600 hover:text-white font-medium"
-                >
-                  <Plus className="mr-2 h-4 w-4" />
-                  Add User
-                </Button>
-              </DialogTrigger>
+            {canCreateUsers ? (
+              <Dialog open={open} onOpenChange={setOpen}>
+                <DialogTrigger asChild>
+                  <Button
+                    variant="outline"
+                    size="lg"
+                    className="w-full sm:w-auto rounded-full bg-blue-500 text-white hover:bg-blue-600 hover:text-white font-medium"
+                  >
+                    <Plus className="mr-2 h-4 w-4" />
+                    Add User
+                  </Button>
+                </DialogTrigger>
 
-              <DialogContent className="w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-                <DialogHeader>
-                  <DialogTitle>Add User</DialogTitle>
-                  <DialogDescription>
-                    Fill the form to create a New User.
-                  </DialogDescription>
-                </DialogHeader>
+                <DialogContent className="w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+                  <DialogHeader>
+                    <DialogTitle>Add User</DialogTitle>
+                    <DialogDescription>
+                      Fill the form to create a New User.
+                    </DialogDescription>
+                  </DialogHeader>
 
-                <AddLeadForm
-                  onClose={() => {
-                    setOpen(false);
-                  }}
-                />
-              </DialogContent>
-            </Dialog>
+                  <AddLeadForm
+                    onClose={() => {
+                      setOpen(false);
+                    }}
+                  />
+                </DialogContent>
+              </Dialog>
+            ) : null}
 
-            <Button
-              variant="outline"
-              size="lg"
-              onClick={handleExportUsers}
-              className="w-full sm:w-auto rounded-full bg-blue-500 text-white hover:bg-blue-600 hover:text-white font-medium"
-            >
-              <Download className="size-4" />
-              Export Users
-            </Button>
+            {canExportUsers ? (
+              <Button
+                variant="outline"
+                onClick={handleExportUsers}
+                className="flex h-9 w-full items-center justify-center gap-1.5 rounded-full px-4 sm:w-auto"
+              >
+                <Download className="h-4 w-4" />
+                Export Users
+              </Button>
+            ) : null}
           </div>
 
         </div>
