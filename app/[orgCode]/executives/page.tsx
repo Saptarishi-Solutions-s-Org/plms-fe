@@ -27,17 +27,20 @@ import ExecutiveStatCards from "@/components/commoncomponents/managerdashboard/e
 import ExecutiveTableFilters from "@/components/commoncomponents/managerdashboard/executive-table-filter";
 import TablePaginationFooter from "@/components/commoncomponents/table-pagination-footer";
 import { useUrlPagination } from "@/hooks/use-url-pagination";
-import { createPaginationMeta } from "@/types/pagination";
+import { useUrlFilters, type FilterConfig } from "@/hooks/useurlfilters";
+import { createPaginationMeta, type PaginationMeta } from "@/types/pagination";
 
-const DEFAULT_FILTERS: ExecutiveFilters = {
-  search: "",
-  status: [],
+const executiveFilterConfig: FilterConfig<ExecutiveFilters> = {
+  search: { type: "string", urlKey: "search" },
+  status: { type: "list", urlKey: "status" },
 };
+
 
 const formatCount = (value: number) => value.toLocaleString("en-IN");
 
 export default function ExecutivesPage() {
   const { page, limit, setPage, setLimit } = useUrlPagination();
+  const { filters, setFilters } = useUrlFilters<ExecutiveFilters>(executiveFilterConfig);
   const [executives, setExecutives] = useState<ExecutiveRow[]>([]);
 
   const [totalCount, setTotalCount] = useState(0);
@@ -50,10 +53,15 @@ export default function ExecutivesPage() {
 
   const [error, setError] = useState<string | null>(null);
 
-  const [filters, setFilters] = useState<ExecutiveFilters>(DEFAULT_FILTERS);
+  const [draftFilters, setDraftFilters] = useState<ExecutiveFilters>(filters);
 
-  const [draftFilters, setDraftFilters] =
-    useState<ExecutiveFilters>(DEFAULT_FILTERS);
+  useEffect(() => {
+    setDraftFilters(filters);
+  }, [filters]);
+
+  const [pagination, setPagination] = useState<PaginationMeta>(
+    createPaginationMeta({ page, limit, total: 0 }),
+  );
 
   const fetchExecutives = useCallback(async (showLoader = false) => {
     try {
@@ -61,7 +69,12 @@ export default function ExecutivesPage() {
 
       setError(null);
 
-      const response = await getExecutiveOverview();
+      const response = await getExecutiveOverview({
+        page,
+        limit,
+        search: filters.search,
+        status: filters.status.join(","),
+      });
 
       const data = response?.value || response;
 
@@ -92,14 +105,20 @@ export default function ExecutivesPage() {
       );
 
       setExecutives(formattedExecutives);
+      setPagination(
+        data?.pagination ??
+          createPaginationMeta({ page, limit, total: formattedExecutives.length }),
+      );
     } catch (err) {
       setError(
         err instanceof Error ? err.message : "Failed to load executives",
       );
+      setExecutives([]);
+      setPagination(createPaginationMeta({ page, limit, total: 0 }));
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [page, limit, filters]);
 
   useEffect(() => {
     fetchExecutives(true);
@@ -142,54 +161,16 @@ export default function ExecutivesPage() {
 
   const handleApplyFilters = useCallback(() => {
     setFilters(draftFilters);
-    setPage(1);
-  }, [draftFilters, setPage]);
+  }, [draftFilters, setFilters]);
 
   const handleClearFilters = useCallback(() => {
-    setFilters(DEFAULT_FILTERS);
+    setFilters({ search: "", status: [] });
+  }, [setFilters]);
 
-    setDraftFilters(DEFAULT_FILTERS);
-    setPage(1);
-  }, [setPage]);
-
-  const filteredExecutives = useMemo(
-    () =>
-      executives.filter((executive) => {
-        const query = filters.search.toLowerCase();
-
-        const matchesSearch =
-          !query ||
-          executive.name.toLowerCase().includes(query) ||
-          executive.email.toLowerCase().includes(query) ||
-          executive.phone.toLowerCase().includes(query);
-
-        const matchesStatus =
-          filters.status.length === 0 ||
-          filters.status.some((s) => s.toLowerCase() === executive.status.toLowerCase());
-
-        return matchesSearch && matchesStatus;
-      }),
-    [executives, filters],
-  );
-
-  const pagination = useMemo(
-    () =>
-      createPaginationMeta({
-        page,
-        limit,
-        total: filteredExecutives.length,
-      }),
-    [filteredExecutives.length, limit, page],
-  );
-
-  const paginatedExecutives = useMemo(() => {
-    const startIndex = (pagination.page - 1) * pagination.limit;
-
-    return filteredExecutives.slice(startIndex, startIndex + pagination.limit);
-  }, [filteredExecutives, pagination.limit, pagination.page]);
+  const paginatedExecutives = executives;
 
   useEffect(() => {
-    if (page > pagination.totalPages) {
+    if (pagination.totalPages > 0 && page > pagination.totalPages) {
       setPage(pagination.totalPages);
     }
   }, [page, pagination.totalPages, setPage]);
@@ -268,15 +249,6 @@ export default function ExecutivesPage() {
                   className="py-10 text-center text-gray-500"
                 >
                   No Executives Available
-                </TableCell>
-              </TableRow>
-            ) : filteredExecutives.length === 0 ? (
-              <TableRow>
-                <TableCell
-                  colSpan={7}
-                  className="py-10 text-center text-gray-500"
-                >
-                  No Executives Match the Applied Filters
                 </TableCell>
               </TableRow>
             ) : (

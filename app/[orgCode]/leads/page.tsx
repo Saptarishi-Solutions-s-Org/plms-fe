@@ -5,8 +5,9 @@ import type { ComponentType } from "react";
 
 import { AuthUser, getUser, refreshSession } from "@/lib/auth";
 
-import OrgAdminManagerLeadsPage from "./roleleadspage/manager-leads-page";
+import OrgManagerLeadsPage from "./roleleadspage/manager-leads-page";
 import OrgExecutiveLeadsPage from "./roleleadspage/executive-leads-page";
+import OrgAdminLeadsPage from "./roleleadspage/admin-leads-page";
 
 function DefaultLeadsPage() {
   return (
@@ -18,8 +19,8 @@ function DefaultLeadsPage() {
 }
 
 const ROLE_LEADS_MAP: Record<string, ComponentType> = {
-  ADMIN: OrgAdminManagerLeadsPage,
-  MANAGER: OrgAdminManagerLeadsPage,
+  ADMIN: OrgAdminLeadsPage,
+  MANAGER: OrgManagerLeadsPage,
   EXECUTIVE: OrgExecutiveLeadsPage,
 };
 
@@ -41,4 +42,3 @@ export default function LeadsPage() {
 
   return <LeadsComponent />;
 }
- 

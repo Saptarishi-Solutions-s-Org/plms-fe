@@ -2,8 +2,9 @@
 
 import Link from "next/link";
 import { ArrowLeft, BriefcaseBusiness, Download, Users } from "lucide-react";
-import { endOfDay, startOfDay } from "date-fns";
-import { useEffect, useMemo, useState } from "react";
+import { endOfDay, format, startOfDay } from "date-fns";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { getUser } from "@/lib/auth";
 import TablePaginationFooter from "@/components/commoncomponents/table-pagination-footer";
 import { Button } from "@/components/ui/button";
@@ -29,9 +30,7 @@ import type {
   LeadsWithStatsResponse,
 } from "@/types/org-reports";
 import { createPaginationMeta } from "@/types/pagination";
-import { getLeadsWithStats } from "@/services/leads";
-
-
+import { getReportLeads } from "@/services/organizationreports";
 
 const formatSource = (source?: string) => {
   if (!source) {
@@ -71,6 +70,28 @@ const mapApiLeadToRow = (lead: LeadWithStatsApiRow): ExecutiveLeadRow => ({
   createdById: lead.createdById,
 });
 
+const parseDate = (value: string | null) => {
+  if (!value) {
+    return undefined;
+  }
+
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? undefined : date;
+};
+
+const formatDate = (date: Date) => format(date, "yyyy-MM-dd");
+
+const parseDateRange = (searchParams: URLSearchParams): DateRange | undefined => {
+  const from = parseDate(searchParams.get("from"));
+  const to = parseDate(searchParams.get("to"));
+
+  if (!from) {
+    return undefined;
+  }
+
+  return to ? { from, to } : { from };
+};
+
 const buildSummary = (
   rows: ExecutiveLeadRow[],
   executiveId: string,
@@ -88,9 +109,17 @@ export default function ExecutiveLeadsPage({
   leads,
 }: ExecutiveLeadsProps) {
   const { page, limit, setPage, setLimit } = useUrlPagination();
+  const searchParams = useSearchParams();
+  const pathname = usePathname();
+  const router = useRouter();
   const [leadRows, setLeadRows] = useState(leads || []);
-  const [dateRange, setDateRange] = useState<DateRange>();
-  const [appliedDateRange, setAppliedDateRange] = useState<DateRange>();
+  const [dateRange, setDateRange] = useState<DateRange | undefined>(() =>
+    parseDateRange(searchParams),
+  );
+  const appliedDateRange = useMemo(
+    () => parseDateRange(searchParams),
+    [searchParams],
+  );
   const { handleExport } = useExecutiveLeadsExport(leadRows);
 
   const pagination = useMemo(
@@ -120,7 +149,7 @@ export default function ExecutiveLeadsPage({
   useEffect(() => {
     const fetchLeadStats = async () => {
       try {
-        const data = (await getLeadsWithStats()) as LeadsWithStatsResponse;
+        const data = (await getReportLeads()) as LeadsWithStatsResponse;
         const leads = data?.leads;
 
         const filteredLeads = Array.isArray(leads)
@@ -147,21 +176,45 @@ export default function ExecutiveLeadsPage({
   }, [appliedDateRange, executiveId]);
 
   useEffect(() => {
+    setDateRange(appliedDateRange);
+  }, [appliedDateRange]);
+
+  const replaceDateRange = useCallback(
+    (range?: DateRange) => {
+      const params = new URLSearchParams(searchParams.toString());
+
+      if (range?.from) {
+        params.set("from", formatDate(range.from));
+        if (range.to) {
+          params.set("to", formatDate(range.to));
+        } else {
+          params.delete("to");
+        }
+      } else {
+        params.delete("from");
+        params.delete("to");
+      }
+
+      params.set("page", "1");
+      router.replace(`${pathname}?${params.toString()}`, { scroll: false });
+    },
+    [pathname, router, searchParams],
+  );
+
+  const handleClearDateRange = () => {
+    setDateRange(undefined);
+    replaceDateRange(undefined);
+  };
+
+  const handleApplyDateRange = () => {
+    replaceDateRange(dateRange);
+  };
+
+  useEffect(() => {
     if (page > pagination.totalPages) {
       setPage(pagination.totalPages);
     }
   }, [page, pagination.totalPages, setPage]);
-
-  const handleClearDateRange = () => {
-    setDateRange(undefined);
-    setAppliedDateRange(undefined);
-    setPage(1);
-  };
-
-  const handleApplyDateRange = () => {
-    setAppliedDateRange(dateRange);
-    setPage(1);
-  };
 
   const summaryCards = [
     {
