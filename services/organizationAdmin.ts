@@ -38,7 +38,10 @@ export const getAllExecutives = () => {
 
 export const getExecutivesForManager = (managerId: string) => {
   return api(
-    `/odata/v4/organization-admin/getExecutivesForManager('${managerId}')`
+    buildApiFunctionUrl(
+      "/odata/v4/organization-admin/getExecutivesForManager",
+      { managerId },
+    ),
   );
 };
 
