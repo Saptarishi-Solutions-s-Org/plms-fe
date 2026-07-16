@@ -258,18 +258,23 @@ service SegmentationService {
    - Displays Name, Description, color badge, active status, leads count, and list of assigned offers.
    - Dropdown menu actions: View, Edit, Duplicate, Deactivate, Delete, Export.
 
-3. **Condition Builder Component (For Dynamic Segments)**:
-   - Interactive list where users select:
-     1. Category -> Filter Type (e.g. Demographic -> Gender)
-     2. Operator (e.g. Equals)
-     3. Value input (Select dropdown, input field, or date picker depending on metadata type)
-   - Supports nesting (Add Group) and conditional connectors (AND / OR).
+3. **Segment Creation / Builder Flow**:
+   - **Static Segment Builder**:
+     - No dynamic filters. Users can manually pick/check leads from a full table view of leads (under the allowed role scoping) to associate them.
+   - **Dynamic Segment Builder (Condition Row Editor)**:
+     - Renders the **1st filter row** by default.
+     - Beside each filter row, a green `+` button appends a new rule condition row, and a red trash/delete icon removes that specific rule line.
+     - **Constraint**: At least **one** filter condition must be configured (you cannot delete the final remaining row).
+     - Clicking **"Apply Filters"** triggers the preview service request and updates the sidebar indicators.
 
-4. **Live Preview Panel (Sticky Right Sidebar in Builder)**:
-   - Displays real-time matching metrics using `previewSegment` action:
-     - Matching lead count gauge.
-     - Demographic indicators (Male/Female counts, Average Age).
-     - Table listing the first 20 matching lead names.
+4. **Live Preview Panel (Sticky Right Sidebar)**:
+   - Displays real-time matching statistics fetched from the `previewSegment` action:
+     - Dynamic matches count.
+     - Demographic indicators (Male/Female split, Average Age).
+     - A preview table listing the first 20 matching lead names.
+
+5. **Action Confirmation Dialogs**:
+   - Every saving action (creating, updating, deleting, or archiving segments) **must** prompt the user using the pre-existing `<ActionConfirmationDialog>` component already implemented in the system, maintaining standard UI UX alerts.
 
 ---
 
