@@ -26,15 +26,8 @@ matrix AS (
         ('user','update','Admin'),
         ('user','view','System  Admin'),
         ('user','view','Admin'),
-
-        ('roles','create','System  Admin'),
-        ('roles','create','Admin'),
-        ('roles','update','System  Admin'),
-        ('roles','update','Admin'),
-        ('roles','view','System  Admin'),
-        ('roles','view','Admin'),
-        ('roles','delete','System  Admin'),
-        ('roles','delete','Admin'),
+        ('user','view','Manager'),
+        ('user','export','Manager'),
 
         ('organization','create','System  Admin'),
         ('organization','update','System  Admin'),
