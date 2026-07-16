@@ -13,6 +13,12 @@ export const createOffer = (data: Record<string, unknown>) =>
     body: JSON.stringify(data),
   });
 
+export const updateOffer = (data: Record<string, unknown>) =>
+  api(`/odata/v4/offer/updateOffer`, {
+    method: "POST",
+    body: JSON.stringify(data),
+  });
+
 
 export const toggleOfferStatus = (id: string) =>
   api(`/odata/v4/offer/toggleOfferStatus`, {

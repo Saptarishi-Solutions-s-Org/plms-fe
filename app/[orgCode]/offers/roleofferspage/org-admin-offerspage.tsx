@@ -17,6 +17,7 @@ import {
   getOfferSummary,
   getOffers,
   toggleOfferStatus,
+  updateOffer,
 } from "@/services/offers";
 import { OFFER_LIST_CHANGED } from "@/types/realtime";
 
@@ -52,6 +53,9 @@ export default function OrgAdminOffersPage() {
 
   const [createOpen, setCreateOpen] =
     useState(false);
+
+  const [editingOffer, setEditingOffer] =
+    useState<Offer | null>(null);
 
   const { filters, setFilters } = useUrlOfferFilters();
 
@@ -95,6 +99,7 @@ export default function OrgAdminOffersPage() {
         const formattedOffers: Offer[] = (
           offersResponse?.offers ||
           []
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         ).map((item: any) => ({
           id: item.id,
 
@@ -107,6 +112,7 @@ export default function OrgAdminOffersPage() {
           assignedUsers:
             item.managers
               ?.map(
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 (manager: any) => manager.name
               )
               .join(", ") || "",
@@ -201,86 +207,95 @@ export default function OrgAdminOffersPage() {
     });
   }, [fetchOffers]);
 
+  const buildOfferApiPayload = useCallback(
+    (data: OfferPayload) => ({
+      ...(data.id && { id: data.id }),
+
+      title: data.title,
+
+      description:
+        data.description,
+
+      discount_type:
+        data.discount_type,
+
+      valid_from:
+        data.valid_from,
+
+      valid_to:
+        data.valid_to,
+
+      is_global:
+        data.is_global,
+
+      ...(!data.is_global && {
+        manager_ids:
+          data.manager_ids,
+      }),
+
+      ...(data.discount_amount !==
+        undefined && {
+        discount_amount:
+          data.discount_amount,
+      }),
+
+      ...(data.discount_percentage !==
+        undefined && {
+        discount_percentage:
+          data.discount_percentage,
+      }),
+
+      ...(data.max_discount_amount !==
+        undefined && {
+        max_discount_amount:
+          data.max_discount_amount,
+      }),
+
+      ...(data.combo_description !==
+        undefined && {
+        combo_description:
+          data.combo_description,
+      }),
+
+      ...(data.buy_quantity !==
+        undefined && {
+        buy_quantity:
+          data.buy_quantity,
+      }),
+
+      ...(data.get_quantity !==
+        undefined && {
+        get_quantity:
+          data.get_quantity,
+      }),
+
+      ...(data.min_purchase_amount !==
+        undefined && {
+        min_purchase_amount:
+          data.min_purchase_amount,
+      }),
+
+      ...(data.discount_value !==
+        undefined && {
+        discount_value:
+          data.discount_value,
+      }),
+
+      ...(data.flag_discount_amount !==
+        undefined && {
+        flag_discount_amount:
+          data.flag_discount_amount,
+      }),
+    }),
+    []
+  );
+
   const handleCreateOffer = useCallback(
     async (data: OfferPayload) => {
       try {
-        await createOffer({
-          title: data.title,
-
-          description:
-            data.description,
-
-          discount_type:
-            data.discount_type,
-
-          valid_from:
-            data.valid_from,
-
-          valid_to:
-            data.valid_to,
-
-          is_global:
-            data.is_global,
-
-          ...(!data.is_global && {
-            manager_ids:
-              data.manager_ids,
-          }),
-
-          ...(data.discount_amount !==
-            undefined && {
-            discount_amount:
-              data.discount_amount,
-          }),
-
-          ...(data.discount_percentage !==
-            undefined && {
-            discount_percentage:
-              data.discount_percentage,
-          }),
-
-          ...(data.max_discount_amount !==
-            undefined && {
-            max_discount_amount:
-              data.max_discount_amount,
-          }),
-
-          ...(data.combo_description !==
-            undefined && {
-            combo_description:
-              data.combo_description,
-          }),
-
-          ...(data.buy_quantity !==
-            undefined && {
-            buy_quantity:
-              data.buy_quantity,
-          }),
-
-          ...(data.get_quantity !==
-            undefined && {
-            get_quantity:
-              data.get_quantity,
-          }),
-
-          ...(data.min_purchase_amount !==
-            undefined && {
-            min_purchase_amount:
-              data.min_purchase_amount,
-          }),
-
-          ...(data.discount_value !==
-            undefined && {
-            discount_value:
-              data.discount_value,
-          }),
-
-          ...(data.flag_discount_amount !==
-            undefined && {
-            flag_discount_amount:
-              data.flag_discount_amount,
-          }),
-        });
+        await createOffer(
+          buildOfferApiPayload(data)
+        );
 
         await fetchOffers();
 
@@ -296,7 +311,55 @@ export default function OrgAdminOffersPage() {
         };
       }
     },
-    [fetchOffers]
+    [buildOfferApiPayload, fetchOffers]
+  );
+
+  const handleUpdateOffer = useCallback(
+    async (data: OfferPayload) => {
+      try {
+        await updateOffer(
+          buildOfferApiPayload(data)
+        );
+
+        await fetchOffers();
+
+        return {
+          success: true as const,
+        };
+
+      } catch {
+        return {
+          success: false as const,
+          error:
+            "Failed to update offer",
+        };
+      }
+    },
+    [buildOfferApiPayload, fetchOffers]
+  );
+
+  const handleSubmitOffer = useCallback(
+    (data: OfferPayload) =>
+      editingOffer
+        ? handleUpdateOffer(data)
+        : handleCreateOffer(data),
+    [editingOffer, handleUpdateOffer, handleCreateOffer]
+  );
+
+  const handleEditOffer = useCallback(
+    (offer: Offer) => {
+      setEditingOffer(offer);
+      setCreateOpen(true);
+    },
+    []
+  );
+
+  const handleDialogOpenChange = useCallback(
+    (open: boolean) => {
+      setCreateOpen(open);
+      if (!open) setEditingOffer(null);
+    },
+    []
   );
   const handleToggleStatus = useCallback(
     async (id: string) => {
@@ -435,6 +498,7 @@ export default function OrgAdminOffersPage() {
         onToggleStatus={
           handleToggleStatus
         }
+        onEdit={handleEditOffer}
         rowOffset={rowOffset}
       />
 
@@ -449,8 +513,9 @@ export default function OrgAdminOffersPage() {
 
       <CreateOfferDialog
         open={createOpen}
-        onOpenChange={setCreateOpen}
-        onSubmit={handleCreateOffer}
+        onOpenChange={handleDialogOpenChange}
+        onSubmit={handleSubmitOffer}
+        offer={editingOffer}
       />
     </div>
   );

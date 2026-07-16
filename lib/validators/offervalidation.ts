@@ -4,6 +4,7 @@ import type { DateRange } from "@/components/commoncomponents/react-day-picker";
 
 import {
   DISCOUNT_TYPES,
+  type Offer,
   type OfferManager,
 } from "@/types/Createoffer";
 
@@ -216,6 +217,8 @@ export type OfferFormData = z.infer<
 >;
 
 export interface OfferPayload {
+  id?: string;
+
   title: string;
   description: string;
   discount_type: string;
@@ -244,9 +247,12 @@ export interface OfferPayload {
 }
 
 export function buildOfferPayload(
-  data: OfferFormData
+  data: OfferFormData,
+  id?: string
 ): OfferPayload {
   const base: OfferPayload = {
+    ...(id && { id }),
+
     title: data.offerName.trim(),
 
     description:
@@ -330,4 +336,71 @@ export function buildOfferPayload(
   }
 
   return base;
+}
+
+const toFieldString = (value: number | undefined): string =>
+  value === undefined || value === null ? "" : String(value);
+
+export function mapOfferToFormData(
+  offer: Offer
+): OfferFormData {
+  return {
+    offerName: offer.title ?? "",
+
+    description: offer.description ?? "",
+
+    discountType: offer.discountType,
+
+    isGlobal: offer.isGlobal,
+
+    managerIds:
+      offer.managers?.map(
+        (manager) => manager.id
+      ) ?? [],
+
+    dateRange: {
+      from: offer.validFrom
+        ? new Date(offer.validFrom)
+        : undefined,
+      to: offer.validTo
+        ? new Date(offer.validTo)
+        : undefined,
+    },
+
+    discountAmount: toFieldString(
+      offer.discountAmount
+    ),
+
+    discountPercentage: toFieldString(
+      offer.discountPercentage
+    ),
+
+    maxDiscountAmount: toFieldString(
+      offer.maxDiscountAmount
+    ),
+
+    comboDescription:
+      offer.comboDescription ?? "",
+
+    buyQuantity: toFieldString(
+      offer.buyQuantity
+    ),
+
+    getQuantity: toFieldString(
+      offer.getQuantity
+    ),
+
+    minPurchaseAmount: toFieldString(
+      offer.minPurchaseAmount
+    ),
+
+    conditionalDiscountValue:
+      toFieldString(
+        offer.conditionalDiscountValue
+      ),
+
+    flagDiscountAmount: toFieldString(
+      offer.flagDiscountAmount
+    ),
+  };
 }

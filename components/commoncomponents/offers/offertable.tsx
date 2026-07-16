@@ -33,7 +33,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
-import { MoreHorizontal } from "lucide-react";
+import { MoreHorizontal, Pencil } from "lucide-react";
 
 const formatDate = (date: string | Date | null | undefined): string => {
   if (!date) return "—";
@@ -151,12 +151,14 @@ function DiscountSummary({ offer }: { offer: Offer }) {
 interface OffersTableProps {
   offers: Offer[];
   onToggleStatus: (id: string) => void;
+  onEdit?: (offer: Offer) => void;
   rowOffset?: number;
 }
 
 export function OffersTable({
   offers,
   onToggleStatus,
+  onEdit,
   rowOffset = 0,
 }: OffersTableProps) {
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
@@ -171,6 +173,14 @@ export function OffersTable({
       setOpenMenuId(null);
     },
     [onToggleStatus],
+  );
+
+  const handleEdit = useCallback(
+    (offer: Offer) => {
+      onEdit?.(offer);
+      setOpenMenuId(null);
+    },
+    [onEdit],
   );
 
   return (
@@ -317,6 +327,15 @@ export function OffersTable({
                         </DropdownMenuTrigger>
 
                         <DropdownMenuContent align="end">
+                          {onEdit && (
+                            <DropdownMenuItem
+                              onClick={() => handleEdit(offer)}
+                            >
+                              <Pencil className="mr-2 h-4 w-4" />
+                              Edit
+                            </DropdownMenuItem>
+                          )}
+
                           {isActive ? (
                             <AlertDialog>
                               <AlertDialogTrigger asChild>
