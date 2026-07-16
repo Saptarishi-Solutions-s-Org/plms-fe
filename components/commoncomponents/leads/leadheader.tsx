@@ -13,8 +13,13 @@ export default function LeadHeader({
   onAddLead,
   onBulkAssign,
   showImportExport = true,
+  showImport,
+  showExport,
 }: LeadHeaderProps) {
   const [isImportOpen, setImportOpen] = useState(false);
+
+  const shouldShowExport = showExport !== undefined ? showExport : showImportExport;
+  const shouldShowImport = showImport !== undefined ? showImport : showImportExport;
 
   return (
     <>
@@ -31,28 +36,28 @@ export default function LeadHeader({
           </Button>
         )}
 
-        {showImportExport && (
-          <>
-            <Button
-              type="button"
-              variant="outline"
-              onClick={onExport}
-              className="flex h-9 w-full items-center justify-center gap-1.5 rounded-full px-4 sm:w-auto"
-            >
-              <Download className="h-4 w-4" />
-              Export
-            </Button>
+        {shouldShowExport && (
+          <Button
+            type="button"
+            variant="outline"
+            onClick={onExport}
+            className="flex h-9 w-full items-center justify-center gap-1.5 rounded-full px-4 sm:w-auto"
+          >
+            <Download className="h-4 w-4" />
+            Export
+          </Button>
+        )}
 
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => setImportOpen(true)}
-              className="flex h-9 w-full items-center justify-center gap-1.5 rounded-full px-4 sm:w-auto"
-            >
-              <Upload className="h-4 w-4" />
-              Import
-            </Button>
-          </>
+        {shouldShowImport && (
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => setImportOpen(true)}
+            className="flex h-9 w-full items-center justify-center gap-1.5 rounded-full px-4 sm:w-auto"
+          >
+            <Upload className="h-4 w-4" />
+            Import
+          </Button>
         )}
 
         <Button
@@ -64,7 +69,7 @@ export default function LeadHeader({
         </Button>
       </div>
 
-      {showImportExport && (
+      {shouldShowImport && (
         <LeadImportDialog
           open={isImportOpen}
           onOpenChange={setImportOpen}
