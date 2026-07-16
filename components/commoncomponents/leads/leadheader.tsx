@@ -13,10 +13,13 @@ export default function LeadHeader({
   onAddLead,
   onBulkAssign,
   showImportExport = true,
-  showImport = showImportExport,
-  showExport = showImportExport,
+  showImport,
+  showExport,
 }: LeadHeaderProps) {
   const [isImportOpen, setImportOpen] = useState(false);
+
+  const shouldShowExport = showExport !== undefined ? showExport : showImportExport;
+  const shouldShowImport = showImport !== undefined ? showImport : showImportExport;
 
   return (
     <>
@@ -33,7 +36,7 @@ export default function LeadHeader({
           </Button>
         )}
 
-        {showExport && (
+        {shouldShowExport && (
           <Button
             type="button"
             variant="outline"
@@ -45,7 +48,7 @@ export default function LeadHeader({
           </Button>
         )}
 
-        {showImport && (
+        {shouldShowImport && (
           <Button
             type="button"
             variant="outline"
@@ -66,7 +69,7 @@ export default function LeadHeader({
         </Button>
       </div>
 
-      {showImport && (
+      {shouldShowImport && (
         <LeadImportDialog
           open={isImportOpen}
           onOpenChange={setImportOpen}
