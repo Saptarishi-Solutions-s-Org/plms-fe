@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { Download } from "lucide-react";
 
 import GlobalLoader from "@/components/commoncomponents/globalloader";
 import TablePaginationFooter from "@/components/commoncomponents/table-pagination-footer";
@@ -9,14 +10,18 @@ import { OfferFilters } from "@/components/commoncomponents/offers/offerfilter";
 import { OffersTable } from "@/components/commoncomponents/offers/offertable";
 import { CreateOfferDialog } from "@/components/commoncomponents/offers/createoffer";
 import { Button } from "@/components/ui/button";
+import { useOfferExport } from "@/hooks/export";
 import { useUrlPagination } from "@/hooks/use-url-pagination";
 import { useUrlOfferFilters } from "@/hooks/useurloffer";
+import { type AuthUser, getUser } from "@/lib/auth";
+import { canAccess } from "@/lib/permissions";
 import { subscribeRealtime } from "@/lib/socket";
 import {
   createOffer,
   getOfferSummary,
   getOffers,
   toggleOfferStatus,
+  updateOffer,
 } from "@/services/offers";
 import { OFFER_LIST_CHANGED } from "@/types/realtime";
 
@@ -37,6 +42,32 @@ const DEFAULT_FILTERS: OfferFiltersType = {
 };
 
 export default function OrgAdminOffersPage() {
+  const [user, setUser] = useState<AuthUser | null>(() => getUser());
+
+  useEffect(() => {
+    const syncUser = () => setUser(getUser());
+    window.addEventListener("LMA-auth-changed", syncUser);
+    return () => window.removeEventListener("LMA-auth-changed", syncUser);
+  }, []);
+
+  const canView = useMemo(
+    () => canAccess(user, ["offers"], ["view"]),
+    [user]
+  );
+  const canCreate = useMemo(
+    () => canAccess(user, ["offers"], ["create"]),
+    [user]
+  );
+  const canExport = useMemo(
+    () => canAccess(user, ["offers"], ["export"]),
+    [user]
+  );
+  const canUpdate = useMemo(
+    () => canAccess(user, ["offers"], ["update"]),
+    [user]
+  );
+
+  const { handleExport } = useOfferExport();
   const { page, limit, setPage, setLimit } = useUrlPagination();
   const [offers, setOffers] = useState<Offer[]>([]);
   const [totalCount, setTotalCount] = useState(0);
@@ -52,6 +83,9 @@ export default function OrgAdminOffersPage() {
 
   const [createOpen, setCreateOpen] =
     useState(false);
+
+  const [editingOffer, setEditingOffer] =
+    useState<Offer | null>(null);
 
   const { filters, setFilters } = useUrlOfferFilters();
 
@@ -77,6 +111,16 @@ export default function OrgAdminOffersPage() {
 
   const fetchOffers = useCallback(
     async () => {
+      if (!canView) {
+        setOffers([]);
+        setTotalCount(0);
+        setGlobalCount(0);
+        setPagination(emptyPagination(limit));
+        setIsLoading(false);
+        setHasLoaded(true);
+        return;
+      }
+
       try {
         setIsLoading(true);
 
@@ -95,6 +139,7 @@ export default function OrgAdminOffersPage() {
         const formattedOffers: Offer[] = (
           offersResponse?.offers ||
           []
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         ).map((item: any) => ({
           id: item.id,
 
@@ -107,6 +152,7 @@ export default function OrgAdminOffersPage() {
           assignedUsers:
             item.managers
               ?.map(
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 (manager: any) => manager.name
               )
               .join(", ") || "",
@@ -189,98 +235,108 @@ export default function OrgAdminOffersPage() {
         setHasLoaded(true);
       }
     },
-    [filters, limit, page]
+    [canView, filters, limit, page]
   );
   useEffect(() => {
     fetchOffers();
   }, [fetchOffers]);
 
   useEffect(() => {
+    if (!canView) return;
     return subscribeRealtime(OFFER_LIST_CHANGED, () => {
       fetchOffers();
     });
-  }, [fetchOffers]);
+  }, [canView, fetchOffers]);
+
+  const buildOfferApiPayload = useCallback(
+    (data: OfferPayload) => ({
+      ...(data.id && { id: data.id }),
+
+      title: data.title,
+
+      description:
+        data.description,
+
+      discount_type:
+        data.discount_type,
+
+      valid_from:
+        data.valid_from,
+
+      valid_to:
+        data.valid_to,
+
+      is_global:
+        data.is_global,
+
+      ...(!data.is_global && {
+        manager_ids:
+          data.manager_ids,
+      }),
+
+      ...(data.discount_amount !==
+        undefined && {
+        discount_amount:
+          data.discount_amount,
+      }),
+
+      ...(data.discount_percentage !==
+        undefined && {
+        discount_percentage:
+          data.discount_percentage,
+      }),
+
+      ...(data.max_discount_amount !==
+        undefined && {
+        max_discount_amount:
+          data.max_discount_amount,
+      }),
+
+      ...(data.combo_description !==
+        undefined && {
+        combo_description:
+          data.combo_description,
+      }),
+
+      ...(data.buy_quantity !==
+        undefined && {
+        buy_quantity:
+          data.buy_quantity,
+      }),
+
+      ...(data.get_quantity !==
+        undefined && {
+        get_quantity:
+          data.get_quantity,
+      }),
+
+      ...(data.min_purchase_amount !==
+        undefined && {
+        min_purchase_amount:
+          data.min_purchase_amount,
+      }),
+
+      ...(data.discount_value !==
+        undefined && {
+        discount_value:
+          data.discount_value,
+      }),
+
+      ...(data.flag_discount_amount !==
+        undefined && {
+        flag_discount_amount:
+          data.flag_discount_amount,
+      }),
+    }),
+    []
+  );
 
   const handleCreateOffer = useCallback(
     async (data: OfferPayload) => {
       try {
-        await createOffer({
-          title: data.title,
-
-          description:
-            data.description,
-
-          discount_type:
-            data.discount_type,
-
-          valid_from:
-            data.valid_from,
-
-          valid_to:
-            data.valid_to,
-
-          is_global:
-            data.is_global,
-
-          ...(!data.is_global && {
-            manager_ids:
-              data.manager_ids,
-          }),
-
-          ...(data.discount_amount !==
-            undefined && {
-            discount_amount:
-              data.discount_amount,
-          }),
-
-          ...(data.discount_percentage !==
-            undefined && {
-            discount_percentage:
-              data.discount_percentage,
-          }),
-
-          ...(data.max_discount_amount !==
-            undefined && {
-            max_discount_amount:
-              data.max_discount_amount,
-          }),
-
-          ...(data.combo_description !==
-            undefined && {
-            combo_description:
-              data.combo_description,
-          }),
-
-          ...(data.buy_quantity !==
-            undefined && {
-            buy_quantity:
-              data.buy_quantity,
-          }),
-
-          ...(data.get_quantity !==
-            undefined && {
-            get_quantity:
-              data.get_quantity,
-          }),
-
-          ...(data.min_purchase_amount !==
-            undefined && {
-            min_purchase_amount:
-              data.min_purchase_amount,
-          }),
-
-          ...(data.discount_value !==
-            undefined && {
-            discount_value:
-              data.discount_value,
-          }),
-
-          ...(data.flag_discount_amount !==
-            undefined && {
-            flag_discount_amount:
-              data.flag_discount_amount,
-          }),
-        });
+        await createOffer(
+          buildOfferApiPayload(data)
+        );
 
         await fetchOffers();
 
@@ -296,7 +352,55 @@ export default function OrgAdminOffersPage() {
         };
       }
     },
-    [fetchOffers]
+    [buildOfferApiPayload, fetchOffers]
+  );
+
+  const handleUpdateOffer = useCallback(
+    async (data: OfferPayload) => {
+      try {
+        await updateOffer(
+          buildOfferApiPayload(data)
+        );
+
+        await fetchOffers();
+
+        return {
+          success: true as const,
+        };
+
+      } catch {
+        return {
+          success: false as const,
+          error:
+            "Failed to update offer",
+        };
+      }
+    },
+    [buildOfferApiPayload, fetchOffers]
+  );
+
+  const handleSubmitOffer = useCallback(
+    (data: OfferPayload) =>
+      editingOffer
+        ? handleUpdateOffer(data)
+        : handleCreateOffer(data),
+    [editingOffer, handleUpdateOffer, handleCreateOffer]
+  );
+
+  const handleEditOffer = useCallback(
+    (offer: Offer) => {
+      setEditingOffer(offer);
+      setCreateOpen(true);
+    },
+    []
+  );
+
+  const handleDialogOpenChange = useCallback(
+    (open: boolean) => {
+      setCreateOpen(open);
+      if (!open) setEditingOffer(null);
+    },
+    []
   );
   const handleToggleStatus = useCallback(
     async (id: string) => {
@@ -390,67 +494,93 @@ export default function OrgAdminOffersPage() {
           </p>
         </div>
 
-        <Button
-          onClick={() =>
-            setCreateOpen(true)
-          }
-          className="w-full rounded-full bg-blue-600 px-6 text-white hover:bg-blue-700 sm:w-auto"
-        >
-          + Create Offer
-        </Button>
+        <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
+          {canExport && (
+            <Button
+              type="button"
+              variant="outline"
+              onClick={handleExport}
+              className="flex h-9 w-full items-center justify-center gap-1.5 rounded-full px-4 sm:w-auto"
+            >
+              <Download className="h-4 w-4" />
+              Export
+            </Button>
+          )}
+
+          {canCreate && (
+            <Button
+              onClick={() =>
+                setCreateOpen(true)
+              }
+              className="w-full rounded-full bg-blue-600 px-6 text-white hover:bg-blue-700 sm:w-auto"
+            >
+              + Create Offer
+            </Button>
+          )}
+        </div>
       </div>
 
-      {/* Cards */}
+      {canView ? (
+        <>
+          {/* Cards */}
 
-      <OfferCards
-        totalCount={totalCount}
-        activeCount={activeCount}
-        inactiveCount={inactiveCount}
-        globalCount={globalCount}
-      />
+          <OfferCards
+            totalCount={totalCount}
+            activeCount={activeCount}
+            inactiveCount={inactiveCount}
+            globalCount={globalCount}
+          />
 
-      {/* Filters */}
+          {/* Filters */}
 
-      <OfferFilters
-        filters={draftFilters}
-        onFilterChange={
-          handleFilterChange
-        }
-        onApply={handleApplyFilters}
-        onClear={handleClearFilters}
-      />
+          <OfferFilters
+            filters={draftFilters}
+            onFilterChange={
+              handleFilterChange
+            }
+            onApply={handleApplyFilters}
+            onClear={handleClearFilters}
+          />
 
-      {/* Table */}
+          {/* Table */}
 
-      <TablePaginationFooter
-        pagination={pagination}
-        onPageChange={setPage}
-        onLimitChange={setLimit}
-        placement="top"
-        totalLabel="offers"
-      />
+          <TablePaginationFooter
+            pagination={pagination}
+            onPageChange={setPage}
+            onLimitChange={setLimit}
+            placement="top"
+            totalLabel="offers"
+          />
 
-      <OffersTable
-        offers={offers}
-        onToggleStatus={
-          handleToggleStatus
-        }
-        rowOffset={rowOffset}
-      />
+          <OffersTable
+            offers={offers}
+            onToggleStatus={
+              canUpdate ? handleToggleStatus : undefined
+            }
+            onEdit={canUpdate ? handleEditOffer : undefined}
+            rowOffset={rowOffset}
+          />
 
-      <TablePaginationFooter
-        pagination={pagination}
-        onPageChange={setPage}
-        onLimitChange={setLimit}
-        totalLabel="offers"
-      />
+          <TablePaginationFooter
+            pagination={pagination}
+            onPageChange={setPage}
+            onLimitChange={setLimit}
+            totalLabel="offers"
+          />
+        </>
+      ) : (
+        <div className="rounded-lg border border-gray-200 bg-white p-12 text-center text-sm text-gray-500 shadow-sm">
+          You do not have permission to view offers.
+        </div>
+      )}
 
       {/* Dialog */}
 
       <CreateOfferDialog
         open={createOpen}
-        onOpenChange={setCreateOpen}
-        onSubmit={handleCreateOffer}
+        onOpenChange={handleDialogOpenChange}
+        onSubmit={handleSubmitOffer}
+        offer={editingOffer}
       />
     </div>
   );

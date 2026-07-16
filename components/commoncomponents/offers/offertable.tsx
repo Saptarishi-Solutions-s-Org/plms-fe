@@ -33,7 +33,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
-import { MoreHorizontal } from "lucide-react";
+import { MoreHorizontal, Pencil } from "lucide-react";
 
 const formatDate = (date: string | Date | null | undefined): string => {
   if (!date) return "—";
@@ -150,13 +150,15 @@ function DiscountSummary({ offer }: { offer: Offer }) {
 
 interface OffersTableProps {
   offers: Offer[];
-  onToggleStatus: (id: string) => void;
+  onToggleStatus?: (id: string) => void;
+  onEdit?: (offer: Offer) => void;
   rowOffset?: number;
 }
 
 export function OffersTable({
   offers,
   onToggleStatus,
+  onEdit,
   rowOffset = 0,
 }: OffersTableProps) {
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
@@ -167,10 +169,20 @@ export function OffersTable({
 
   const handleToggleStatus = useCallback(
     (id: string) => {
-      onToggleStatus(id);
+      onToggleStatus?.(id);
       setOpenMenuId(null);
     },
     [onToggleStatus],
+  );
+
+  const hasActions = Boolean(onEdit || onToggleStatus);
+
+  const handleEdit = useCallback(
+    (offer: Offer) => {
+      onEdit?.(offer);
+      setOpenMenuId(null);
+    },
+    [onEdit],
   );
 
   return (
@@ -218,9 +230,11 @@ export function OffersTable({
               Status
             </TableHead>
 
-            <TableHead className="w-20 whitespace-nowrap text-center text-xs sm:text-sm">
-              Actions
-            </TableHead>
+            {hasActions && (
+              <TableHead className="w-20 whitespace-nowrap text-center text-xs sm:text-sm">
+                Actions
+              </TableHead>
+            )}
           </TableRow>
         </TableHeader>
 
@@ -228,7 +242,7 @@ export function OffersTable({
           {offers.length === 0 ? (
             <TableRow>
               <TableCell
-                colSpan={11}
+                colSpan={hasActions ? 11 : 10}
                 className="py-12 text-center text-sm font-semibold text-gray-400"
               >
                 No offers found
@@ -295,6 +309,7 @@ export function OffersTable({
                     <StatusBadge status={offer.status} />
                   </TableCell>
 
+                  {hasActions && (
                   <TableCell className="w-20 text-center">
                     <div className="flex justify-center">
                       <DropdownMenu
@@ -317,7 +332,16 @@ export function OffersTable({
                         </DropdownMenuTrigger>
 
                         <DropdownMenuContent align="end">
-                          {isActive ? (
+                          {onEdit && (
+                            <DropdownMenuItem
+                              onClick={() => handleEdit(offer)}
+                            >
+                              <Pencil className="mr-2 h-4 w-4" />
+                              Edit
+                            </DropdownMenuItem>
+                          )}
+
+                          {onToggleStatus && (isActive ? (
                             <AlertDialog>
                               <AlertDialogTrigger asChild>
                                 <DropdownMenuItem
@@ -359,11 +383,12 @@ export function OffersTable({
                             >
                               Activate
                             </DropdownMenuItem>
-                          )}
+                          ))}
                         </DropdownMenuContent>
                       </DropdownMenu>
                     </div>
                   </TableCell>
+                  )}
                 </TableRow>
               );
             })
