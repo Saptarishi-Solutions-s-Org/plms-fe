@@ -230,9 +230,11 @@ export function OffersTable({
               Status
             </TableHead>
 
-            <TableHead className="w-20 whitespace-nowrap text-center text-xs sm:text-sm">
-              Actions
-            </TableHead>
+            {hasActions && (
+              <TableHead className="w-20 whitespace-nowrap text-center text-xs sm:text-sm">
+                Actions
+              </TableHead>
+            )}
           </TableRow>
         </TableHeader>
 
@@ -240,7 +242,7 @@ export function OffersTable({
           {offers.length === 0 ? (
             <TableRow>
               <TableCell
-                colSpan={11}
+                colSpan={hasActions ? 11 : 10}
                 className="py-12 text-center text-sm font-semibold text-gray-400"
               >
                 No offers found
@@ -307,11 +309,9 @@ export function OffersTable({
                     <StatusBadge status={offer.status} />
                   </TableCell>
 
+                  {hasActions && (
                   <TableCell className="w-20 text-center">
                     <div className="flex justify-center">
-                      {!hasActions ? (
-                        <span className="text-xs text-gray-400">—</span>
-                      ) : (
                       <DropdownMenu
                         open={!isExpired && isMenuOpen}
                         onOpenChange={(open) =>
@@ -386,9 +386,9 @@ export function OffersTable({
                           ))}
                         </DropdownMenuContent>
                       </DropdownMenu>
-                      )}
                     </div>
                   </TableCell>
+                  )}
                 </TableRow>
               );
             })

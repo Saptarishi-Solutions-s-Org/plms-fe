@@ -39,6 +39,8 @@ import { Button } from "@/components/ui/button";
 import { useManagerOfferExport } from "@/hooks/export";
 import { useUrlPagination } from "@/hooks/use-url-pagination";
 import { useUrlOfferFilters } from "@/hooks/useurloffer";
+import { type AuthUser, getUser } from "@/lib/auth";
+import { canAccess } from "@/lib/permissions";
 import { subscribeRealtime } from "@/lib/socket";
 import { MoreHorizontal, ListChecks, Download, Plus, Pencil } from "lucide-react";
 import Image from "next/image";
@@ -148,6 +150,31 @@ const formatManagerOffers = (
   }));
 
 export default function OrgManagerOffersPage() {
+  const [user, setUser] = useState<AuthUser | null>(() => getUser());
+
+  useEffect(() => {
+    const syncUser = () => setUser(getUser());
+    window.addEventListener("LMA-auth-changed", syncUser);
+    return () => window.removeEventListener("LMA-auth-changed", syncUser);
+  }, []);
+
+  const canView = useMemo(
+    () => canAccess(user, ["offers"], ["view"]),
+    [user],
+  );
+  const canCreate = useMemo(
+    () => canAccess(user, ["offers"], ["create"]),
+    [user],
+  );
+  const canExport = useMemo(
+    () => canAccess(user, ["offers"], ["export"]),
+    [user],
+  );
+  const canUpdate = useMemo(
+    () => canAccess(user, ["offers"], ["update"]),
+    [user],
+  );
+
   const { handleExport } = useManagerOfferExport();
   const { page, limit, setPage, setLimit } = useUrlPagination();
   const [offers, setOffers] = useState<ManagerOffer[]>([]);
@@ -228,6 +255,19 @@ export default function OrgManagerOffersPage() {
   );
 
   const fetchOffers = useCallback(async () => {
+    if (!canView) {
+      setOffers([]);
+      setPagination(emptyPagination(limit));
+      setExecutives([]);
+      setTotalCount(0);
+      setActiveCount(0);
+      setInactiveCount(0);
+      setGlobalCount(0);
+      setIsLoading(false);
+      setHasLoaded(true);
+      return;
+    }
+
     try {
       setIsLoading(true);
 
@@ -277,17 +317,18 @@ export default function OrgManagerOffersPage() {
       setIsLoading(false);
       setHasLoaded(true);
     }
-  }, [filters, limit, page]);
+  }, [canView, filters, limit, page]);
 
   useEffect(() => {
     fetchOffers();
   }, [fetchOffers]);
 
   useEffect(() => {
+    if (!canView) return;
     return subscribeRealtime(OFFER_LIST_CHANGED, () => {
       fetchOffers();
     });
-  }, [fetchOffers]);
+  }, [canView, fetchOffers]);
 
   const fetchBulkOffers = useCallback(async () => {
     try {
@@ -309,10 +350,10 @@ export default function OrgManagerOffersPage() {
   }, []);
 
   useEffect(() => {
-    if (isBulkActionsOpen) {
+    if (isBulkActionsOpen && canUpdate) {
       fetchBulkOffers();
     }
-  }, [fetchBulkOffers, isBulkActionsOpen]);
+  }, [canUpdate, fetchBulkOffers, isBulkActionsOpen]);
 
   const handleFilterChange = useCallback(
     <K extends keyof OfferFiltersType>(key: K, value: OfferFiltersType[K]) => {
@@ -571,33 +612,39 @@ export default function OrgManagerOffersPage() {
         </div>
 
         <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
-          <Button
-            type="button"
-            variant="outline"
-            onClick={handleExport}
-            className="flex h-9 w-full items-center justify-center gap-1.5 rounded-full px-4 sm:w-auto"
-          >
-            <Download className="h-4 w-4" />
-            Export
-          </Button>
+          {canExport && (
+            <Button
+              type="button"
+              variant="outline"
+              onClick={handleExport}
+              className="flex h-9 w-full items-center justify-center gap-1.5 rounded-full px-4 sm:w-auto"
+            >
+              <Download className="h-4 w-4" />
+              Export
+            </Button>
+          )}
 
-          <Button
-            variant="outline"
-            size="lg"
-            className="w-full sm:w-auto rounded-full bg-blue-600 text-white hover:bg-blue-600 hover:text-white font-medium"
-            onClick={() => setIsBulkActionsOpen(true)}
-          >
-            <ListChecks className="h-4 w-4" />
-            Bulk Action
-          </Button>
+          {canUpdate && (
+            <Button
+              variant="outline"
+              size="lg"
+              className="w-full sm:w-auto rounded-full bg-blue-600 text-white hover:bg-blue-600 hover:text-white font-medium"
+              onClick={() => setIsBulkActionsOpen(true)}
+            >
+              <ListChecks className="h-4 w-4" />
+              Bulk Action
+            </Button>
+          )}
 
-          <Button
-            onClick={() => setCreateOpen(true)}
-            className="flex h-9 w-full items-center justify-center gap-1.5 rounded-full bg-blue-600 px-4 text-white hover:bg-blue-700 sm:w-auto"
-          >
-            <Plus className="h-4 w-4" />
-            Create Offer
-          </Button>
+          {canCreate && (
+            <Button
+              onClick={() => setCreateOpen(true)}
+              className="flex h-9 w-full items-center justify-center gap-1.5 rounded-full bg-blue-600 px-4 text-white hover:bg-blue-700 sm:w-auto"
+            >
+              <Plus className="h-4 w-4" />
+              Create Offer
+            </Button>
+          )}
         </div>
       </div>
 
@@ -619,6 +666,8 @@ export default function OrgManagerOffersPage() {
         onAssignOffer={handleBulkAssignOffer}
       />
 
+      {canView ? (
+        <>
       {/* Cards */}
       <OfferCards
         totalCount={totalCount}
@@ -668,21 +717,23 @@ export default function OrgManagerOffersPage() {
 
               <TableHead>Assigned To</TableHead>
 
-              <TableHead className="text-center">Actions</TableHead>
+              {canUpdate && (
+                <TableHead className="text-center">Actions</TableHead>
+              )}
             </TableRow>
           </TableHeader>
 
           <TableBody>
             {isLoading ? (
               <TableRow>
-                <TableCell colSpan={11} className="py-10 text-center text-gray-500">
+                <TableCell colSpan={canUpdate ? 11 : 10} className="py-10 text-center text-gray-500">
                   Loading offers...
                 </TableCell>
               </TableRow>
             ) : offers.length === 0 ? (
               <TableRow>
                 <TableCell
-                  colSpan={11}
+                  colSpan={canUpdate ? 11 : 10}
                   className="py-10 text-center text-gray-500"
                 >
                   No Offers Available
@@ -759,6 +810,7 @@ export default function OrgManagerOffersPage() {
                     </Button>
                   </TableCell>
 
+                  {canUpdate && (
                   <TableCell className="text-center">
                     <DropdownMenu
                       onOpenChange={(open) =>
@@ -833,6 +885,7 @@ export default function OrgManagerOffersPage() {
                       </DropdownMenuContent>
                     </DropdownMenu>
                   </TableCell>
+                  )}
                 </TableRow>
               ))
             )}
@@ -846,6 +899,12 @@ export default function OrgManagerOffersPage() {
         onLimitChange={setLimit}
         totalLabel="offers"
       />
+        </>
+      ) : (
+        <div className="rounded-lg border border-gray-200 bg-white p-12 text-center text-sm text-gray-500 shadow-sm">
+          You do not have permission to view offers.
+        </div>
+      )}
 
       <AlertDialog
         open={isViewAllErrorOpen}

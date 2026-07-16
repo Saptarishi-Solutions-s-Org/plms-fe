@@ -21,6 +21,8 @@ import { MultiSelectCombobox } from "@/components/ui/multi-select-combobox";
 import { useExecutiveOfferExport } from "@/hooks/export";
 import { useUrlPagination } from "@/hooks/use-url-pagination";
 import { useUrlOfferFilters } from "@/hooks/useurloffer";
+import { type AuthUser, getUser } from "@/lib/auth";
+import { canAccess } from "@/lib/permissions";
 import { subscribeRealtime } from "@/lib/socket";
 import { Download } from "lucide-react";
 
@@ -136,6 +138,23 @@ const getDiscountValue = (offer: ExecutiveOfferRow) => {
 };
 
 export default function OrgExecutiveOffersPage() {
+  const [user, setUser] = useState<AuthUser | null>(() => getUser());
+
+  useEffect(() => {
+    const syncUser = () => setUser(getUser());
+    window.addEventListener("LMA-auth-changed", syncUser);
+    return () => window.removeEventListener("LMA-auth-changed", syncUser);
+  }, []);
+
+  const canView = useMemo(
+    () => canAccess(user, ["offers"], ["view"]),
+    [user],
+  );
+  const canExport = useMemo(
+    () => canAccess(user, ["offers"], ["export"]),
+    [user],
+  );
+
   const { handleExport } = useExecutiveOfferExport();
   const { page, limit, setPage, setLimit } = useUrlPagination();
   const [offers, setOffers] = useState<ExecutiveOfferRow[]>([]);
@@ -170,6 +189,14 @@ export default function OrgExecutiveOffersPage() {
   );
 
   const fetchOffers = useCallback(async () => {
+    if (!canView) {
+      setOffers([]);
+      setPagination(emptyPagination(limit));
+      setIsLoading(false);
+      setHasLoaded(true);
+      return;
+    }
+
     try {
       setIsLoading(true);
 
@@ -193,17 +220,18 @@ export default function OrgExecutiveOffersPage() {
       setIsLoading(false);
       setHasLoaded(true);
     }
-  }, [filters.search, limit, page, selectedDiscountTypes, selectedStatuses]);
+  }, [canView, filters.search, limit, page, selectedDiscountTypes, selectedStatuses]);
 
   useEffect(() => {
     fetchOffers();
   }, [fetchOffers]);
 
   useEffect(() => {
+    if (!canView) return;
     return subscribeRealtime(OFFER_LIST_CHANGED, () => {
       fetchOffers();
     });
-  }, [fetchOffers]);
+  }, [canView, fetchOffers]);
 
   const handleFilterChange = useCallback(
     <K extends keyof OfferFilters>(
@@ -266,17 +294,21 @@ export default function OrgExecutiveOffersPage() {
           </p>
         </div>
 
-        <Button
-          type="button"
-          variant="outline"
-          onClick={handleExport}
-          className="flex h-9 w-full items-center justify-center gap-1.5 rounded-full px-4 sm:w-auto"
-        >
-          <Download className="h-4 w-4" />
-          Export
-        </Button>
+        {canExport && (
+          <Button
+            type="button"
+            variant="outline"
+            onClick={handleExport}
+            className="flex h-9 w-full items-center justify-center gap-1.5 rounded-full px-4 sm:w-auto"
+          >
+            <Download className="h-4 w-4" />
+            Export
+          </Button>
+        )}
       </div>
 
+      {canView ? (
+        <>
       {/* Cards */}
       <OfferCards
         totalCount={offerStats.total}
@@ -433,6 +465,12 @@ export default function OrgExecutiveOffersPage() {
         onLimitChange={setLimit}
         totalLabel="offers"
       />
+        </>
+      ) : (
+        <div className="rounded-lg border border-gray-200 bg-white p-12 text-center text-sm text-gray-500 shadow-sm">
+          You do not have permission to view offers.
+        </div>
+      )}
     </div>
   );
 }
