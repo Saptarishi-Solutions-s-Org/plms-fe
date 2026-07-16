@@ -5,7 +5,6 @@ import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import type {
   ExecutivePerformanceRecord,
-  ExecutiveUserRecord,
   TeamPerformanceProps,
   TeamPerformanceRow,
   TeamPerformanceStatCard,
@@ -35,8 +34,7 @@ import {
 } from "@/components/ui/table";
 import { useExecutiveExport } from "@/hooks/export";
 import { useUrlPagination } from "@/hooks/use-url-pagination";
-import { getExecutiveUsers } from "@/services/leads";
-import { getExecutivePerformance } from "@/services/managerdashboard";
+import { getReportExecutivePerformance } from "@/services/organizationreports";
 import { createPaginationMeta } from "@/types/pagination";
 
 const fallbackStatIcons = [Users, Award, FileText, CheckCircle, Percent];
@@ -47,11 +45,6 @@ const fallbackStatColors = [
   "bg-orange-400",
   "bg-purple-500",
 ];
-
-const normalizeName = (value: unknown) =>
-  String(value ?? "")
-    .trim()
-    .toLowerCase();
 
 const toPerformanceRow = (
   executiveId: string,
@@ -125,38 +118,14 @@ export default function TeamPerformanceTab({
       try {
         setLoading(true);
 
-        const [userData, performanceData] = await Promise.all([
-          getExecutiveUsers().catch(() => []),
-          getExecutivePerformance().catch(() => []),
-        ]);
-
-        const users = Array.isArray(userData)
-          ? (userData as ExecutiveUserRecord[])
-          : [];
-        const performanceRows = Array.isArray(performanceData)
-          ? (performanceData as ExecutivePerformanceRecord[])
-          : [];
-
-        const performanceByName = new Map(
-          performanceRows.map((row) => [normalizeName(row.executiveName), row]),
+        const performanceRows = await getReportExecutivePerformance();
+        const mappedRows = performanceRows.map((performance) =>
+          toPerformanceRow(
+            performance.executiveId ?? performance.id ?? "",
+            performance.executiveName ?? performance.name ?? "-",
+            performance,
+          ),
         );
-
-        const mappedRows =
-          users.length > 0
-            ? users.map((user) =>
-                toPerformanceRow(
-                  user.id ?? "",
-                  user.name ?? "-",
-                  performanceByName.get(normalizeName(user.name)),
-                ),
-              )
-            : performanceRows.map((performance) =>
-                toPerformanceRow(
-                  performance.executiveId ?? performance.id ?? "",
-                  performance.executiveName ?? "-",
-                  performance,
-                ),
-              );
 
         setExecutives(mappedRows.length > 0 ? mappedRows : rows);
       } catch (error) {
@@ -429,7 +398,10 @@ export default function TeamPerformanceTab({
                           className="rounded-md bg-blue-50 text-xs font-bold text-blue-600 hover:bg-blue-100"
                         >
                           <Link
-                            href={`/${orgCode}/org-reports/executive/${row.executiveId}`}
+                            href={{
+                              pathname: `/${orgCode}/org-reports/executive`,
+                              query: { executiveId: row.executiveId },
+                            }}
                           >
                             View
                           </Link>

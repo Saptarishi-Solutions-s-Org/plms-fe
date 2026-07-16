@@ -30,9 +30,7 @@ import type {
   LeadsWithStatsResponse,
 } from "@/types/org-reports";
 import { createPaginationMeta } from "@/types/pagination";
-import { getLeadsWithStats } from "@/services/leads";
-
-
+import { getReportLeads } from "@/services/organizationreports";
 
 const formatSource = (source?: string) => {
   if (!source) {
@@ -151,7 +149,7 @@ export default function ExecutiveLeadsPage({
   useEffect(() => {
     const fetchLeadStats = async () => {
       try {
-        const data = (await getLeadsWithStats()) as LeadsWithStatsResponse;
+        const data = (await getReportLeads()) as LeadsWithStatsResponse;
         const leads = data?.leads;
 
         const filteredLeads = Array.isArray(leads)
