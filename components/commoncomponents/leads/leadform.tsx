@@ -223,7 +223,7 @@ export default function LeadForm({
     setIsSubmitting(true);
 
     try {
-      await onSubmit(data);
+      await onSubmit({ ...data, managerId: selectedManagerId || undefined });
     } catch (error) {
       toast.error(
         error instanceof Error ? error.message : "Failed to save lead.",

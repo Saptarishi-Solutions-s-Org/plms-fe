@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState, useMemo } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { ArrowLeft, Pencil } from "lucide-react";
@@ -18,7 +18,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { getLeadDetail, getLeadsWithStats, updateLead } from "@/services/leads";
+import { getLeadDetail, getLeadsWithStats, updateLead, updateLeadActivity } from "@/services/leads";
 import type { LeadDetailData, LeadFormData } from "@/types/leadtypes";
 import type {
   LeadDetailResponse,
@@ -26,6 +26,8 @@ import type {
 } from "@/types/leadActivity";
 import { LEAD_DETAIL_CHANGED, LeadDetailChangedPayload } from "@/types/realtime";
 import { subscribeRealtime } from "@/lib/socket";
+import { type AuthUser, getUser } from "@/lib/auth";
+import { canAccess } from "@/lib/permissions";
 
 export default function LeadDetailPage() {
   const { orgCode, leadId } = useParams<{ orgCode: string; leadId: string }>();
@@ -34,6 +36,31 @@ export default function LeadDetailPage() {
   const [isLoading, setLoading] = useState(true);
   const [isEditOpen, setEditOpen] = useState(false);
   const [hasLoaded, setHasLoaded] = useState(false);
+
+  const [user, setUser] = useState<AuthUser | null>(() => getUser());
+
+  useEffect(() => {
+    const syncUser = () => setUser(getUser());
+    window.addEventListener("LMA-auth-changed", syncUser);
+    return () => window.removeEventListener("LMA-auth-changed", syncUser);
+  }, []);
+
+  const canViewActivity = useMemo(
+    () => canAccess(user, ["lead_activity"], ["view"]),
+    [user]
+  );
+  const canCreateActivity = useMemo(
+    () => canAccess(user, ["lead_activity"], ["create"]),
+    [user]
+  );
+  const canUpdateActivity = useMemo(
+    () => canAccess(user, ["lead_activity"], ["update"]),
+    [user]
+  );
+  const canUpdateLead = useMemo(
+    () => canAccess(user, ["lead"], ["update"]),
+    [user]
+  );
 
   const fetchDetail = useCallback(async () => {
     try {
@@ -105,6 +132,11 @@ export default function LeadDetailPage() {
     setEditOpen(false);
   };
 
+  const handleEditActivity = async (id: string, notes: string) => {
+    await updateLeadActivity(id, notes);
+    await fetchDetail();
+  };
+
   return (
     <>
        <div className="min-h-full w-full space-y-4 p-4 sm:p-5">
@@ -130,15 +162,17 @@ export default function LeadDetailPage() {
               </p>
             </div>
           </div>
-          <Button
-            type="button"
-            size="sm"
-            onClick={() => setEditOpen(true)}
-            className="flex shrink-0 items-center gap-1 bg-blue-600 text-white hover:bg-blue-700"
-          >
-            <Pencil className="h-4 w-4" />
-            Edit
-          </Button>
+          {canUpdateLead && (
+            <Button
+              type="button"
+              size="sm"
+              onClick={() => setEditOpen(true)}
+              className="flex shrink-0 items-center gap-1 bg-blue-600 text-white hover:bg-blue-700"
+            >
+              <Pencil className="h-4 w-4" />
+              Edit
+            </Button>
+          )}
         </div>
 
         <LeadHeroCard lead={lead} />
@@ -152,13 +186,25 @@ export default function LeadDetailPage() {
                 </h2>
               </div>
               <div className="min-h-0 flex-1 overflow-x-hidden overflow-y-auto">
-                <ActivityTimeline activities={activities} />
+                {canViewActivity ? (
+                  <ActivityTimeline 
+                    activities={activities}
+                    canEdit={canUpdateActivity}
+                    onEdit={handleEditActivity}
+                  />
+                ) : (
+                  <div className="flex h-full items-center justify-center p-4 text-sm text-gray-500 text-center">
+                    You do not have permission to view lead activities.
+                  </div>
+                )}
               </div>
             </div>
           </div>
 
           <div className="flex flex-col gap-4 lg:h-[560px]">
-            <AddNoteForm leadId={lead.uuid} onAdded={fetchDetail} />
+            {canCreateActivity && (
+              <AddNoteForm leadId={lead.uuid} onAdded={fetchDetail} />
+            )}
             <OfferCard offers={offers} />
           </div>
         </div>

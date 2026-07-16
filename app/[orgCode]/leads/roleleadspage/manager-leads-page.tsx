@@ -30,6 +30,9 @@ import type {
   LeadPayload,
 } from "@/types/leadtypes";
 
+import { type AuthUser, getUser } from "@/lib/auth";
+import { canAccess } from "@/lib/permissions";
+
 const BULK_ASSIGN_PAGE_LIMIT = 100;
 
 function joinFilterValues(values?: string[]) {
@@ -57,6 +60,19 @@ function toLeadPayload(lead: Lead, assignedTo: string): LeadPayload {
 }
 
 export default function ManagerLeadsPage() {
+  const [user, setUser] = useState<AuthUser | null>(() => getUser());
+
+  useEffect(() => {
+    const syncUser = () => setUser(getUser());
+    window.addEventListener("LMA-auth-changed", syncUser);
+    return () => window.removeEventListener("LMA-auth-changed", syncUser);
+  }, []);
+  const canCreateLead = useMemo(() => canAccess(user, ["lead"], ["create"]), [user]);
+  const canExportLead = useMemo(() => canAccess(user, ["lead"], ["export"]), [user]);
+  const canImportLead = useMemo(() => canAccess(user, ["lead"], ["import"]), [user]);
+  const canUpdateLead = useMemo(() => canAccess(user, ["lead"], ["update"]), [user]);
+
+  console.log(canCreateLead,"hello")
   const { page, limit, setPage, setLimit } = useUrlPagination();
   const { filters, setFilters } = useUrlLeadFilters();
   const { handleExport } = useLeadExport();
@@ -71,7 +87,7 @@ export default function ManagerLeadsPage() {
     useState(false);
 
   useEffect(() => {
-    getExecutiveUsers().then(setExecutives).catch(console.error);
+    getExecutiveUsers().then((res: any) => setExecutives(res.users ?? [])).catch(console.error);
   }, []);
 
   const executiveNamesById = useMemo(
@@ -293,6 +309,10 @@ export default function ManagerLeadsPage() {
                 setIsBulkAssignOpen(true);
                 void fetchBulkAssignLeads();
               }}
+              showCreate={canCreateLead}
+              showExport={canExportLead}
+              showImport={canImportLead}
+              showBulkAssign={canUpdateLead}
             />
           </div>
 
@@ -321,10 +341,10 @@ export default function ManagerLeadsPage() {
             renderActions={(lead) => (
               <LeadActions
                 lead={lead}
-                onEdit={openEditForm}
+                onEdit={canUpdateLead ? openEditForm : undefined}
                 onViewDetails={handleViewDetails}
                 executives={executives}
-                onAssign={handleAssignLead}
+                onAssign={canUpdateLead ? handleAssignLead : undefined}
               />
             )}
           />

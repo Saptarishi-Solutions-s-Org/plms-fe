@@ -34,4 +34,6 @@ export const leadFormSchema = z.object({
   notes: z.string().min(1, "Notes is required"),
 
   assignedTo: z.string().optional(),
+
+  managerId: z.string().optional(),
 });
