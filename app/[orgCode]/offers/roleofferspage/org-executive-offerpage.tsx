@@ -18,9 +18,11 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { MultiSelectCombobox } from "@/components/ui/multi-select-combobox";
+import { useExecutiveOfferExport } from "@/hooks/export";
 import { useUrlPagination } from "@/hooks/use-url-pagination";
 import { useUrlOfferFilters } from "@/hooks/useurloffer";
 import { subscribeRealtime } from "@/lib/socket";
+import { Download } from "lucide-react";
 
 import { getExecutiveOffers } from "@/services/executivestats";
 
@@ -134,6 +136,7 @@ const getDiscountValue = (offer: ExecutiveOfferRow) => {
 };
 
 export default function OrgExecutiveOffersPage() {
+  const { handleExport } = useExecutiveOfferExport();
   const { page, limit, setPage, setLimit } = useUrlPagination();
   const [offers, setOffers] = useState<ExecutiveOfferRow[]>([]);
   const [pagination, setPagination] = useState<PaginationMeta>(
@@ -262,6 +265,16 @@ export default function OrgExecutiveOffersPage() {
             Manage offers and assign them to leads easily.
           </p>
         </div>
+
+        <Button
+          type="button"
+          variant="outline"
+          onClick={handleExport}
+          className="flex h-9 w-full items-center justify-center gap-1.5 rounded-full px-4 sm:w-auto"
+        >
+          <Download className="h-4 w-4" />
+          Export
+        </Button>
       </div>
 
       {/* Cards */}

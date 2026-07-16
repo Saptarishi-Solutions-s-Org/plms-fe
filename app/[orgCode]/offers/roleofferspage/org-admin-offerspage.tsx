@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { Download } from "lucide-react";
 
 import GlobalLoader from "@/components/commoncomponents/globalloader";
 import TablePaginationFooter from "@/components/commoncomponents/table-pagination-footer";
@@ -9,8 +10,11 @@ import { OfferFilters } from "@/components/commoncomponents/offers/offerfilter";
 import { OffersTable } from "@/components/commoncomponents/offers/offertable";
 import { CreateOfferDialog } from "@/components/commoncomponents/offers/createoffer";
 import { Button } from "@/components/ui/button";
+import { useOfferExport } from "@/hooks/export";
 import { useUrlPagination } from "@/hooks/use-url-pagination";
 import { useUrlOfferFilters } from "@/hooks/useurloffer";
+import { type AuthUser, getUser } from "@/lib/auth";
+import { canAccess } from "@/lib/permissions";
 import { subscribeRealtime } from "@/lib/socket";
 import {
   createOffer,
@@ -38,6 +42,32 @@ const DEFAULT_FILTERS: OfferFiltersType = {
 };
 
 export default function OrgAdminOffersPage() {
+  const [user, setUser] = useState<AuthUser | null>(() => getUser());
+
+  useEffect(() => {
+    const syncUser = () => setUser(getUser());
+    window.addEventListener("LMA-auth-changed", syncUser);
+    return () => window.removeEventListener("LMA-auth-changed", syncUser);
+  }, []);
+
+  const canView = useMemo(
+    () => canAccess(user, ["offers"], ["view"]),
+    [user]
+  );
+  const canCreate = useMemo(
+    () => canAccess(user, ["offers"], ["create"]),
+    [user]
+  );
+  const canExport = useMemo(
+    () => canAccess(user, ["offers"], ["export"]),
+    [user]
+  );
+  const canUpdate = useMemo(
+    () => canAccess(user, ["offers"], ["update"]),
+    [user]
+  );
+
+  const { handleExport } = useOfferExport();
   const { page, limit, setPage, setLimit } = useUrlPagination();
   const [offers, setOffers] = useState<Offer[]>([]);
   const [totalCount, setTotalCount] = useState(0);
@@ -81,6 +111,16 @@ export default function OrgAdminOffersPage() {
 
   const fetchOffers = useCallback(
     async () => {
+      if (!canView) {
+        setOffers([]);
+        setTotalCount(0);
+        setGlobalCount(0);
+        setPagination(emptyPagination(limit));
+        setIsLoading(false);
+        setHasLoaded(true);
+        return;
+      }
+
       try {
         setIsLoading(true);
 
@@ -195,17 +235,18 @@ export default function OrgAdminOffersPage() {
         setHasLoaded(true);
       }
     },
-    [filters, limit, page]
+    [canView, filters, limit, page]
   );
   useEffect(() => {
     fetchOffers();
   }, [fetchOffers]);
 
   useEffect(() => {
+    if (!canView) return;
     return subscribeRealtime(OFFER_LIST_CHANGED, () => {
       fetchOffers();
     });
-  }, [fetchOffers]);
+  }, [canView, fetchOffers]);
 
   const buildOfferApiPayload = useCallback(
     (data: OfferPayload) => ({
@@ -453,61 +494,85 @@ export default function OrgAdminOffersPage() {
           </p>
         </div>
 
-        <Button
-          onClick={() =>
-            setCreateOpen(true)
-          }
-          className="w-full rounded-full bg-blue-600 px-6 text-white hover:bg-blue-700 sm:w-auto"
-        >
-          + Create Offer
-        </Button>
+        <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
+          {canExport && (
+            <Button
+              type="button"
+              variant="outline"
+              onClick={handleExport}
+              className="flex h-9 w-full items-center justify-center gap-1.5 rounded-full px-4 sm:w-auto"
+            >
+              <Download className="h-4 w-4" />
+              Export
+            </Button>
+          )}
+
+          {canCreate && (
+            <Button
+              onClick={() =>
+                setCreateOpen(true)
+              }
+              className="w-full rounded-full bg-blue-600 px-6 text-white hover:bg-blue-700 sm:w-auto"
+            >
+              + Create Offer
+            </Button>
+          )}
+        </div>
       </div>
 
-      {/* Cards */}
+      {canView ? (
+        <>
+          {/* Cards */}
 
-      <OfferCards
-        totalCount={totalCount}
-        activeCount={activeCount}
-        inactiveCount={inactiveCount}
-        globalCount={globalCount}
-      />
+          <OfferCards
+            totalCount={totalCount}
+            activeCount={activeCount}
+            inactiveCount={inactiveCount}
+            globalCount={globalCount}
+          />
 
-      {/* Filters */}
+          {/* Filters */}
 
-      <OfferFilters
-        filters={draftFilters}
-        onFilterChange={
-          handleFilterChange
-        }
-        onApply={handleApplyFilters}
-        onClear={handleClearFilters}
-      />
+          <OfferFilters
+            filters={draftFilters}
+            onFilterChange={
+              handleFilterChange
+            }
+            onApply={handleApplyFilters}
+            onClear={handleClearFilters}
+          />
 
-      {/* Table */}
+          {/* Table */}
 
-      <TablePaginationFooter
-        pagination={pagination}
-        onPageChange={setPage}
-        onLimitChange={setLimit}
-        placement="top"
-        totalLabel="offers"
-      />
+          <TablePaginationFooter
+            pagination={pagination}
+            onPageChange={setPage}
+            onLimitChange={setLimit}
+            placement="top"
+            totalLabel="offers"
+          />
 
-      <OffersTable
-        offers={offers}
-        onToggleStatus={
-          handleToggleStatus
-        }
-        onEdit={handleEditOffer}
-        rowOffset={rowOffset}
-      />
+          <OffersTable
+            offers={offers}
+            onToggleStatus={
+              canUpdate ? handleToggleStatus : undefined
+            }
+            onEdit={canUpdate ? handleEditOffer : undefined}
+            rowOffset={rowOffset}
+          />
 
-      <TablePaginationFooter
-        pagination={pagination}
-        onPageChange={setPage}
-        onLimitChange={setLimit}
-        totalLabel="offers"
-      />
+          <TablePaginationFooter
+            pagination={pagination}
+            onPageChange={setPage}
+            onLimitChange={setLimit}
+            totalLabel="offers"
+          />
+        </>
+      ) : (
+        <div className="rounded-lg border border-gray-200 bg-white p-12 text-center text-sm text-gray-500 shadow-sm">
+          You do not have permission to view offers.
+        </div>
+      )}
 
       {/* Dialog */}
 

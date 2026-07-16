@@ -35,10 +35,11 @@ import {
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { useManagerOfferExport } from "@/hooks/export";
 import { useUrlPagination } from "@/hooks/use-url-pagination";
 import { useUrlOfferFilters } from "@/hooks/useurloffer";
 import { subscribeRealtime } from "@/lib/socket";
-import { MoreHorizontal, ListChecks } from "lucide-react";
+import { MoreHorizontal, ListChecks, Download } from "lucide-react";
 import Image from "next/image";
 
 import {
@@ -140,6 +141,7 @@ const formatManagerOffers = (
   }));
 
 export default function OrgManagerOffersPage() {
+  const { handleExport } = useManagerOfferExport();
   const { page, limit, setPage, setLimit } = useUrlPagination();
   const [offers, setOffers] = useState<ManagerOffer[]>([]);
   const [bulkOffers, setBulkOffers] = useState<ManagerOffer[]>([]);
@@ -469,15 +471,27 @@ export default function OrgManagerOffersPage() {
           </p>
         </div>
 
-        <Button
-          variant="outline"
-          size="lg"
-          className="w-full sm:w-auto rounded-full bg-blue-600 text-white hover:bg-blue-600 hover:text-white font-medium"
-          onClick={() => setIsBulkActionsOpen(true)}
-        >
-          <ListChecks className="h-4 w-4" />
-          Bulk Action
-        </Button>
+        <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={handleExport}
+            className="flex h-9 w-full items-center justify-center gap-1.5 rounded-full px-4 sm:w-auto"
+          >
+            <Download className="h-4 w-4" />
+            Export
+          </Button>
+
+          <Button
+            variant="outline"
+            size="lg"
+            className="w-full sm:w-auto rounded-full bg-blue-600 text-white hover:bg-blue-600 hover:text-white font-medium"
+            onClick={() => setIsBulkActionsOpen(true)}
+          >
+            <ListChecks className="h-4 w-4" />
+            Bulk Action
+          </Button>
+        </div>
       </div>
 
       <BulkActionsDrawer
