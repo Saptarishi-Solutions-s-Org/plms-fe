@@ -113,9 +113,9 @@ Based on the role matrix clean-up patterns and your updated requirements, we def
 | Role | `view` | `create` | `update` | `delete` | `export` | `import` |
 |---|:---:|:---:|:---:|:---:|:---:|:---:|
 | **System Admin** | 🚫 *Blocked* | 🚫 *Blocked* | 🚫 *Blocked* | 🚫 *Blocked* | 🚫 *Blocked* | 🚫 *Blocked* |
-| **Admin** | Active | Active | Active | Active | Active | 🚫 *Blocked* |
+| **Admin** | Active | 🚫 *Blocked* | 🚫 *Blocked* | 🚫 *Blocked* | 🚫 *Blocked* | 🚫 *Blocked* |
 | **Manager** | Active | Active | Active | Active | Active | 🚫 *Blocked* |
-| **Executive** | Active | Active | Active | 🚫 *Blocked* | 🚫 *Blocked* | 🚫 *Blocked* |
+| **Executive** | Active | Active | Active | Active | Active | 🚫 *Blocked* |
 
 ### Functional Constraints & Data Ownership Per Role:
 
@@ -124,9 +124,10 @@ Based on the role matrix clean-up patterns and your updated requirements, we def
    - **Action**: All segmentation actions are blocked with the `🚫` ban symbol.
 
 2. **Admin**:
-   - **Data Scope**: **Organization-Wide Leads**. Can build segments using any lead belonging to their organization (`leads.organization_ID = <admin_org_id>`).
-   - **Filter Configuration**: Admin is the only role allowed to enable/disable specific segment filter types for the organization (managing rows in `OrganizationSegmentFilterTypes`).
-   - **Blocked**: `import` is blocked.
+   - **Data Scope**: **Organization-Wide Leads (Monitoring)**. Can monitor segments using any lead belonging to their organization (`leads.organization_ID = <admin_org_id>`).
+   - **Segment Ownership**: **View-Only Access**. Can view all segments created by Managers and Executives across the organization. Cannot create, edit, delete, or export segments.
+   - **Filter Configuration**: Admin manages filter types and is the only role allowed to enable/disable specific segment filter types for the organization (managing rows in `OrganizationSegmentFilterTypes`).
+   - **Blocked**: `create`, `update`, `delete`, `export`, and `import` are blocked.
 
 3. **Manager**:
    - **Data Scope**: **Team Leads**. Can build segments using leads assigned directly to themselves, or leads assigned to any executive who reports to them:
@@ -136,16 +137,18 @@ Based on the role matrix clean-up patterns and your updated requirements, we def
          SELECT id FROM crm_user WHERE reporting_manager_ID = <manager_user_id>
      )
      ```
-   - **Constraints**: Uses the filter types configured by the Admin, but cannot enable/disable filter types.
+   - **Segment Ownership**: Can view, create, edit, delete, and export segments created by themselves or by reporting Executives in their team.
    - **Blocked**: `import` is blocked.
 
 4. **Executive**:
-   - **Data Scope**: **Individual Leads**. Can create, view, and update segments strictly restricted to leads assigned directly to them:
+   - **Data Scope**: **Individual Leads**. Can create, view, update, delete, and export segments strictly restricted to leads assigned directly to them:
      ```sql
      leads.assigned_to_ID = <executive_user_id>
      ```
      This isolation condition is automatically appended to the segment's preview, count, and offer-assignment query generator on the backend.
-   - **Blocked**: `delete` (cannot delete global segments, can only delete own segments), `export` (🚫 blocked to prevent lead database leakage), and `import` (🚫 blocked).
+   - **Segment Ownership**: Can only edit, delete, or export segments they created themselves. If they view/use Admin/global segments, the leads evaluated will strictly only be those assigned to them.
+   - **Exporting**: Executive can export leads from their segments, but the exported lead spreadsheet will strictly only include leads matching the segment filters that are assigned to them.
+   - **Blocked**: `import` is blocked.
 
 ---
 
