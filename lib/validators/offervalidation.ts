@@ -24,7 +24,10 @@ export const DISCOUNT_OPTIONS = [
   { value: "Flag_Discount", label: "Flag Discount" },
 ] as const;
 
-export const offerFormSchema = z
+function buildOfferFormSchema(
+  requireManagerSelection: boolean
+) {
+  return z
   .object({
     offerName: z
       .string()
@@ -80,6 +83,7 @@ export const offerFormSchema = z
     }
 
     if (
+      requireManagerSelection &&
       !data.isGlobal &&
       data.managerIds.length === 0
     ) {
@@ -211,6 +215,11 @@ export const offerFormSchema = z
         break;
     }
   });
+}
+
+export const offerFormSchema = buildOfferFormSchema(true);
+
+export const managerOfferFormSchema = buildOfferFormSchema(false);
 
 export type OfferFormData = z.infer<
   typeof offerFormSchema
