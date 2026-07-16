@@ -21,6 +21,9 @@ export default function LeadHeader({
   const shouldShowExport = showExport !== undefined ? showExport : showImportExport;
   const shouldShowImport = showImport !== undefined ? showImport : showImportExport;
 
+  const shouldShowExport = showExport !== undefined ? showExport : showImportExport;
+  const shouldShowImport = showImport !== undefined ? showImport : showImportExport;
+
   return (
     <>
       <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
