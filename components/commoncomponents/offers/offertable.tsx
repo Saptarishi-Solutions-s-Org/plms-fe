@@ -150,7 +150,7 @@ function DiscountSummary({ offer }: { offer: Offer }) {
 
 interface OffersTableProps {
   offers: Offer[];
-  onToggleStatus: (id: string) => void;
+  onToggleStatus?: (id: string) => void;
   onEdit?: (offer: Offer) => void;
   rowOffset?: number;
 }
@@ -169,11 +169,13 @@ export function OffersTable({
 
   const handleToggleStatus = useCallback(
     (id: string) => {
-      onToggleStatus(id);
+      onToggleStatus?.(id);
       setOpenMenuId(null);
     },
     [onToggleStatus],
   );
+
+  const hasActions = Boolean(onEdit || onToggleStatus);
 
   const handleEdit = useCallback(
     (offer: Offer) => {
@@ -307,6 +309,9 @@ export function OffersTable({
 
                   <TableCell className="w-20 text-center">
                     <div className="flex justify-center">
+                      {!hasActions ? (
+                        <span className="text-xs text-gray-400">—</span>
+                      ) : (
                       <DropdownMenu
                         open={!isExpired && isMenuOpen}
                         onOpenChange={(open) =>
@@ -336,7 +341,7 @@ export function OffersTable({
                             </DropdownMenuItem>
                           )}
 
-                          {isActive ? (
+                          {onToggleStatus && (isActive ? (
                             <AlertDialog>
                               <AlertDialogTrigger asChild>
                                 <DropdownMenuItem
@@ -378,9 +383,10 @@ export function OffersTable({
                             >
                               Activate
                             </DropdownMenuItem>
-                          )}
+                          ))}
                         </DropdownMenuContent>
                       </DropdownMenu>
+                      )}
                     </div>
                   </TableCell>
                 </TableRow>
