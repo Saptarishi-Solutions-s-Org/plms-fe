@@ -1,7 +1,11 @@
 import { api } from "@/lib/api";
 import { buildApiFunctionUrl } from "@/lib/api-function-url";
 import type { LeadImportRow } from "@/types/leadImport";
-import type { AddActivityFormData, LeadPayload } from "@/types/leadtypes";
+import type {
+  AddActivityFormData,
+  ExecutiveOption,
+  LeadPayload,
+} from "@/types/leadtypes";
 
 export type GetLeadsWithStatsParams = {
   page?: number;
@@ -16,8 +20,31 @@ export type GetLeadsWithStatsParams = {
 export const getLeadsWithStats = (params?: GetLeadsWithStatsParams) =>
   api(buildApiFunctionUrl("/odata/v4/lead/getLeadsWithStats", params));
 
-export const getExecutiveUsers = () =>
-  api("/odata/v4/lead/getExecutiveUsers()");
+export const getExecutiveUsers = async (): Promise<ExecutiveOption[]> => {
+  const response = await api("/odata/v4/lead/getExecutiveUsers()");
+
+  if (Array.isArray(response)) {
+    return response;
+  }
+
+  if (!response) {
+    return [];
+  }
+
+  if (Array.isArray((response as any).executives)) {
+    return (response as any).executives;
+  }
+
+  if (Array.isArray((response as any).items)) {
+    return (response as any).items;
+  }
+
+  if (Array.isArray((response as any).results)) {
+    return (response as any).results;
+  }
+
+  return [];
+};
 
 export const createLead = (payload: LeadPayload) =>
   api("/odata/v4/lead/createLead", {

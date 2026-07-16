@@ -1,7 +1,8 @@
 "use client";
 
-import { useMemo, useState, useEffect } from "react";
+import { useCallback, useMemo, useState, useEffect } from "react";
 import Link from "next/link";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import type {
   ExecutivePerformanceRecord,
   ExecutiveUserRecord,
@@ -88,10 +89,36 @@ export default function TeamPerformanceTab({
   orgCode,
 }: TeamPerformanceProps) {
   const { page, limit, setPage, setLimit } = useUrlPagination();
+  const searchParams = useSearchParams();
+  const pathname = usePathname();
+  const router = useRouter();
+  const initialSearch = searchParams.get("search") ?? "";
   const [executives, setExecutives] = useState(rows);
   const [loading, setLoading] = useState(false);
-  const [search, setSearch] = useState("");
-  const [appliedSearch, setAppliedSearch] = useState("");
+  const [search, setSearch] = useState(initialSearch);
+  const [appliedSearch, setAppliedSearch] = useState(initialSearch);
+
+  useEffect(() => {
+    const query = searchParams.get("search") ?? "";
+    setSearch(query);
+    setAppliedSearch(query);
+  }, [searchParams]);
+
+  const replaceSearchQuery = useCallback(
+    (query: string) => {
+      const params = new URLSearchParams(searchParams.toString());
+
+      if (query) {
+        params.set("search", query.trim());
+      } else {
+        params.delete("search");
+      }
+
+      params.set("page", "1");
+      router.replace(`${pathname}?${params.toString()}`, { scroll: false });
+    },
+    [pathname, router, searchParams],
+  );
 
   useEffect(() => {
     const fetchExecutives = async () => {
@@ -155,9 +182,7 @@ export default function TeamPerformanceTab({
   }, [appliedSearch, executives]);
 
   const handleClearSearch = () => {
-    setSearch("");
-    setAppliedSearch("");
-    setPage(1);
+    replaceSearchQuery("");
   };
 
   const performanceRows = useMemo(() => {
@@ -186,8 +211,7 @@ export default function TeamPerformanceTab({
   }, [page, pagination.totalPages, setPage]);
 
   const handleApplySearch = () => {
-    setAppliedSearch(search);
-    setPage(1);
+    replaceSearchQuery(search);
   };
 
   const displayStats = useMemo(() => {
