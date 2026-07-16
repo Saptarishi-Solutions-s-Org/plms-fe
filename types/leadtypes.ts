@@ -142,6 +142,8 @@ export type LeadHeaderProps = {
   onAddLead: () => void;
   onBulkAssign?: () => void;
   showImportExport?: boolean;
+  showImport?: boolean;
+  showExport?: boolean;
 };
 
 export type LeadActionsProps = {
