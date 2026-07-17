@@ -10,8 +10,8 @@ import {
 import { toast } from "sonner";
 import type { ReportTab } from "@/types/org-reports";
 
-import AdminReportsPage from "@/components/commoncomponents/reports/admin-reports-page";
 import ExecutiveReportsPage from "@/components/commoncomponents/reports/executive-reports-page";
+import AdminReportsPage from "@/components/commoncomponents/reports/admin-reports-page";
 import GlobalLoader from "@/components/commoncomponents/globalloader";
 import OverviewTab from "@/components/commoncomponents/reports/Overview/overview-tab";
 import TeamPerformanceTab from "@/components/commoncomponents/reports/team-performance/team-performance-tab";
