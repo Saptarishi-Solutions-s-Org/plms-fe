@@ -1,4 +1,5 @@
 import { exportLeads } from "@/services/leads";
+import { exportExecutives } from "@/services/organizationreports";
 import {
   exportOffersAdmin,
   exportOffersExecutive,
@@ -63,6 +64,17 @@ async function exportRowsAsCsv(
 export function useLeadExport() {
   const handleExport = () =>
     exportRowsAsCsv(exportLeads, "LeadsReport", "There are no leads to export.");
+
+  return { handleExport };
+}
+
+export function useReportExecutivesExport() {
+  const handleExport = () =>
+    exportRowsAsCsv(
+      exportExecutives,
+      "ExecutivesReport",
+      "There are no executives to export.",
+    );
 
   return { handleExport };
 }

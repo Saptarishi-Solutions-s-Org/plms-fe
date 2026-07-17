@@ -3,12 +3,17 @@
 import { useCallback, useEffect, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { toast } from "sonner";
+import { Download } from "lucide-react";
 
 import GlobalLoader from "@/components/commoncomponents/globalloader";
+import { Button } from "@/components/ui/button";
 import OverviewTab from "@/components/commoncomponents/reports/Overview/overview-tab";
 import LeadsDetailsTab from "@/components/commoncomponents/reports/executive-leads/leads-details-tab";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { subscribeRealtime } from "@/lib/socket";
+import { type AuthUser, getUser } from "@/lib/auth";
+import { canAccess } from "@/lib/permissions";
+import { useExecutiveLeadsExport } from "@/hooks/export";
 import {
   getLeadSourceAnalytics,
   getReportLeads,
@@ -189,6 +194,15 @@ export default function ExecutiveReportsPage() {
   >([]);
   const [initialLoading, setInitialLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [currentUser, setCurrentUser] = useState<AuthUser | null>(() => getUser());
+  const canExportReports = canAccess(currentUser, ["reports"], ["export"]);
+  const { handleExport } = useExecutiveLeadsExport(leads);
+
+  useEffect(() => {
+    const syncUser = () => setCurrentUser(getUser());
+    window.addEventListener("LMA-auth-changed", syncUser);
+    return () => window.removeEventListener("LMA-auth-changed", syncUser);
+  }, []);
 
   const fetchReports = useCallback(async () => {
     setIsRefreshing(true);
@@ -284,13 +298,27 @@ export default function ExecutiveReportsPage() {
 
   return (
     <div className="h-full w-full space-y-5 p-4 sm:p-5">
-      <div>
-        <h1 className="text-lg font-semibold text-slate-900 sm:text-2xl">
-          My Reports
-        </h1>
-        <p className="text-xs text-slate-500 sm:text-sm">
-          Review your personal lead activity and performance.
-        </p>
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h1 className="text-lg font-semibold text-slate-900 sm:text-2xl">
+            My Reports
+          </h1>
+          <p className="text-xs text-slate-500 sm:text-sm">
+            Review your personal lead activity and performance.
+          </p>
+        </div>
+        {canExportReports && activeTab === "leads-details" && (
+          <Button
+            type="button"
+            variant="outline"
+            onClick={handleExport}
+            disabled={leads.length === 0}
+            className="flex h-9 w-full items-center justify-center gap-1.5 rounded-full px-4 sm:w-auto"
+          >
+            <Download className="h-4 w-4" />
+            Export
+          </Button>
+        )}
       </div>
 
       <Tabs

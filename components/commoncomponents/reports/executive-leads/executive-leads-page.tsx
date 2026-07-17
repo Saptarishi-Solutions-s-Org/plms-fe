@@ -5,7 +5,8 @@ import { ArrowLeft, BriefcaseBusiness, Download, Users } from "lucide-react";
 import { endOfDay, format, startOfDay } from "date-fns";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { getUser } from "@/lib/auth";
+import { type AuthUser, getUser } from "@/lib/auth";
+import { canAccess } from "@/lib/permissions";
 import TablePaginationFooter from "@/components/commoncomponents/table-pagination-footer";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardTitle } from "@/components/ui/card";
@@ -113,6 +114,11 @@ export default function ExecutiveLeadsPage({
   const pathname = usePathname();
   const router = useRouter();
   const [leadRows, setLeadRows] = useState(leads || []);
+  const [currentUser, setCurrentUser] = useState<AuthUser | null>(() => getUser());
+  const canExportReports = useMemo(
+    () => canAccess(currentUser, ["reports"], ["export"]),
+    [currentUser],
+  );
   const [dateRange, setDateRange] = useState<DateRange | undefined>(() =>
     parseDateRange(searchParams),
   );
@@ -121,6 +127,12 @@ export default function ExecutiveLeadsPage({
     [searchParams],
   );
   const { handleExport } = useExecutiveLeadsExport(leadRows);
+
+  useEffect(() => {
+    const syncUser = () => setCurrentUser(getUser());
+    window.addEventListener("LMA-auth-changed", syncUser);
+    return () => window.removeEventListener("LMA-auth-changed", syncUser);
+  }, []);
 
   const pagination = useMemo(
     () =>
@@ -265,6 +277,18 @@ export default function ExecutiveLeadsPage({
               </p>
             </div>
           </div>
+          {canExportReports && (
+            <Button
+              type="button"
+              variant="outline"
+              onClick={handleExport}
+              disabled={leadRows.length === 0}
+              className="flex h-9 w-full items-center justify-center gap-1.5 rounded-full px-4 sm:w-auto"
+            >
+              <Download className="h-4 w-4" />
+              Export
+            </Button>
+          )}
         </header>
 
         <section className="grid w-full grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -320,14 +344,6 @@ export default function ExecutiveLeadsPage({
                 className="h-10 rounded-md bg-blue-600 px-4 text-white hover:bg-blue-700"
               >
                 Apply
-              </Button>
-              <Button
-                type="button"
-                onClick={handleExport}
-                className="h-10 rounded-md bg-green-600 px-4 text-white hover:bg-green-700"
-              >
-                <Download className="size-4" />
-                Export
               </Button>
             </div>
           </div>

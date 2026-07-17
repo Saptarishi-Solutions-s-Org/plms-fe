@@ -8,9 +8,11 @@ import {
   useSearchParams,
 } from "next/navigation";
 import { toast } from "sonner";
+import { Download } from "lucide-react";
 import type { ReportTab } from "@/types/org-reports";
 
 import GlobalLoader from "@/components/commoncomponents/globalloader";
+import { Button } from "@/components/ui/button";
 import OverviewTab from "@/components/commoncomponents/reports/Overview/overview-tab";
 import ExecutiveLeadsPage from "@/components/commoncomponents/reports/executive-leads/executive-leads-page";
 import TeamPerformanceTab from "@/components/commoncomponents/reports/team-performance/team-performance-tab";
@@ -21,6 +23,9 @@ import {
   getReportStats,
 } from "@/services/organizationreports";
 import { subscribeRealtime } from "@/lib/socket";
+import { type AuthUser, getUser } from "@/lib/auth";
+import { canAccess } from "@/lib/permissions";
+import { useReportExecutivesExport } from "@/hooks/export";
 import { LEAD_SOURCE_OPTIONS } from "@/types/leadtypes";
 import type {
   LeadSourceAnalyticsRow,
@@ -146,6 +151,9 @@ export default function ManagerReportsPage() {
   const activeTab = isReportTab(tabParam) ? tabParam : "overview";
   const [initialLoading, setInitialLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [currentUser, setCurrentUser] = useState<AuthUser | null>(() => getUser());
+  const canExportReports = canAccess(currentUser, ["reports"], ["export"]);
+  const { handleExport } = useReportExecutivesExport();
   const [stats, setStats] = useState<OrganizationReportStats>(emptyStats);
 
   const [leadSourceDistributionData, setLeadSourceDistributionData] = useState<
@@ -155,6 +163,12 @@ export default function ManagerReportsPage() {
   const [sourceConversionRateData, setSourceConversionRateData] = useState<
     SourceConversionRateRow[]
   >([]);
+
+  useEffect(() => {
+    const syncUser = () => setCurrentUser(getUser());
+    window.addEventListener("LMA-auth-changed", syncUser);
+    return () => window.removeEventListener("LMA-auth-changed", syncUser);
+  }, []);
 
   const fetchReports = useCallback(async () => {
     setIsRefreshing(true);
@@ -239,13 +253,26 @@ export default function ManagerReportsPage() {
   return (
     <div className="w-full h-full p-4 sm:p-5 space-y-5">
       <div className="flex w-full flex-col gap-5">
-        <div>
-          <h1 className="text-lg font-semibold text-gray-900 sm:text-2xl">
-            Reports
-          </h1>
-          <p className="text-xs text-gray-500 sm:text-sm">
-            Analyzing team performance for the current cycle
-          </p>
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <h1 className="text-lg font-semibold text-gray-900 sm:text-2xl">
+              Reports
+            </h1>
+            <p className="text-xs text-gray-500 sm:text-sm">
+              Analyzing team performance for the current cycle
+            </p>
+          </div>
+          {canExportReports && activeTab === "team-performance" && (
+            <Button
+              type="button"
+              variant="outline"
+              onClick={handleExport}
+              className="flex h-9 w-full items-center justify-center gap-1.5 rounded-full px-4 sm:w-auto"
+            >
+              <Download className="h-4 w-4" />
+              Export
+            </Button>
+          )}
         </div>
 
         <Tabs

@@ -1,10 +1,8 @@
 "use client";
 
 import { useEffect, useMemo } from "react";
-import { Download } from "lucide-react";
 
 import TablePaginationFooter from "@/components/commoncomponents/table-pagination-footer";
-import { Button } from "@/components/ui/button";
 import {
   Table,
   TableBody,
@@ -13,7 +11,6 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { useExecutiveLeadsExport } from "@/hooks/export";
 import { useUrlPagination } from "@/hooks/use-url-pagination";
 import type { ExecutiveLeadRow } from "@/types/org-reports";
 import { createPaginationMeta } from "@/types/pagination";
@@ -49,7 +46,6 @@ export default function LeadsDetailsTab({
     const startIndex = (pagination.page - 1) * pagination.limit;
     return leads.slice(startIndex, startIndex + pagination.limit);
   }, [leads, pagination.limit, pagination.page]);
-  const { handleExport } = useExecutiveLeadsExport(leads);
 
   useEffect(() => {
     if (page > pagination.totalPages) {
@@ -69,15 +65,6 @@ export default function LeadsDetailsTab({
           </p>
         </div>
 
-        <Button
-          type="button"
-          onClick={handleExport}
-          disabled={leads.length === 0}
-          className="h-10 bg-emerald-600 text-white hover:bg-emerald-700"
-        >
-          <Download className="size-4" />
-          Export
-        </Button>
       </div>
 
       <div className="overflow-x-auto rounded-xl border border-slate-200 bg-white shadow-sm">

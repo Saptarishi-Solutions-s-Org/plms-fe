@@ -5,6 +5,8 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { ArrowLeft, Download } from "lucide-react";
 import { toast } from "sonner";
 
+import { type AuthUser, getUser } from "@/lib/auth";
+import { canAccess } from "@/lib/permissions";
 import GlobalLoader from "@/components/commoncomponents/globalloader";
 import TablePaginationFooter from "@/components/commoncomponents/table-pagination-footer";
 import ReportStats from "@/components/commoncomponents/reports/Overview/stats";
@@ -165,6 +167,17 @@ export default function AdminReportsPage() {
   const [executiveLeads, setExecutiveLeads] = useState<LeadWithStatsApiRow[]>(
     [],
   );
+  const [currentUser, setCurrentUser] = useState<AuthUser | null>(() => getUser());
+  const canExportReports = useMemo(
+    () => canAccess(currentUser, ["reports"], ["export"]),
+    [currentUser],
+  );
+
+  useEffect(() => {
+    const syncUser = () => setCurrentUser(getUser());
+    window.addEventListener("LMA-auth-changed", syncUser);
+    return () => window.removeEventListener("LMA-auth-changed", syncUser);
+  }, []);
 
   const replaceQuery = useCallback(
     (changes: Record<string, string | null>) => {
@@ -358,18 +371,72 @@ export default function AdminReportsPage() {
       }),
     [leads, selectedManager],
   );
+  const handleHeaderExport = () => {
+    if (selectedExecutive) {
+      downloadCsv(
+        "ExecutiveLeadsReport",
+        ["Lead", "Status", "Source", "Assigned By"],
+        executiveLeads.map((lead) => [
+          lead.name,
+          lead.status,
+          lead.leadSource ?? lead.source,
+          lead.createdByName,
+        ]),
+      );
+      return;
+    }
+
+    if (selectedManager) {
+      downloadCsv(
+        "ManagerExecutivesReport",
+        ["Executive", "Leads", "Converted", "Conversion Rate"],
+        executiveRows.map((row) => [
+          row.name,
+          row.leads,
+          row.converted,
+          `${row.conversionRate}%`,
+        ]),
+      );
+      return;
+    }
+
+    downloadCsv(
+      "OrganizationManagersReport",
+      ["Manager", "Executives", "Leads", "Conversion Rate"],
+      managers.map((manager) => [
+        manager.name,
+        manager.executives.length,
+        manager.leads,
+        `${manager.conversionRate}%`,
+      ]),
+    );
+  };
+
   if (loading) return <GlobalLoader />;
 
   return (
     <div className="h-full w-full space-y-6 p-4 sm:p-6">
       <div className="flex w-full flex-col gap-6">
-        <div>
-          <h1 className="text-lg font-semibold text-gray-900 sm:text-2xl">
-            Reports
-          </h1>
-          <p className="mt-1 text-sm text-gray-500 sm:text-base">
-            Organization performance and reporting hierarchy
-          </p>
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <h1 className="text-lg font-semibold text-gray-900 sm:text-2xl">
+              Reports
+            </h1>
+            <p className="mt-1 text-sm text-gray-500 sm:text-base">
+              Organization performance and reporting hierarchy
+            </p>
+          </div>
+          {canExportReports && activeTab === "organization-performance" && (
+            <Button
+              type="button"
+              variant="outline"
+              onClick={handleHeaderExport}
+              className="flex h-9 w-full items-center justify-center gap-1.5 rounded-full px-4 sm:w-auto"
+            >
+              <Download className="h-4 w-4" />
+              Export
+            </Button>
+          )}
         </div>
         <Tabs
           value={activeTab}
@@ -422,18 +489,6 @@ export default function AdminReportsPage() {
               title={`${selectedExecutive.name} Leads`}
               totalLabel="leads"
               onBack={() => replaceQuery({ executiveId: null })}
-              exportAction={() =>
-                downloadCsv(
-                  "ExecutiveLeadsReport",
-                  ["Lead", "Status", "Source", "Assigned By"],
-                  executiveLeads.map((lead) => [
-                    lead.name,
-                    lead.status,
-                    lead.leadSource ?? lead.source,
-                    lead.createdByName,
-                  ]),
-                )
-              }
               headers={["Lead", "Status", "Source", "Assigned By"]}
               rows={executiveLeads.map((lead) => [
                 lead.name ?? "-",
@@ -448,18 +503,6 @@ export default function AdminReportsPage() {
               title={`${selectedManager.name} Executives`}
               totalLabel="executives"
               onBack={() => replaceQuery({ managerId: null })}
-              exportAction={() =>
-                downloadCsv(
-                  "ManagerExecutivesReport",
-                  ["Executive", "Leads", "Converted", "Conversion Rate"],
-                  executiveRows.map((row) => [
-                    row.name,
-                    row.leads,
-                    row.converted,
-                    `${row.conversionRate}%`,
-                  ]),
-                )
-              }
               headers={[
                 "Executive",
                 "Leads Assigned",
@@ -483,18 +526,6 @@ export default function AdminReportsPage() {
               key="managers"
               title="Managers"
               totalLabel="managers"
-              exportAction={() =>
-                downloadCsv(
-                  "OrganizationManagersReport",
-                  ["Manager", "Executives", "Leads", "Conversion Rate"],
-                  managers.map((manager) => [
-                    manager.name,
-                    manager.executives.length,
-                    manager.leads,
-                    `${manager.conversionRate}%`,
-                  ]),
-                )
-              }
               headers={[
                 "Manager",
                 "Executives",
@@ -553,14 +584,12 @@ function PerformanceTable({
   title,
   headers,
   rows,
-  exportAction,
   onBack,
   totalLabel,
 }: {
   title: string;
   headers: string[];
   rows: React.ReactNode[][];
-  exportAction: () => void;
   onBack?: () => void;
   totalLabel: string;
 }) {
@@ -598,12 +627,6 @@ function PerformanceTable({
             {title}
           </h2>
         </div>
-        <Button
-          onClick={exportAction}
-          className="h-10 rounded-md bg-green-600 px-4 text-white hover:bg-green-700"
-        >
-          <Download className="size-4" /> Export
-        </Button>
       </div>
       <div className="overflow-x-auto rounded-lg border border-gray-200 bg-white shadow-sm">
         <Table>

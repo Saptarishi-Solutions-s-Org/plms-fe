@@ -12,7 +12,6 @@ import type {
 import {
   Award,
   CheckCircle,
-  Download,
   FileText,
   Percent,
   Search,
@@ -32,7 +31,6 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { useExecutiveExport } from "@/hooks/export";
 import { useUrlPagination } from "@/hooks/use-url-pagination";
 import { getReportExecutivePerformance } from "@/services/organizationreports";
 import { createPaginationMeta } from "@/types/pagination";
@@ -90,7 +88,6 @@ export default function TeamPerformanceTab({
   const [loading, setLoading] = useState(false);
   const [search, setSearch] = useState(initialSearch);
   const [appliedSearch, setAppliedSearch] = useState(initialSearch);
-
   useEffect(() => {
     const query = searchParams.get("search") ?? "";
     setSearch(query);
@@ -171,7 +168,6 @@ export default function TeamPerformanceTab({
 
     return performanceRows.slice(startIndex, startIndex + pagination.limit);
   }, [pagination.limit, pagination.page, performanceRows]);
-  const { handleExport } = useExecutiveExport(performanceRows);
 
   useEffect(() => {
     if (page > pagination.totalPages) {
@@ -315,14 +311,6 @@ export default function TeamPerformanceTab({
               className="h-10 rounded-md bg-blue-600 px-4 text-white hover:bg-blue-700"
             >
               Apply
-            </Button>
-            <Button
-              type="button"
-              onClick={handleExport}
-              className="h-10 rounded-md bg-green-600 px-4 text-white hover:bg-green-700"
-            >
-              <Download className="size-4" />
-              Export
             </Button>
           </div>
         </div>
