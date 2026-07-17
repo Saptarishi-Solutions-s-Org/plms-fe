@@ -8,6 +8,7 @@ export interface OrganizationReportStats {
   offers_utilized: number;
 }
 export type ReportTab = "overview" | "team-performance";
+export type ExecutiveReportTab = "overview" | "leads-details";
 
 export interface ReportStatsProps {
   stats: OrganizationReportStats;

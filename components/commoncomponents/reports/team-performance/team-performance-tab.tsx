@@ -398,10 +398,7 @@ export default function TeamPerformanceTab({
                           className="rounded-md bg-blue-50 text-xs font-bold text-blue-600 hover:bg-blue-100"
                         >
                           <Link
-                            href={{
-                              pathname: `/${orgCode}/org-reports/executive`,
-                              query: { executiveId: row.executiveId },
-                            }}
+                            href={`/${orgCode}/org-reports?executiveId=${encodeURIComponent(row.executiveId)}`}
                           >
                             View
                           </Link>

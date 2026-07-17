@@ -72,21 +72,21 @@ export const MENU_CONFIG: MenuGroup[] = [
       },
 
       {
-        href: "/org-reports",
-        icon: FilePen,
-        label: "Reports",
-        modules: ["lead"],
-        permissions: ["view"],
-        roles: ["Manager"],
-      },
-
-      {
         href: "/offers",
         icon: Gift,
         label: "Offers",
         modules: ["offers"],
         permissions: ["view"],
         roles: ["Admin", "Manager", "Executive"],
+      },
+
+      {
+        href: "/org-reports",
+        icon: FilePen,
+        label: "Reports",
+        modules: ["reports"],
+        permissions: ["view"],
+        roles: ["Manager", "Executive"],
       },
     ],
   },
