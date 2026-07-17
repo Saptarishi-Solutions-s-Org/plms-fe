@@ -18,6 +18,7 @@ import { Controller } from "react-hook-form";
 import { useEffect, useState } from "react";
 import { getCountries, getStatesByCountry } from "@/services/location";
 import { createOrganizationUser, getReportingManagers } from "@/services/organizationAdmin";
+import { createManagerExecutive } from "@/services/managerdashboard";
 import { toast } from "sonner";
 import { ReactDayPicker as Calendar } from "@/components/commoncomponents/react-day-picker";
 import { CalendarIcon } from "lucide-react";
@@ -27,6 +28,8 @@ import {
     PopoverContent,
 } from "@/components/ui/popover";
 import { format } from "date-fns";
+import { canAccess } from "@/lib/permissions";
+import { useCurrentUser } from "@/hooks/use-current-user";
 
 const GenderOptions = [
     { value: "Male", label: "Male" },
@@ -62,7 +65,15 @@ const years = Array.from(
 );
 
 
-const AddLeadForm = ({ onClose }: { onClose?: () => void }) => {
+type UserFormMode = "admin" | "manager";
+
+const AddLeadForm = ({
+    onClose,
+    mode = "admin",
+}: {
+    onClose?: () => void;
+    mode?: UserFormMode;
+}) => {
 
     const [countries, setCountries] = useState<any[]>([]);
     const [states, setStates] = useState<any[]>([]);
@@ -82,6 +93,8 @@ const AddLeadForm = ({ onClose }: { onClose?: () => void }) => {
         return () => media.removeEventListener("change", updateCalendarMonths);
     }, []);
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const currentUser = useCurrentUser();
+    const canCreateUsers = canAccess(currentUser, ["user"], ["create"]);
 
     const {
         register,
@@ -102,7 +115,7 @@ const AddLeadForm = ({ onClose }: { onClose?: () => void }) => {
             country: "",
             state: "",
             city: "",
-            userRole: "",
+            userRole: mode === "manager" ? "Executive" : "",
             reportingManager: "",
         },
     });
@@ -129,7 +142,7 @@ const AddLeadForm = ({ onClose }: { onClose?: () => void }) => {
                     }
                 }
 
-                if (selectedRole === "Executive") {
+                if (mode === "admin" && selectedRole === "Executive") {
                     const managerData = await getReportingManagers();
                     if (isMounted) setManagers(managerData);
                 } else {
@@ -149,9 +162,14 @@ const AddLeadForm = ({ onClose }: { onClose?: () => void }) => {
         return () => {
             isMounted = false;
         };
-    }, [selectedCountry, selectedRole, setValue]);
+    }, [mode, selectedCountry, selectedRole, setValue]);
 
     const onSubmit = async (data: any) => {
+        if (!canCreateUsers) {
+            toast.error("You do not have permission to create users.");
+            return;
+        }
+
         try {
             setIsSubmitting(true);
 
@@ -164,15 +182,21 @@ const AddLeadForm = ({ onClose }: { onClose?: () => void }) => {
                 state: data.state,
                 country: data.country,
                 city: data.city,
-                roleName:
-                    data.userRole === "Manager"
-                        ? "Manager"
-                        : "Executive",
-                reportingManager: data.reportingManager || null,
+                ...(mode === "admin"
+                    ? {
+                        roleName: data.userRole === "Manager" ? "Manager" : "Executive",
+                        reportingManager: data.reportingManager || null,
+                    }
+                    : {}),
             };
 
-            await createOrganizationUser(payload);
-            toast.success("User created successfully!");
+            if (mode === "manager") {
+                await createManagerExecutive(payload);
+                toast.success("Executive created successfully!");
+            } else {
+                await createOrganizationUser(payload);
+                toast.success("User created successfully!");
+            }
             reset();
 
             if (onClose) onClose();
@@ -373,7 +397,7 @@ const AddLeadForm = ({ onClose }: { onClose?: () => void }) => {
                         Account & Location
                     </h2>
 
-                    <div className="flex flex-col gap-4">
+                        <div className="flex flex-col gap-4">
                         <div className="flex gap-4">
                             <div className="flex flex-col gap-1 w-full">
                                 <Label htmlFor="email" required>
@@ -465,6 +489,7 @@ const AddLeadForm = ({ onClose }: { onClose?: () => void }) => {
                 </div>
 
                 {/* ROLE SECTION */}
+                {mode === "admin" && (
                 <div className="flex flex-col gap-4 mt-3">
                     <h2 className="text-lg font-bold text-blue-600">
                         Role & Status
@@ -530,6 +555,7 @@ const AddLeadForm = ({ onClose }: { onClose?: () => void }) => {
                         </div>
                     </div>
                 </div>
+                )}
 
                 {/* SUBMIT */}
                 <div className="mt-3">
