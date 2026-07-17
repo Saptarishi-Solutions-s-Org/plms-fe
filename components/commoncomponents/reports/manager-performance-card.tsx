@@ -27,7 +27,7 @@ export default function ManagerPerformanceCard({
           {title}
         </CardTitle>
       </CardHeader>
-      <CardContent className="flex-1 space-y-7 overflow-y-auto px-6 pb-6">
+      <CardContent className="min-h-0 flex-1 space-y-7 overflow-y-scroll px-6 pb-6 pr-4 [scrollbar-color:#cbd5e1_transparent] [scrollbar-width:thin] [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-slate-300 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar]:w-2">
         {managers.map((manager) => (
           <div key={manager.id} className="space-y-3">
             <div className="flex justify-between gap-4 text-base">
