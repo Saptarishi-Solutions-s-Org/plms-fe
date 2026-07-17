@@ -6,6 +6,7 @@ import { ArrowLeft, Download } from "lucide-react";
 import { toast } from "sonner";
 
 import GlobalLoader from "@/components/commoncomponents/globalloader";
+import TablePaginationFooter from "@/components/commoncomponents/table-pagination-footer";
 import ReportStats from "@/components/commoncomponents/reports/Overview/stats";
 import { SourceVsConversionRate } from "@/components/commoncomponents/reports/Overview/source-vs-conversion-rate";
 import ManagerPerformanceCard from "@/components/commoncomponents/reports/manager-performance-card";
@@ -20,9 +21,9 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { getExecutivesForManager } from "@/services/organizationAdmin";
 import {
   getLeadSourceAnalytics,
+  getReportExecutivesForManager,
   getReportLeads,
   getReportManagerPerformance,
   getReportManagers,
@@ -34,6 +35,7 @@ import type {
   OrganizationReportStats,
   SourceConversionRateRow,
 } from "@/types/org-reports";
+import { createPaginationMeta } from "@/types/pagination";
 
 type Person = { id: string; name: string };
 type ManagerPerformance = Person & {
@@ -202,7 +204,7 @@ export default function AdminReportsPage() {
           managerRows.map(async (manager) => ({
             manager,
             executives: toPeople(
-              await getExecutivesForManager(manager.id),
+              await getReportExecutivesForManager(manager.id),
               "executives",
             ),
           })),
@@ -416,7 +418,9 @@ export default function AdminReportsPage() {
         <TabsContent value="organization-performance" className="w-full">
           {selectedExecutive ? (
             <PerformanceTable
+              key={`executive-${selectedExecutive.id}`}
               title={`${selectedExecutive.name} Leads`}
+              totalLabel="leads"
               onBack={() => replaceQuery({ executiveId: null })}
               exportAction={() =>
                 downloadCsv(
@@ -440,7 +444,9 @@ export default function AdminReportsPage() {
             />
           ) : selectedManager ? (
             <PerformanceTable
+              key={`manager-${selectedManager.id}`}
               title={`${selectedManager.name} Executives`}
+              totalLabel="executives"
               onBack={() => replaceQuery({ managerId: null })}
               exportAction={() =>
                 downloadCsv(
@@ -474,7 +480,9 @@ export default function AdminReportsPage() {
             />
           ) : (
             <PerformanceTable
+              key="managers"
               title="Managers"
+              totalLabel="managers"
               exportAction={() =>
                 downloadCsv(
                   "OrganizationManagersReport",
@@ -547,13 +555,30 @@ function PerformanceTable({
   rows,
   exportAction,
   onBack,
+  totalLabel,
 }: {
   title: string;
   headers: string[];
   rows: React.ReactNode[][];
   exportAction: () => void;
   onBack?: () => void;
+  totalLabel: string;
 }) {
+  const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(25);
+  const pagination = createPaginationMeta({ page, limit, total: rows.length });
+  const currentPage = Math.min(page, pagination.totalPages);
+  const currentPagination =
+    currentPage === page
+      ? pagination
+      : createPaginationMeta({
+          page: currentPage,
+          limit,
+          total: rows.length,
+        });
+  const startIndex = (currentPage - 1) * limit;
+  const paginatedRows = rows.slice(startIndex, startIndex + limit);
+
   return (
     <section className="w-full space-y-5">
       <div className="flex flex-wrap items-center justify-between gap-3">
@@ -595,8 +620,8 @@ function PerformanceTable({
             </TableRow>
           </TableHeader>
           <TableBody>
-            {rows.map((row, rowIndex) => (
-              <TableRow key={rowIndex}>
+            {paginatedRows.map((row, rowIndex) => (
+              <TableRow key={startIndex + rowIndex}>
                 {row.map((cell, cellIndex) => (
                   <TableCell
                     key={cellIndex}
@@ -620,6 +645,15 @@ function PerformanceTable({
           </TableBody>
         </Table>
       </div>
+      <TablePaginationFooter
+        pagination={currentPagination}
+        onPageChange={setPage}
+        onLimitChange={(nextLimit) => {
+          setLimit(nextLimit);
+          setPage(1);
+        }}
+        totalLabel={totalLabel}
+      />
     </section>
   );
 }

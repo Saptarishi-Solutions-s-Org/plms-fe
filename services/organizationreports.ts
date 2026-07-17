@@ -60,5 +60,12 @@ export const getReportManagerPerformance = () =>
   api("/odata/v4/report-dashboard/getReportManagerPerformance()");
 export const getReportManagers = () =>
   api("/odata/v4/report-dashboard/getReportManagers()");
+export const getReportExecutivesForManager = (managerId: string) =>
+  api(
+    buildApiFunctionUrl(
+      "/odata/v4/report-dashboard/getReportExecutivesForManager",
+      { managerId, limit: 100 },
+    ),
+  );
 export const exportExecutives = () =>
   api("/odata/v4/report-dashboard/exportExecutives", { method: "POST" });
