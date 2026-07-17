@@ -75,9 +75,9 @@ export const MENU_CONFIG: MenuGroup[] = [
         href: "/org-reports",
         icon: FilePen,
         label: "Reports",
-        modules: ["reports", "report", "lead"],
+        modules: ["reports"],
         permissions: ["view"],
-        roles: ["Admin", "Organization Admin", "Manager"],
+        roles: ["Admin", "Manager"],
       },
 
       {
