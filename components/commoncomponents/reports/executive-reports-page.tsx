@@ -14,6 +14,7 @@ import { subscribeRealtime } from "@/lib/socket";
 import { type AuthUser, getUser } from "@/lib/auth";
 import { canAccess } from "@/lib/permissions";
 import { useExecutiveLeadsExport } from "@/hooks/export";
+import { useUrlPagination } from "@/hooks/use-url-pagination";
 import {
   getLeadSourceAnalytics,
   getReportLeads,
@@ -35,6 +36,11 @@ import {
   OFFER_LIST_CHANGED,
   type LeadListChangedPayload,
 } from "@/types/realtime";
+import {
+  emptyPagination,
+  normalizePagination,
+  type PaginationMeta,
+} from "@/types/pagination";
 
 const emptyStats: OrganizationReportStats = {
   total_leads: 0,
@@ -184,6 +190,7 @@ export default function ExecutiveReportsPage() {
   const searchParams = useSearchParams();
   const tabParam = searchParams.get("tab");
   const activeTab = isExecutiveReportTab(tabParam) ? tabParam : "overview";
+  const { page, limit, setPage, setLimit } = useUrlPagination();
   const [stats, setStats] = useState<OrganizationReportStats>(emptyStats);
   const [leads, setLeads] = useState<ExecutiveLeadRow[]>([]);
   const [leadSourceDistribution, setLeadSourceDistribution] = useState<
@@ -194,6 +201,9 @@ export default function ExecutiveReportsPage() {
   >([]);
   const [initialLoading, setInitialLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [pagination, setPagination] = useState<PaginationMeta>(() =>
+    emptyPagination(limit),
+  );
   const [currentUser, setCurrentUser] = useState<AuthUser | null>(() => getUser());
   const canExportReports = canAccess(currentUser, ["reports"], ["export"]);
   const { handleExport } = useExecutiveLeadsExport(leads);
@@ -210,7 +220,7 @@ export default function ExecutiveReportsPage() {
     try {
       const [statsResponse, leadsResponse, analyticsResponse] = await Promise.all([
         getReportStats(),
-        getReportLeads(),
+        getReportLeads({ page, limit }),
         getLeadSourceAnalytics(),
       ]);
       const statsData = unwrapResponse(
@@ -220,6 +230,13 @@ export default function ExecutiveReportsPage() {
         leadsResponse as LeadsWithStatsResponse | { value?: LeadsWithStatsResponse },
       );
       const reportLeads = Array.isArray(leadData?.leads) ? leadData.leads : [];
+      setPagination(
+        normalizePagination(
+          leadData?.pagination,
+          reportLeads.length,
+          limit,
+        ),
+      );
       const analytics = mapAnalytics(analyticsResponse);
       const sourceReports = analytics.hasData
         ? analytics
@@ -251,6 +268,7 @@ export default function ExecutiveReportsPage() {
     } catch {
       setStats(emptyStats);
       setLeads([]);
+      setPagination(emptyPagination(limit));
       setLeadSourceDistribution([]);
       setSourceConversionRate([]);
       toast.error("Failed to load executive reports");
@@ -258,7 +276,7 @@ export default function ExecutiveReportsPage() {
       setInitialLoading(false);
       setIsRefreshing(false);
     }
-  }, []);
+  }, [limit, page]);
 
   useEffect(() => {
     fetchReports();
@@ -355,7 +373,13 @@ export default function ExecutiveReportsPage() {
         </TabsContent>
 
         <TabsContent value="leads-details" className="w-full">
-          <LeadsDetailsTab leads={leads} loading={isRefreshing} />
+          <LeadsDetailsTab
+            leads={leads}
+            loading={isRefreshing}
+            pagination={pagination}
+            onPageChange={setPage}
+            onLimitChange={setLimit}
+          />
         </TabsContent>
       </Tabs>
 

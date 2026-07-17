@@ -21,13 +21,7 @@ export type GetReportLeadsParams = {
 };
 
 export const getReportLeads = (params: GetReportLeadsParams = {}) =>
-  api(
-    buildApiFunctionUrl("/odata/v4/report-dashboard/getReportLeads", {
-      page: 1,
-      limit: 100,
-      ...params,
-    }),
-  );
+  api(buildApiFunctionUrl("/odata/v4/report-dashboard/getReportLeads", params));
 export const getReportOffers = () =>
   api("/odata/v4/report-dashboard/getReportOffers()");
 export const getReportExecutivePerformance =

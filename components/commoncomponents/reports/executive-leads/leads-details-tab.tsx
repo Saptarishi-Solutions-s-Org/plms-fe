@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo } from "react";
+import { useEffect } from "react";
 
 import TablePaginationFooter from "@/components/commoncomponents/table-pagination-footer";
 import {
@@ -11,13 +11,15 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { useUrlPagination } from "@/hooks/use-url-pagination";
 import type { ExecutiveLeadRow } from "@/types/org-reports";
-import { createPaginationMeta } from "@/types/pagination";
+import type { PaginationMeta } from "@/types/pagination";
 
 type LeadsDetailsTabProps = {
   leads: ExecutiveLeadRow[];
   loading: boolean;
+  pagination: PaginationMeta;
+  onPageChange: (page: number) => void;
+  onLimitChange: (limit: number) => void;
 };
 
 const getStatusClassName = (status: string) => {
@@ -36,22 +38,15 @@ const getStatusClassName = (status: string) => {
 export default function LeadsDetailsTab({
   leads,
   loading,
+  pagination,
+  onPageChange,
+  onLimitChange,
 }: LeadsDetailsTabProps) {
-  const { page, limit, setPage, setLimit } = useUrlPagination();
-  const pagination = useMemo(
-    () => createPaginationMeta({ page, limit, total: leads.length }),
-    [leads.length, limit, page],
-  );
-  const visibleLeads = useMemo(() => {
-    const startIndex = (pagination.page - 1) * pagination.limit;
-    return leads.slice(startIndex, startIndex + pagination.limit);
-  }, [leads, pagination.limit, pagination.page]);
-
   useEffect(() => {
-    if (page > pagination.totalPages) {
-      setPage(pagination.totalPages);
+    if (pagination.page > pagination.totalPages) {
+      onPageChange(pagination.totalPages);
     }
-  }, [page, pagination.totalPages, setPage]);
+  }, [onPageChange, pagination.page, pagination.totalPages]);
 
   return (
     <section className="w-full space-y-4">
@@ -85,14 +80,14 @@ export default function LeadsDetailsTab({
                   Loading lead details...
                 </TableCell>
               </TableRow>
-            ) : visibleLeads.length === 0 ? (
+            ) : leads.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={5} className="h-36 text-center text-slate-500">
                   No leads are assigned to you yet.
                 </TableCell>
               </TableRow>
             ) : (
-              visibleLeads.map((lead, index) => (
+              leads.map((lead, index) => (
                 <TableRow key={lead.id}>
                   <TableCell className="text-slate-500">
                     {(pagination.page - 1) * pagination.limit + index + 1}
@@ -123,8 +118,8 @@ export default function LeadsDetailsTab({
       {!loading && (
         <TablePaginationFooter
           pagination={pagination}
-          onPageChange={setPage}
-          onLimitChange={setLimit}
+          onPageChange={onPageChange}
+          onLimitChange={onLimitChange}
           totalLabel="leads"
         />
       )}
