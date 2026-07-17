@@ -241,7 +241,7 @@ export default function TeamPerformanceTab({
   }, [executives, stats]);
 
   return (
-    <div className="w-full space-y-5">
+    <div className="w-full space-y-6">
       <section className="grid w-full grid-cols-[repeat(auto-fit,minmax(240px,1fr))] gap-4">
         {displayStats.map(({ label, value, Icon, color }) => {
           const isTextValue = label === "Top Performer";

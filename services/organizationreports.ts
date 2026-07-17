@@ -7,27 +7,14 @@ import type {
 
 export const getReportStats = () =>
   api("/odata/v4/report-dashboard/getReportStats()");
-
 export type GetReportLeadsParams = {
-  search?: string;
-  status?: string;
-  priority?: string;
-  leadSource?: string;
   assignedTo?: string;
-  startDate?: string;
-  endDate?: string;
   page?: number;
   limit?: number;
 };
 
-export const getReportLeads = (params: GetReportLeadsParams = {}) =>
-  api(
-    buildApiFunctionUrl("/odata/v4/report-dashboard/getReportLeads", {
-      page: 1,
-      limit: 100,
-      ...params,
-    }),
-  );
+export const getReportLeads = (params?: GetReportLeadsParams) =>
+  api(buildApiFunctionUrl("/odata/v4/report-dashboard/getReportLeads", params));
 export const getReportOffers = () =>
   api("/odata/v4/report-dashboard/getReportOffers()");
 export const getReportExecutivePerformance =
@@ -69,5 +56,9 @@ export const getReportExecutives = async (): Promise<
 };
 export const getLeadSourceAnalytics = () =>
   api("/odata/v4/report-dashboard/getLeadSourceAnalytics()");
+export const getReportManagerPerformance = () =>
+  api("/odata/v4/report-dashboard/getReportManagerPerformance()");
+export const getReportManagers = () =>
+  api("/odata/v4/report-dashboard/getReportManagers()");
 export const exportExecutives = () =>
   api("/odata/v4/report-dashboard/exportExecutives", { method: "POST" });

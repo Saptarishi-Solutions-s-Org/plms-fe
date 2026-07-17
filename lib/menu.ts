@@ -86,7 +86,7 @@ export const MENU_CONFIG: MenuGroup[] = [
         label: "Reports",
         modules: ["reports"],
         permissions: ["view"],
-        roles: ["Manager", "Executive"],
+        roles: ["Admin", "Manager", "Executive"],
       },
     ],
   },
