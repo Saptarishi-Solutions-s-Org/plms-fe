@@ -32,6 +32,7 @@ const BLOCKED_PERMISSIONS: Record<string, Record<string, string[]>> = {
     permission: ["create", "import", "export", "delete"],
     reports: ["create", "update", "import", "delete"],
     user: ["import", "delete"],
+    segmentation: ["create", "update", "delete", "import", "export"],
   },
   Manager: {
     lead: ["delete"],
@@ -40,6 +41,7 @@ const BLOCKED_PERMISSIONS: Record<string, Record<string, string[]>> = {
     permission: ["create", "view", "update", "delete", "import", "export"],
     reports: ["create", "update", "import", "delete"],
     user: ["import", "delete", "update"],
+    segmentation: ["import"],
   },
   Executive: {
     lead: ["delete"],
@@ -48,6 +50,7 @@ const BLOCKED_PERMISSIONS: Record<string, Record<string, string[]>> = {
     permission: ["create", "view", "update", "delete", "import", "export"],
     reports: ["create", "update", "import", "delete"],
     user: ["create", "view", "update", "delete", "import", "export"],
+    segmentation: ["import"],
   },
 };
 
@@ -78,10 +81,20 @@ type RmpTemplateItem = {
   access: boolean;
 };
 
+type SegmentFilterTemplate = {
+  id: string;
+  name: string;
+  label: string;
+  category: string;
+  operator_type: string;
+  default: boolean;
+};
+
 type DefaultTemplatesResponse = {
   modules: ModuleTemplate[];
   roles: RoleTemplate[];
   rmp: RmpTemplateItem[];
+  segmentFilters: SegmentFilterTemplate[];
 };
 
 export default function DefaultTemplatesPage() {
@@ -343,6 +356,56 @@ export default function DefaultTemplatesPage() {
                       className="text-center py-6"
                     >
                       No template permissions found for this role
+                    </TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Default Segmentation Filters */}
+      <Card className="hover:shadow-md transition">
+        <CardHeader className="flex flex-row items-center gap-3">
+          <div className="p-2 rounded-lg bg-indigo-100 text-indigo-600">
+            <Award className="h-5 w-5" />
+          </div>
+          <CardTitle className="text-lg">Default Segmentation Filters</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="rounded-lg border border-gray-200 overflow-hidden">
+            <Table>
+              <TableHeader className="bg-[#7677F41A] border-b border-gray-200">
+                <TableRow>
+                  <TableHead>Filter Label</TableHead>
+                  <TableHead>Database Name</TableHead>
+                  <TableHead>Category</TableHead>
+                  <TableHead>Operator Type</TableHead>
+                  <TableHead className="text-center">Default Enabled</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {data?.segmentFilters?.length ? (
+                  data.segmentFilters.map((f) => (
+                    <TableRow key={f.id}>
+                      <TableCell className="font-semibold text-gray-900">{f.label}</TableCell>
+                      <TableCell className="font-mono text-xs text-gray-500">{f.name}</TableCell>
+                      <TableCell className="text-gray-700">{f.category}</TableCell>
+                      <TableCell>
+                        <span className="text-purple-600 font-medium text-[10px] bg-purple-50 px-2 py-0.5 rounded border border-purple-100 uppercase tracking-wide">
+                          {f.operator_type}
+                        </span>
+                      </TableCell>
+                      <TableCell className="text-center">
+                        <Checkbox checked={f.default} className="pointer-events-none" tabIndex={-1} />
+                      </TableCell>
+                    </TableRow>
+                  ))
+                ) : (
+                  <TableRow>
+                    <TableCell colSpan={5} className="text-center py-4 text-gray-400">
+                      No default segmentation filters configured
                     </TableCell>
                   </TableRow>
                 )}

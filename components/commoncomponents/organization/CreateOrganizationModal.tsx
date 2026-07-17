@@ -20,6 +20,8 @@ import {
   SelectItem,
 } from "@/components/ui/select";
 
+import { RefreshCw } from "lucide-react";
+
 import {
   createOrganization,
   updateOrganization,
@@ -32,6 +34,7 @@ export default function CreateOrganizationModal({
   setOpen,
   onSuccess,
   org,
+  loadingOrg = false,
 }: any) {
   const [form, setForm] = useState({
     name: "",
@@ -161,7 +164,7 @@ export default function CreateOrganizationModal({
         if (!o) reset();
       }}
     >
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="sm:max-w-xl">
         <DialogHeader>
           <DialogTitle>
             {org ? "Edit Organization" : "Create Organization"}
@@ -173,143 +176,152 @@ export default function CreateOrganizationModal({
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-4 py-2">
-            <div className="space-y-1">
-              <Label required>Organization Name</Label>
-              <Input
-                placeholder="Enter name"
-                value={form.name}
-                onChange={(e) => updateField("name", e.target.value)}
-                className={errors.name ? "border-red-500" : ""}
-              />
-              {errors.name && (
-                <p className="text-sm text-red-500">{errors.name}</p>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 py-2">
+          {loadingOrg ? (
+            <div className="col-span-full flex flex-col items-center justify-center py-12">
+              <RefreshCw className="h-8 w-8 animate-spin text-blue-600 mb-2" />
+              <p className="text-sm text-gray-500 font-medium">Loading details...</p>
+            </div>
+          ) : (
+            <>
+              <div className="space-y-1 sm:col-span-2">
+                <Label required>Organization Name</Label>
+                <Input
+                  placeholder="Enter name"
+                  value={form.name}
+                  onChange={(e) => updateField("name", e.target.value)}
+                  className={errors.name ? "border-red-500" : ""}
+                />
+                {errors.name && (
+                  <p className="text-sm text-red-500">{errors.name}</p>
+                )}
+              </div>
+
+              <div className="space-y-1">
+                <Label required>Email</Label>
+                <Input
+                  placeholder="Enter email"
+                  value={form.email}
+                  onChange={(e) => updateField("email", e.target.value)}
+                  className={errors.email ? "border-red-500" : ""}
+                />
+                {errors.email && (
+                  <p className="text-sm text-red-500">{errors.email}</p>
+                )}
+              </div>
+
+              <div className="space-y-1">
+                <Label required>Phone</Label>
+                <Input
+                  placeholder="Enter phone"
+                  value={form.phone}
+                  onChange={(e) => updateField("phone", e.target.value)}
+                  className={errors.phone ? "border-red-500" : ""}
+                />
+                {errors.phone && (
+                  <p className="text-sm text-red-500">{errors.phone}</p>
+                )}
+              </div>
+
+              <div className="space-y-1 sm:col-span-2">
+                <Label required>Address</Label>
+                <Input
+                  placeholder="Enter address"
+                  value={form.address}
+                  onChange={(e) => updateField("address", e.target.value)}
+                  className={errors.address ? "border-red-500" : ""}
+                />
+                {errors.address && (
+                  <p className="text-sm text-red-500">{errors.address}</p>
+                )}
+              </div>
+
+              <div className="space-y-1">
+                <Label required>Country</Label>
+                <Select
+                  value={form.country}
+                  onValueChange={(val) => {
+                    setForm((prev) => ({ ...prev, country: val, state: "" }));
+                  }}
+                >
+                  <SelectTrigger
+                    className={`w-full ${errors.country ? "border-red-500" : ""}`}
+                  >
+                    <SelectValue placeholder="Select Country" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {countries.map((c) => (
+                      <SelectItem key={c.id} value={c.id}>
+                        {c.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-1">
+                <Label required>State</Label>
+                <Select
+                  value={form.state}
+                  onValueChange={(val) => updateField("state", val)}
+                  disabled={!form.country}
+                >
+                  <SelectTrigger
+                    className={`w-full ${errors.state ? "border-red-500" : ""}`}
+                  >
+                    <SelectValue placeholder="Select State" />
+                  </SelectTrigger>
+                  <SelectContent className="max-h-50">
+                    {states.map((s) => (
+                      <SelectItem key={s.id} value={s.id}>
+                        {s.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-1">
+                <Label required>Trial Type</Label>
+                <Select
+                  value={form.trial}
+                  onValueChange={(val) => updateField("trial", val)}
+                >
+                  <SelectTrigger
+                    className={`w-full ${errors.trial ? "border-red-500" : ""}`}
+                  >
+                    <SelectValue placeholder="Select Trial Type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Free">Free</SelectItem>
+                    <SelectItem value="Premium">Premium</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {org && (
+                <div className="space-y-1">
+                  <Label>Status</Label>
+                  <Select
+                    value={form.is_active ? "active" : "inactive"}
+                    onValueChange={(val) =>
+                      setForm((prev) => ({
+                        ...prev,
+                        is_active: val === "active",
+                      }))
+                    }
+                  >
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="Select Status" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="active">Active</SelectItem>
+                      <SelectItem value="inactive">Inactive</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
               )}
-            </div>
-
-          <div className="space-y-1">
-            <Label required>Email</Label>
-            <Input
-              placeholder="Enter email"
-              value={form.email}
-              onChange={(e) => updateField("email", e.target.value)}
-              className={errors.email ? "border-red-500" : ""}
-            />
-            {errors.email && (
-              <p className="text-sm text-red-500">{errors.email}</p>
-            )}
-          </div>
-
-          <div className="space-y-1">
-            <Label required>Phone</Label>
-            <Input
-              placeholder="Enter phone"
-              value={form.phone}
-              onChange={(e) => updateField("phone", e.target.value)}
-              className={errors.phone ? "border-red-500" : ""}
-            />
-            {errors.phone && (
-              <p className="text-sm text-red-500">{errors.phone}</p>
-            )}
-          </div>
-
-          <div className="space-y-1">
-            <Label required>Address</Label>
-            <Input
-              placeholder="Enter address"
-              value={form.address}
-              onChange={(e) => updateField("address", e.target.value)}
-              className={errors.address ? "border-red-500" : ""}
-            />
-            {errors.address && (
-              <p className="text-sm text-red-500">{errors.address}</p>
-            )}
-          </div>
-
-          <div className="space-y-1">
-            <Label required>Country</Label>
-            <Select
-              value={form.country}
-              onValueChange={(val) => {
-                setForm((prev) => ({ ...prev, country: val, state: "" }));
-              }}
-            >
-              <SelectTrigger
-                className={`w-full ${errors.country ? "border-red-500" : ""}`}
-              >
-                <SelectValue placeholder="Select Country" />
-              </SelectTrigger>
-              <SelectContent>
-                {countries.map((c) => (
-                  <SelectItem key={c.id} value={c.id}>
-                    {c.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div className="space-y-1">
-            <Label required>State</Label>
-            <Select
-              value={form.state}
-              onValueChange={(val) => updateField("state", val)}
-              disabled={!form.country}
-            >
-              <SelectTrigger
-                className={`w-full ${errors.state ? "border-red-500" : ""}`}
-              >
-                <SelectValue placeholder="Select State" />
-              </SelectTrigger>
-              <SelectContent className="max-h-50">
-                {states.map((s) => (
-                  <SelectItem key={s.id} value={s.id}>
-                    {s.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div className="space-y-1">
-            <Label required>Trial Type</Label>
-            <Select
-              value={form.trial}
-              onValueChange={(val) => updateField("trial", val)}
-            >
-              <SelectTrigger
-                className={`w-full ${errors.trial ? "border-red-500" : ""}`}
-              >
-                <SelectValue placeholder="Select Trial Type" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="Free">Free</SelectItem>
-                <SelectItem value="Premium">Premium</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          {org && (
-            <div className="space-y-1">
-              <Label>Status</Label>
-              <Select
-                value={form.is_active ? "active" : "inactive"}
-                onValueChange={(val) =>
-                  setForm((prev) => ({
-                    ...prev,
-                    is_active: val === "active",
-                  }))
-                }
-              >
-                <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Select Status" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="active">Active</SelectItem>
-                  <SelectItem value="inactive">Inactive</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+            </>
           )}
         </div>
 

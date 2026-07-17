@@ -64,6 +64,7 @@ export default function ExecutivesPage() {
   const [inactiveCount, setInactiveCount] = useState(0);
 
   const [isLoading, setIsLoading] = useState(true);
+  const [hasLoaded, setHasLoaded] = useState(false);
 
   const [error, setError] = useState<string | null>(null);
 
@@ -135,12 +136,13 @@ export default function ExecutivesPage() {
       setPagination(createPaginationMeta({ page, limit, total: 0 }));
     } finally {
       setIsLoading(false);
+      setHasLoaded(true);
     }
   }, [page, limit, filters]);
 
   useEffect(() => {
-    fetchExecutives(true);
-  }, [fetchExecutives]);
+    fetchExecutives(!hasLoaded);
+  }, [fetchExecutives, hasLoaded]);
 
   useEffect(() => {
     const refreshExecutives = () => {
@@ -233,7 +235,7 @@ export default function ExecutivesPage() {
     }
   }, [page, pagination.totalPages, setPage]);
 
-  if (isLoading) {
+  if (isLoading && !hasLoaded) {
     return <GlobalLoader />;
   }
 

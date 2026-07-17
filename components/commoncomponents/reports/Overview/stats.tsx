@@ -1,6 +1,3 @@
-"use client";
-
-import { Card, CardContent, CardTitle } from "@/components/ui/card";
 import {
   BarChart2,
   BriefcaseBusiness,
@@ -22,25 +19,25 @@ export const ReportStats = ({ stats, variant = "default" }: ReportStatsProps) =>
       title: "Total Leads",
       value: stats.total_leads,
       Icon: BarChart2,
-      color: "bg-indigo-500",
+      color: "bg-indigo-50 text-indigo-600",
     },
     {
       title: "Leads Assigned",
       value: stats.leads_assigned,
       Icon: CheckCircle,
-      color: "bg-blue-500",
+      color: "bg-blue-50 text-blue-600",
     },
     {
       title: "Conversion Rate",
       value: `${conversionRate.toFixed(1)}%`,
       Icon: Percent,
-      color: "bg-green-500",
+      color: "bg-green-50 text-green-600",
     },
     {
       title: "Active Offers",
       value: stats.active_offers,
       Icon: BriefcaseBusiness,
-      color: "bg-purple-500",
+      color: "bg-purple-50 text-purple-600",
     },
   ];
   const adminCards: ReportCard[] = [
@@ -48,19 +45,19 @@ export const ReportStats = ({ stats, variant = "default" }: ReportStatsProps) =>
       title: "Total Users",
       value: stats.total_users ?? 0,
       Icon: Users,
-      color: "bg-indigo-500",
+      color: "bg-indigo-50 text-indigo-600",
     },
     {
       title: "Active Users",
       value: stats.active_users ?? 0,
       Icon: UserCheck,
-      color: "bg-green-500",
+      color: "bg-green-50 text-green-600",
     },
     {
       title: "Active Offers",
       value: stats.active_offers,
       Icon: BriefcaseBusiness,
-      color: "bg-purple-500",
+      color: "bg-purple-50 text-purple-600",
     },
   ];
   const cards = variant === "admin" ? adminCards : defaultCards;
@@ -72,22 +69,20 @@ export const ReportStats = ({ stats, variant = "default" }: ReportStatsProps) =>
       }`}
     >
       {cards.map(({ title, value, Icon, color }) => (
-        <Card key={title} className="p-4">
-          <div className="flex items-center justify-between">
-            <CardTitle className="text-sm text-gray-500">{title}</CardTitle>
-            <div
-              className={`flex h-8 w-8 items-center justify-center rounded-full text-white ${color}`}
-            >
-              <Icon className="h-4 w-4" />
-            </div>
+        <div
+          key={title}
+          className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm flex items-center gap-4 hover:shadow-md transition duration-200"
+        >
+          <div className={`p-3 rounded-xl ${color}`}>
+            <Icon className="w-6 h-6" />
           </div>
-
-          <CardContent className="p-0 mt-2">
-            <p className="text-5xl font-semibold text-gray-900">
+          <div>
+            <p className="text-xs text-gray-500 font-medium uppercase tracking-wider">{title}</p>
+            <h3 className="text-xl font-bold text-gray-900">
               {typeof value === "number" ? value.toLocaleString() : value}
-            </p>
-          </CardContent>
-        </Card>
+            </h3>
+          </div>
+        </div>
       ))}
     </div>
   );

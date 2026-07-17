@@ -69,6 +69,15 @@ export type OrganizationPermission = {
   access: boolean;
 };
 
+export type OrgSegmentFilter = {
+  id: string;
+  name: string;
+  label: string;
+  category: string;
+  operator_type: string;
+  is_enabled: boolean;
+};
+
 export type OrganizationDetailResponse = {
   organization: OrganizationDetail;
   users?: OrganizationAdminUser[];
@@ -77,6 +86,7 @@ export type OrganizationDetailResponse = {
   allModules?: OrganizationModule[];
   allRoles?: OrganizationRole[];
   permissions: OrganizationPermission[];
+  segmentFilters: OrgSegmentFilter[];
 };
 
 export type OrganizationAdminUser = {
@@ -96,6 +106,7 @@ export type OrganizationAdminUser = {
 export type OrganizationAdminPermissionsResponse = {
   roles: OrganizationRole[];
   permissions: OrganizationPermission[];
+  segmentFilters: OrgSegmentFilter[];
 };
 
 export type OrganizationRoleMatrix = Record<

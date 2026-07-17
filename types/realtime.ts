@@ -8,6 +8,19 @@ export const LEAD_LIST_CHANGED = "lead:list:changed";
 export const LEAD_DETAIL_CHANGED = "lead:detail:changed";
 export const USER_LIST_CHANGED = "user:list:changed";
 export const USER_DETAIL_CHANGED = "user:detail:changed";
+export const SEGMENT_LIST_CHANGED = "segment:list:changed";
+export const SEGMENT_DETAIL_CHANGED = "segment:detail:changed";
+
+export type SegmentListChangedPayload = {
+  reason: string;
+  segmentId?: string;
+};
+
+export type SegmentDetailChangedPayload = {
+  reason: string;
+  segmentId?: string;
+};
+
 
 export type OrganizationListChangedPayload = {
   reason: string;

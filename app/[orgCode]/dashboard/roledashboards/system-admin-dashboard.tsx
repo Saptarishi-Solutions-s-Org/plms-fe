@@ -119,31 +119,27 @@ export default function SystemAdminDashboard() {
 
       {/* Metric Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <Card className="hover:shadow-md transition">
-          <CardContent className="flex items-center gap-4 p-5">
-            <div className="p-3 rounded-xl bg-blue-100 text-blue-600">
-              <Building2 className="w-5 h-5" />
-            </div>
-            <div>
-              <p className="text-sm text-muted-foreground font-medium">Organizations</p>
-              <p className="text-2xl font-semibold">
-                {data.totalOrganizations}
-              </p>
-            </div>
-          </CardContent>
-        </Card>
+        <div className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm flex items-center gap-4 hover:shadow-md transition duration-200">
+          <div className="p-3 rounded-xl bg-blue-50 text-blue-600">
+            <Building2 className="w-5 h-5" />
+          </div>
+          <div>
+            <p className="text-xs text-gray-500 font-medium uppercase tracking-wider">Organizations</p>
+            <h3 className="text-xl font-bold text-gray-900">
+              {data.totalOrganizations}
+            </h3>
+          </div>
+        </div>
 
-        <Card className="hover:shadow-md transition">
-          <CardContent className="flex items-center gap-4 p-5">
-            <div className="p-3 rounded-xl bg-green-100 text-green-600">
-              <Users className="w-5 h-5" />
-            </div>
-            <div>
-              <p className="text-sm text-muted-foreground font-medium">Users</p>
-              <p className="text-2xl font-semibold">{data.totalUsers}</p>
-            </div>
-          </CardContent>
-        </Card>
+        <div className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm flex items-center gap-4 hover:shadow-md transition duration-200">
+          <div className="p-3 rounded-xl bg-green-50 text-green-600">
+            <Users className="w-5 h-5" />
+          </div>
+          <div>
+            <p className="text-xs text-gray-500 font-medium uppercase tracking-wider">Users</p>
+            <h3 className="text-xl font-bold text-gray-900">{data.totalUsers}</h3>
+          </div>
+        </div>
       </div>
 
       {/* Users per Org list */}

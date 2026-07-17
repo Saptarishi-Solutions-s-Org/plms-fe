@@ -55,6 +55,7 @@ const BLOCKED_PERMISSIONS: Record<string, Record<string, string[]>> = {
     permission: ["create", "import", "export", "delete"],
     reports: ["create", "update", "import", "delete"],
     user: ["import", "delete"],
+    segmentation: ["create", "update", "delete", "import", "export"],
   },
   Manager: {
     lead: ["delete"],
@@ -63,6 +64,7 @@ const BLOCKED_PERMISSIONS: Record<string, Record<string, string[]>> = {
     permission: ["create", "view", "update", "delete", "import", "export"],
     reports: ["create", "update", "import", "delete"],
     user: ["import", "delete"],
+    segmentation: ["import"],
   },
   Executive: {
     lead: ["delete"],
@@ -71,11 +73,13 @@ const BLOCKED_PERMISSIONS: Record<string, Record<string, string[]>> = {
     permission: ["create", "view", "update", "delete", "import", "export"],
     reports: ["create", "update", "import", "delete"],
     user: ["create", "view", "update", "delete", "import", "export"],
+    segmentation: ["import"],
   },
 };
 import { updateOrganizationAdminPermissions } from "@/services/systemAdmin";
 import { getAdminUsers } from "@/services/user";
 import UserModal from "@/components/commoncomponents/user/userModal";
+import { toggleSegmentFilter } from "@/services/segments";
 
 import {
   DropdownMenu,
@@ -133,6 +137,19 @@ export default function OrganizationDetailsPage() {
       console.error(err);
     }
   }, []);
+
+  const handleToggleSegmentFilter = async (filterId: string, currentStatus: boolean) => {
+    try {
+      toast.loading("Updating filter status...");
+      await toggleSegmentFilter(filterId, !currentStatus);
+      toast.dismiss();
+      toast.success("Segmentation filter updated successfully!");
+      loadOrganization("realtime");
+    } catch (err) {
+      toast.dismiss();
+      toast.error("Failed to update segmentation filter status.");
+    }
+  };
 
   const loadOrganization = useCallback(
     async (mode: "initial" | "realtime" = "initial") => {
@@ -900,6 +917,58 @@ export default function OrganizationDetailsPage() {
                   <TableRow>
                     <TableCell colSpan={8} className="text-center py-6">
                       No users found
+                    </TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card className="hover:shadow-md transition">
+        <CardHeader className="flex flex-row items-center gap-3">
+          <div className="p-2 rounded-lg bg-indigo-100 text-indigo-600">
+            <Award className="h-5 w-5" />
+          </div>
+          <CardTitle className="text-lg">Segmentation Filters Configuration</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="rounded-lg border border-gray-200 overflow-hidden">
+            <Table>
+              <TableHeader className="bg-[#7677F41A] border-b border-gray-200">
+                <TableRow>
+                  <TableHead>Filter Label</TableHead>
+                  <TableHead>Database Name</TableHead>
+                  <TableHead>Category</TableHead>
+                  <TableHead>Operator Type</TableHead>
+                  <TableHead className="text-center">Status</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {data?.segmentFilters?.length ? (
+                  data.segmentFilters.map((f) => (
+                    <TableRow key={f.id}>
+                      <TableCell className="font-semibold text-gray-900">{f.label}</TableCell>
+                      <TableCell className="font-mono text-xs text-gray-500">{f.name}</TableCell>
+                      <TableCell className="text-gray-700">{f.category}</TableCell>
+                      <TableCell>
+                        <span className="text-purple-600 font-medium text-[10px] bg-purple-50 px-2 py-0.5 rounded border border-purple-100 uppercase tracking-wide">
+                          {f.operator_type}
+                        </span>
+                      </TableCell>
+                      <TableCell className="flex items-center justify-center">
+                        <Checkbox 
+                          checked={f.is_enabled} 
+                          onCheckedChange={() => handleToggleSegmentFilter(f.id, f.is_enabled)} 
+                        />
+                      </TableCell>
+                    </TableRow>
+                  ))
+                ) : (
+                  <TableRow>
+                    <TableCell colSpan={5} className="text-center py-4 text-gray-400">
+                      No segmentation filters configured for this organization
                     </TableCell>
                   </TableRow>
                 )}

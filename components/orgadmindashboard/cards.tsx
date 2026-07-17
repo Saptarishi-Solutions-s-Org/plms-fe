@@ -1,27 +1,25 @@
-import { Card,CardTitle, CardContent } from "@/components/ui/card";
 import { AdminCardsProps } from "@/types/organizationadmindashboard/dashboardtypes";
 import { Users, UserCheck, UserX } from "lucide-react";
 
-
-const AdminCards =({ stats }: AdminCardsProps) => {
-   const cards = [
+const AdminCards = ({ stats }: AdminCardsProps) => {
+  const cards = [
     {
       title: "Total Users",
       value: stats.total_users,
       icon: Users,
-      color: "bg-blue-500",
+      color: "bg-blue-50 text-blue-600",
     },
     {
       title: "Active Users",
       value: stats.active_users,
       icon: UserCheck,
-      color: "bg-green-500",
+      color: "bg-green-50 text-green-600",
     },
     {
       title: "Inactive Users",
       value: stats.inactive_users,
       icon: UserX,
-      color: "bg-rose-500",
+      color: "bg-rose-50 text-rose-600",
     },
   ];
 
@@ -33,29 +31,18 @@ const AdminCards =({ stats }: AdminCardsProps) => {
           const Icon = item.icon;
 
           return (
-            <Card
+            <div
               key={index}
-              className="p-4"
+              className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm flex items-center gap-4 hover:shadow-md transition duration-200"
             >
-              <div className="flex items-center justify-between">
-                <CardTitle className="text-sm text-gray-500">
-                  {item.title}
-                </CardTitle>
-
-                <div
-                  className={`flex h-10 w-10 items-center justify-center rounded-full text-white ${item.color}`}
-                >
-                  <Icon className="h-6 w-6" />
-                </div>
+              <div className={`p-3 rounded-xl ${item.color}`}>
+                <Icon className="w-6 h-6" />
               </div>
-
-              {/* Value */}
-              <CardContent className="p-0 mt-2">
-                <p className="text-5xl font-semibold">
-                  {item.value.toLocaleString()}
-                </p>
-              </CardContent>
-            </Card>
+              <div>
+                <p className="text-xs text-gray-500 font-medium uppercase tracking-wider">{item.title}</p>
+                <h3 className="text-xl font-bold text-gray-900">{item.value.toLocaleString()}</h3>
+              </div>
+            </div>
           );
         })}
       </div>

@@ -94,7 +94,7 @@ export default function TablePaginationFooter({
   const paginationNav = (compact = false) => (
     <Pagination
       className={cn(
-        "mx-0 w-full justify-center overflow-x-auto sm:w-auto sm:justify-start",
+        "mx-0 w-full justify-center overflow-x-auto sm:w-auto sm:justify-start scrollbar-none [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]",
         placement === "top" && "justify-end",
       )}
     >
