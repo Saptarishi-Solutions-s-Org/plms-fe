@@ -17,10 +17,10 @@ const ExecutivePerformance = ({
   data,
 }: ExecutivePerformanceProps) => {
   return (
-    <Card className="w-full h-[420px] rounded-[2rem] border border-gray-200 bg-white shadow-md flex flex-col">
-      <CardHeader className="flex flex-row items-start justify-between gap-4 space-y-0 px-6 pt-6">
+    <Card className="flex h-[420px] w-full flex-col rounded-lg border border-gray-200 bg-white shadow-sm">
+      <CardHeader className="flex flex-row items-start justify-between gap-4 space-y-0 px-5 pt-5">
         <div className="space-y-1">
-          <CardTitle className="text-[1.7rem] font-bold tracking-tight text-slate-900">
+          <CardTitle className="text-lg font-semibold text-gray-900">
             {title}
           </CardTitle>
 
@@ -28,7 +28,7 @@ const ExecutivePerformance = ({
         </div>
       </CardHeader>
 
-      <CardContent className="flex-1 space-y-6 px-6 pb-6 pt-2 overflow-y-auto custom-scrollbar">
+      <CardContent className="custom-scrollbar flex-1 space-y-5 overflow-y-auto px-5 pb-5 pt-2">
         {data.length > 0 ? (
           data.map((executive, index) => (
             <div
@@ -37,11 +37,11 @@ const ExecutivePerformance = ({
             >
               <div className="flex-1 space-y-1.5">
                 <div className="flex items-center justify-between gap-4">
-                  <p className="text-lg font-semibold text-slate-800">
+                  <p className="text-sm font-medium text-gray-700">
                     {executive.executiveName}
                   </p>
 
-                  <p className="text-lg font-bold text-indigo-500">
+                  <p className="text-sm font-semibold text-indigo-500">
                     {executive.achievement}%
                   </p>
                 </div>

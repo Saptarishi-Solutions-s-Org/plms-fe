@@ -16,18 +16,15 @@ import TeamPerformanceTab from "@/components/commoncomponents/reports/team-perfo
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   getLeadSourceAnalytics,
+  getReportLeads,
+  getReportOffers,
   getReportStats,
 } from "@/services/organizationreports";
-import { getManagerOfferOverview } from "@/services/managerdashboard";
-import { getExecutiveUsers, getLeadsWithStats } from "@/services/leads";
 import { subscribeRealtime } from "@/lib/socket";
-import { getUser } from "@/lib/auth";
 import { LEAD_SOURCE_OPTIONS } from "@/types/leadtypes";
 import type {
-  ExecutiveUserRecord,
   LeadSourceAnalyticsRow,
   LeadSourceRow,
-  LeadWithStatsApiRow,
   OrganizationReportStats,
   SourceConversionRateRow,
 } from "@/types/org-reports";
@@ -44,23 +41,6 @@ const reportSources = LEAD_SOURCE_OPTIONS.map(({ value, label }) => ({
   key: normalizeSource(value),
   label,
 }));
-
-const isConvertedLead = (lead: LeadWithStatsApiRow) =>
-  String(lead.status || "").toLowerCase() === "qualified";
-
-const getManagerAssignedLeads = (
-  leads: LeadWithStatsApiRow[] = [],
-  managerId?: string,
-  executiveIds = new Set<string>(),
-) =>
-  managerId || executiveIds.size > 0
-    ? leads.filter(
-        (lead) =>
-          Boolean(lead.assignedTo) &&
-          (executiveIds.has(lead.assignedTo ?? "") ||
-            lead.createdById === managerId),
-      )
-    : [];
 
 const getLeadSourceRows = (
   rows: LeadSourceAnalyticsRow[],
@@ -145,7 +125,7 @@ export default function OrgReports() {
     try {
       const [statsData, offerOverviewData] = await Promise.all([
         getReportStats(),
-        getManagerOfferOverview(),
+        getReportOffers(),
       ]);
 
       setStats((currentStats) => ({
@@ -168,39 +148,21 @@ export default function OrgReports() {
         statsData,
         offerOverviewData,
         leadsData,
-        executivesData,
         leadSourceAnalyticsData,
       ] = await Promise.all([
         getReportStats(),
-        getManagerOfferOverview(),
-        getLeadsWithStats(),
-        getExecutiveUsers(),
+        getReportOffers(),
+        getReportLeads(),
         getLeadSourceAnalytics(),
       ]);
 
-      const currentUser = getUser();
-      const managerExecutiveIds = new Set(
-        (Array.isArray(executivesData)
-          ? (executivesData as ExecutiveUserRecord[])
-          : []
-        )
-          .map((executive) => executive.id)
-          .filter((id): id is string => Boolean(id)),
-      );
-      const managerAssignedLeads = getManagerAssignedLeads(
-        leadsData?.leads,
-        currentUser?.id,
-        managerExecutiveIds,
-      );
-      const managerAssignedLeadCount = managerAssignedLeads.length;
-
-      const convertedLeadCount =
-        managerAssignedLeads.filter(isConvertedLead).length;
-
       setStats({
-        total_leads: leadsData?.leads?.length ?? 0,
-        leads_assigned: managerAssignedLeadCount,
-        converted_leads: convertedLeadCount,
+        total_leads:
+          Number(leadsData?.pagination?.total) ||
+          leadsData?.leads?.length ||
+          0,
+        leads_assigned: Number(statsData?.leadsAssigned) || 0,
+        converted_leads: Number(statsData?.convertedLeads) || 0,
         active_offers: offerOverviewData?.stats?.activeOffers ?? 0,
         offers_utilized: statsData?.offersUtilized ?? 0,
       });
@@ -258,13 +220,13 @@ export default function OrgReports() {
   };
 
   return (
-    <div className="min-h-screen w-full bg-slate-50 px-4 py-4 sm:px-5 sm:py-5">
-      <div className="flex w-full flex-col gap-6">
+    <div className="w-full h-full p-4 sm:p-5 space-y-5">
+      <div className="flex w-full flex-col gap-5">
         <div>
-          <h1 className="text-xl font-semibold sm:text-2xl lg:text-3xl">
+          <h1 className="text-lg font-semibold text-gray-900 sm:text-2xl">
             Reports
           </h1>
-          <p className="text-xs sm:text-sm text-gray-600">
+          <p className="text-xs text-gray-500 sm:text-sm">
             Analyzing team performance for the current cycle
           </p>
         </div>
@@ -272,7 +234,7 @@ export default function OrgReports() {
         <Tabs
           value={activeTab}
           onValueChange={handleTabChange}
-          className="w-full items-stretch gap-6"
+          className="w-full items-stretch gap-5"
         >
           <div className="w-full border-b border-slate-200">
             <TabsList
@@ -281,13 +243,13 @@ export default function OrgReports() {
             >
               <TabsTrigger
                 value="overview"
-                className="h-11 px-5 text-sm font-bold data-[state=active]:text-blue-600 data-[state=active]:after:bg-blue-600"
+                className="h-11 px-5 text-sm font-semibold data-[state=active]:text-blue-600 data-[state=active]:after:bg-blue-600"
               >
                 Overview
               </TabsTrigger>
               <TabsTrigger
                 value="team-performance"
-                className="h-11 px-5 text-sm font-bold data-[state=active]:text-blue-600 data-[state=active]:after:bg-blue-600"
+                className="h-11 px-5 text-sm font-semibold data-[state=active]:text-blue-600 data-[state=active]:after:bg-blue-600"
               >
                 Team Performance
               </TabsTrigger>

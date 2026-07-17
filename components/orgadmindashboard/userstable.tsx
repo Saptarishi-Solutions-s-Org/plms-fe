@@ -25,11 +25,13 @@ type ActionMode = (typeof actionModes)[keyof typeof actionModes]
 const UserTable = ({ 
   users, 
   loading,
-  onRefresh 
+  onRefresh,
+  rowOffset
 }: { 
   users: UserDetails[]; 
   loading: boolean;
   onRefresh?: () => void;
+  rowOffset?: number;
 }) => {
 
     const [isDeactivateOpen, setIsDeactivateOpen] = useState(false);
@@ -84,7 +86,7 @@ const UserTable = ({
                     ) : (
                         users.map((item, index) => (
                             <TableRow key={item.id}>
-                                <TableCell>{index + 1}</TableCell>
+                                <TableCell>{(rowOffset ?? 0) + index + 1}</TableCell>
                                 <TableCell>{item.name}</TableCell>
                                 <TableCell>{item.email || "-"}</TableCell>
                                 <TableCell>{item.role_name}</TableCell>

@@ -5,6 +5,7 @@ import { toast } from "sonner";
 
 import GlobalLoader from "@/components/commoncomponents/globalloader";
 import { BulkActionsDrawer } from "@/components/commoncomponents/bulk-actions/BulkActionsDrawer";
+import { CreateOfferDialog } from "@/components/commoncomponents/offers/createoffer";
 import { OfferCards } from "@/components/commoncomponents/offers/offercards";
 import { OfferFilters } from "@/components/commoncomponents/offers/offerfilter";
 import TablePaginationFooter from "@/components/commoncomponents/table-pagination-footer";
@@ -35,9 +36,13 @@ import {
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { useManagerOfferExport } from "@/hooks/export";
 import { useUrlPagination } from "@/hooks/use-url-pagination";
+import { useUrlOfferFilters } from "@/hooks/useurloffer";
+import { type AuthUser, getUser } from "@/lib/auth";
+import { canAccess } from "@/lib/permissions";
 import { subscribeRealtime } from "@/lib/socket";
-import { MoreHorizontal, ListChecks } from "lucide-react";
+import { MoreHorizontal, ListChecks, Download, Plus, Pencil } from "lucide-react";
 import Image from "next/image";
 
 import {
@@ -47,7 +52,13 @@ import {
   getExecutiveOverview,
   getManagerOfferOverview,
 } from "@/services/managerdashboard";
-import { getExecutivesByOffer } from "@/services/offers";
+import {
+  createManagerOffer,
+  getExecutivesByOffer,
+  updateManagerOffer,
+} from "@/services/offers";
+
+import type { OfferPayload } from "@/lib/validators/offervalidation";
 
 import type {
   Offer,
@@ -139,6 +150,32 @@ const formatManagerOffers = (
   }));
 
 export default function OrgManagerOffersPage() {
+  const [user, setUser] = useState<AuthUser | null>(() => getUser());
+
+  useEffect(() => {
+    const syncUser = () => setUser(getUser());
+    window.addEventListener("LMA-auth-changed", syncUser);
+    return () => window.removeEventListener("LMA-auth-changed", syncUser);
+  }, []);
+
+  const canView = useMemo(
+    () => canAccess(user, ["offers"], ["view"]),
+    [user],
+  );
+  const canCreate = useMemo(
+    () => canAccess(user, ["offers"], ["create"]),
+    [user],
+  );
+  const canExport = useMemo(
+    () => canAccess(user, ["offers"], ["export"]),
+    [user],
+  );
+  const canUpdate = useMemo(
+    () => canAccess(user, ["offers"], ["update"]),
+    [user],
+  );
+
+  const { handleExport } = useManagerOfferExport();
   const { page, limit, setPage, setLimit } = useUrlPagination();
   const [offers, setOffers] = useState<ManagerOffer[]>([]);
   const [bulkOffers, setBulkOffers] = useState<ManagerOffer[]>([]);
@@ -158,6 +195,8 @@ export default function OrgManagerOffersPage() {
   ] = useState<string | null>(null);
 
   const [isBulkActionsOpen, setIsBulkActionsOpen] = useState(false);
+  const [createOpen, setCreateOpen] = useState(false);
+  const [editingOffer, setEditingOffer] = useState<ManagerOffer | null>(null);
 
   const [isViewAllErrorOpen, setIsViewAllErrorOpen] = useState(false);
   const [selectedOffer, setSelectedOffer] = useState<ManagerOffer | null>(null);
@@ -181,9 +220,12 @@ export default function OrgManagerOffersPage() {
   const [isBulkOffersLoading, setIsBulkOffersLoading] = useState(false);
   const [bulkOffersError, setBulkOffersError] = useState<string | null>(null);
 
-  const [filters, setFilters] = useState(DEFAULT_FILTERS);
+  const { filters, setFilters } = useUrlOfferFilters();
 
-  const [draftFilters, setDraftFilters] = useState(DEFAULT_FILTERS);
+  const [draftFilters, setDraftFilters] = useState(filters);
+  useEffect(() => {
+    setDraftFilters(filters);
+  }, [filters]);
 
   const bulkActionExecutives = useMemo(
     () =>
@@ -213,6 +255,19 @@ export default function OrgManagerOffersPage() {
   );
 
   const fetchOffers = useCallback(async () => {
+    if (!canView) {
+      setOffers([]);
+      setPagination(emptyPagination(limit));
+      setExecutives([]);
+      setTotalCount(0);
+      setActiveCount(0);
+      setInactiveCount(0);
+      setGlobalCount(0);
+      setIsLoading(false);
+      setHasLoaded(true);
+      return;
+    }
+
     try {
       setIsLoading(true);
 
@@ -234,10 +289,10 @@ export default function OrgManagerOffersPage() {
 
       setExecutives(
         executivesResponse?.value?.executives ||
-          executivesResponse?.executives ||
-          executivesResponse?.value ||
-          executivesResponse ||
-          [],
+        executivesResponse?.executives ||
+        executivesResponse?.value ||
+        executivesResponse ||
+        [],
       );
 
       setTotalCount(stats.totalOffers || 0);
@@ -262,17 +317,18 @@ export default function OrgManagerOffersPage() {
       setIsLoading(false);
       setHasLoaded(true);
     }
-  }, [filters, limit, page]);
+  }, [canView, filters, limit, page]);
 
   useEffect(() => {
     fetchOffers();
   }, [fetchOffers]);
 
   useEffect(() => {
+    if (!canView) return;
     return subscribeRealtime(OFFER_LIST_CHANGED, () => {
       fetchOffers();
     });
-  }, [fetchOffers]);
+  }, [canView, fetchOffers]);
 
   const fetchBulkOffers = useCallback(async () => {
     try {
@@ -294,10 +350,10 @@ export default function OrgManagerOffersPage() {
   }, []);
 
   useEffect(() => {
-    if (isBulkActionsOpen) {
+    if (isBulkActionsOpen && canUpdate) {
       fetchBulkOffers();
     }
-  }, [fetchBulkOffers, isBulkActionsOpen]);
+  }, [canUpdate, fetchBulkOffers, isBulkActionsOpen]);
 
   const handleFilterChange = useCallback(
     <K extends keyof OfferFiltersType>(key: K, value: OfferFiltersType[K]) => {
@@ -311,37 +367,12 @@ export default function OrgManagerOffersPage() {
 
   const handleApplyFilters = useCallback(() => {
     setFilters(draftFilters);
-    setPage(1);
-  }, [draftFilters, setPage]);
+  }, [draftFilters, setFilters]);
 
   const handleClearFilters = useCallback(() => {
     setFilters(DEFAULT_FILTERS);
-
     setDraftFilters(DEFAULT_FILTERS);
-    setPage(1);
-  }, [setPage]);
-
-  const filteredOffers = useMemo(
-    () =>
-      offers.filter((offer) => {
-        const query = filters.search.toLowerCase();
-
-        const matchSearch =
-          !query ||
-          offer.title.toLowerCase().includes(query) ||
-          offer.code.toLowerCase().includes(query);
-
-        const matchStatus =
-          filters.status.length === 0 || filters.status.includes(offer.status);
-
-        const matchDiscount =
-          filters.discountType.length === 0 ||
-          filters.discountType.includes(offer.discountType);
-
-        return matchSearch && matchStatus && matchDiscount;
-      }),
-    [offers, filters],
-  );
+  }, [setFilters]);
 
   const rowOffset = (pagination.page - 1) * pagination.limit;
 
@@ -399,8 +430,9 @@ export default function OrgManagerOffersPage() {
   const handleActionsMenuOpenChange = async (
     offerId: string,
     open: boolean,
+    status?: string,
   ) => {
-    if (!open) return;
+    if (!open || status !== "active") return;
 
     setAvailableExecutivesLoadingOfferId(offerId);
 
@@ -421,7 +453,7 @@ export default function OrgManagerOffersPage() {
           ? error.message
           : "Failed to load available executives",
       );
-      
+
     } finally {
       setAvailableExecutivesLoadingOfferId((currentOfferId) =>
         currentOfferId === offerId ? null : currentOfferId,
@@ -448,6 +480,95 @@ export default function OrgManagerOffersPage() {
     } finally {
       setIsAssignedExecutivesLoading(false);
     }
+  };
+
+  const buildManagerOfferApiPayload = (data: OfferPayload) => ({
+    ...(data.id && { id: data.id }),
+
+    title: data.title,
+    description: data.description,
+    discount_type: data.discount_type,
+    valid_from: data.valid_from,
+    valid_to: data.valid_to,
+
+    ...(data.discount_amount !== undefined && {
+      discount_amount: data.discount_amount,
+    }),
+
+    ...(data.discount_percentage !== undefined && {
+      discount_percentage: data.discount_percentage,
+    }),
+
+    ...(data.max_discount_amount !== undefined && {
+      max_discount_amount: data.max_discount_amount,
+    }),
+
+    ...(data.combo_description !== undefined && {
+      combo_description: data.combo_description,
+    }),
+
+    ...(data.buy_quantity !== undefined && {
+      buy_quantity: data.buy_quantity,
+    }),
+
+    ...(data.get_quantity !== undefined && {
+      get_quantity: data.get_quantity,
+    }),
+
+    ...(data.min_purchase_amount !== undefined && {
+      min_purchase_amount: data.min_purchase_amount,
+    }),
+
+    ...(data.discount_value !== undefined && {
+      discount_value: data.discount_value,
+    }),
+
+    ...(data.flag_discount_amount !== undefined && {
+      flag_discount_amount: data.flag_discount_amount,
+    }),
+  });
+
+  const handleCreateOffer = async (data: OfferPayload) => {
+    try {
+      await createManagerOffer(buildManagerOfferApiPayload(data));
+
+      await fetchOffers();
+
+      return { success: true as const };
+    } catch {
+      return {
+        success: false as const,
+        error: "Failed to create offer",
+      };
+    }
+  };
+
+  const handleUpdateOffer = async (data: OfferPayload) => {
+    try {
+      await updateManagerOffer(buildManagerOfferApiPayload(data));
+
+      await fetchOffers();
+
+      return { success: true as const };
+    } catch {
+      return {
+        success: false as const,
+        error: "Failed to update offer",
+      };
+    }
+  };
+
+  const handleSubmitOffer = (data: OfferPayload) =>
+    data.id ? handleUpdateOffer(data) : handleCreateOffer(data);
+
+  const handleEditOffer = (offer: ManagerOffer) => {
+    setEditingOffer(offer);
+    setCreateOpen(true);
+  };
+
+  const handleDialogOpenChange = (open: boolean) => {
+    setCreateOpen(open);
+    if (!open) setEditingOffer(null);
   };
 
   const handleBulkAssignOffer = async ({
@@ -490,16 +611,50 @@ export default function OrgManagerOffersPage() {
           </p>
         </div>
 
-        <Button
-          variant="outline"
-          size="lg"
-          className="w-full sm:w-auto rounded-full bg-blue-600 text-white hover:bg-blue-600 hover:text-white font-medium"
-          onClick={() => setIsBulkActionsOpen(true)}
-        >
-          <ListChecks className="h-4 w-4" />
-          Bulk Action
-        </Button>
+        <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
+          {canExport && (
+            <Button
+              type="button"
+              variant="outline"
+              onClick={handleExport}
+              className="flex h-9 w-full items-center justify-center gap-1.5 rounded-full px-4 sm:w-auto"
+            >
+              <Download className="h-4 w-4" />
+              Export
+            </Button>
+          )}
+
+          {canUpdate && (
+            <Button
+              variant="outline"
+              size="lg"
+              className="w-full sm:w-auto rounded-full bg-blue-600 text-white hover:bg-blue-600 hover:text-white font-medium"
+              onClick={() => setIsBulkActionsOpen(true)}
+            >
+              <ListChecks className="h-4 w-4" />
+              Bulk Action
+            </Button>
+          )}
+
+          {canCreate && (
+            <Button
+              onClick={() => setCreateOpen(true)}
+              className="flex h-9 w-full items-center justify-center gap-1.5 rounded-full bg-blue-600 px-4 text-white hover:bg-blue-700 sm:w-auto"
+            >
+              <Plus className="h-4 w-4" />
+              Create Offer
+            </Button>
+          )}
+        </div>
       </div>
+
+      <CreateOfferDialog
+        open={createOpen}
+        onOpenChange={handleDialogOpenChange}
+        onSubmit={handleSubmitOffer}
+        offer={editingOffer}
+        scope="manager"
+      />
 
       <BulkActionsDrawer
         open={isBulkActionsOpen}
@@ -511,6 +666,8 @@ export default function OrgManagerOffersPage() {
         onAssignOffer={handleBulkAssignOffer}
       />
 
+      {canView ? (
+        <>
       {/* Cards */}
       <OfferCards
         totalCount={totalCount}
@@ -537,184 +694,203 @@ export default function OrgManagerOffersPage() {
       />
 
       <div className="overflow-x-auto rounded-lg border border-gray-200 bg-white shadow-sm">
-          <Table>
-            <TableHeader className="bg-[#7677F41A]">
-              <TableRow>
-                <TableHead>S.No</TableHead>
+        <Table>
+          <TableHeader className="bg-[#7677F41A]">
+            <TableRow>
+              <TableHead>S.No</TableHead>
 
-                <TableHead>Offer Name</TableHead>
+              <TableHead>Offer Name</TableHead>
 
-                <TableHead>Description</TableHead>
+              <TableHead>Description</TableHead>
 
-                <TableHead>Discount Type</TableHead>
+              <TableHead>Discount Type</TableHead>
 
-                <TableHead>Discount Value</TableHead>
+              <TableHead>Discount Value</TableHead>
 
-                <TableHead>Valid From</TableHead>
+              <TableHead>Valid From</TableHead>
 
-                <TableHead>Valid To</TableHead>
+              <TableHead>Valid To</TableHead>
 
-                <TableHead>Status</TableHead>
+              <TableHead>Status</TableHead>
 
-                <TableHead>Assign Status</TableHead>
+              <TableHead>Assign Status</TableHead>
 
-                <TableHead>Assigned To</TableHead>
+              <TableHead>Assigned To</TableHead>
 
+              {canUpdate && (
                 <TableHead className="text-center">Actions</TableHead>
+              )}
+            </TableRow>
+          </TableHeader>
+
+          <TableBody>
+            {isLoading ? (
+              <TableRow>
+                <TableCell colSpan={canUpdate ? 11 : 10} className="py-10 text-center text-gray-500">
+                  Loading offers...
+                </TableCell>
               </TableRow>
-            </TableHeader>
+            ) : offers.length === 0 ? (
+              <TableRow>
+                <TableCell
+                  colSpan={canUpdate ? 11 : 10}
+                  className="py-10 text-center text-gray-500"
+                >
+                  No Offers Available
+                </TableCell>
+              </TableRow>
+            ) : (
+              offers.map((offer, index) => (
+                <TableRow key={offer.id}>
+                  <TableCell>{rowOffset + index + 1}</TableCell>
 
-            <TableBody>
-              {offers.length === 0 ? (
-                <TableRow>
-                  <TableCell
-                    colSpan={11}
-                    className="py-10 text-center text-gray-500"
-                  >
-                    No Offers Available
+                  <TableCell className="font-medium">{offer.title}</TableCell>
+
+                  <TableCell className="max-w-[250px] truncate">
+                    {offer.description || "—"}
                   </TableCell>
-                </TableRow>
-              ) : filteredOffers.length === 0 ? (
-                <TableRow>
-                  <TableCell
-                    colSpan={11}
-                    className="py-10 text-center text-gray-500"
-                  >
-                    No Offers Match the Applied Filters
+
+                  <TableCell>
+                    {DISCOUNT_TYPE_LABELS[offer.discountType] ??
+                      offer.discountType}
                   </TableCell>
-                </TableRow>
-              ) : (
-                filteredOffers.map((offer, index) => (
-                  <TableRow key={offer.id}>
-                    <TableCell>{rowOffset + index + 1}</TableCell>
 
-                    <TableCell className="font-medium">{offer.title}</TableCell>
+                  <TableCell>{getDiscountValue(offer)}</TableCell>
 
-                    <TableCell className="max-w-[250px] truncate">
-                      {offer.description || "—"}
-                    </TableCell>
+                  <TableCell>{formatDate(offer.validFrom)}</TableCell>
 
-                    <TableCell>
-                      {DISCOUNT_TYPE_LABELS[offer.discountType] ??
-                        offer.discountType}
-                    </TableCell>
+                  <TableCell>{formatDate(offer.validTo)}</TableCell>
 
-                    <TableCell>{getDiscountValue(offer)}</TableCell>
+                  <TableCell>
+                    <Badge
+                      variant="outline"
+                      className={
+                        offer.status === "active"
+                          ? "border-green-200 bg-green-50 text-green-700"
+                          : offer.status === "expired"
+                            ? "border-red-200 bg-red-50 text-red-700"
+                            : "border-gray-200 bg-gray-50 text-gray-600"
+                      }
+                    >
+                      <span
+                        className={`mr-1.5 h-1.5 w-1.5 rounded-full ${offer.status === "active"
+                          ? "bg-green-500"
+                          : offer.status === "expired"
+                            ? "bg-red-400"
+                            : "bg-gray-400"
+                          }`}
+                      />
+                      {formatStatusLabel(offer.status)}
+                    </Badge>
+                  </TableCell>
 
-                    <TableCell>{formatDate(offer.validFrom)}</TableCell>
-
-                    <TableCell>{formatDate(offer.validTo)}</TableCell>
-
-                    <TableCell>
+                  <TableCell>
+                    {offer.assignStatus ? (
                       <Badge
-                        variant="outline"
                         className={
-                          offer.status === "active"
-                            ? "border-green-200 bg-green-50 text-green-700"
-                            : offer.status === "expired"
-                              ? "border-red-200 bg-red-50 text-red-700"
-                              : "border-gray-200 bg-gray-50 text-gray-600"
+                          offer.assignStatus.toLowerCase() === "assigned"
+                            ? "border-purple-200 bg-purple-100 text-purple-700"
+                            : "border-slate-200 bg-slate-100 text-slate-700"
                         }
                       >
-                        <span
-                          className={`mr-1.5 h-1.5 w-1.5 rounded-full ${
-                            offer.status === "active"
-                              ? "bg-green-500"
-                              : offer.status === "expired"
-                                ? "bg-red-400"
-                                : "bg-gray-400"
-                          }`}
-                        />
-                        {formatStatusLabel(offer.status)}
+                        {offer.assignStatus}
                       </Badge>
-                    </TableCell>
+                    ) : (
+                      "—"
+                    )}
+                  </TableCell>
 
-                    <TableCell>
-                      {offer.assignStatus ? (
-                        <Badge
+                  <TableCell>
+                    <Button
+                      variant="link"
+                      className="h-auto p-0 text-blue-600 hover:text-blue-700"
+                      onClick={() => handleViewAssignedExecutives(offer)}
+                    >
+                      View All
+                    </Button>
+                  </TableCell>
+
+                  {canUpdate && (
+                  <TableCell className="text-center">
+                    <DropdownMenu
+                      onOpenChange={(open) =>
+                        handleActionsMenuOpenChange(
+                          offer.id,
+                          open,
+                          offer.status,
+                        )
+                      }
+                    >
+                      <DropdownMenuTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          disabled={offer.status === "expired"}
                           className={
-                            offer.assignStatus.toLowerCase() === "assigned"
-                              ? "border-purple-200 bg-purple-100 text-purple-700"
-                              : "border-slate-200 bg-slate-100 text-slate-700"
+                            offer.status === "expired"
+                              ? "cursor-not-allowed opacity-100"
+                              : ""
                           }
                         >
-                          {offer.assignStatus}
-                        </Badge>
-                      ) : (
-                        "—"
-                      )}
-                    </TableCell>
+                          <MoreHorizontal className="h-4 w-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
 
-                    <TableCell>
-                      <Button
-                        variant="link"
-                        className="h-auto p-0 text-blue-600 hover:text-blue-700"
-                        onClick={() => handleViewAssignedExecutives(offer)}
+                      <DropdownMenuContent
+                        align="end"
+                        className="max-h-60 overflow-y-auto"
                       >
-                        View All
-                      </Button>
-                    </TableCell>
-
-                    <TableCell className="text-center">
-                      <DropdownMenu
-                        onOpenChange={(open) =>
-                          handleActionsMenuOpenChange(offer.id, open)
-                        }
-                      >
-                        <DropdownMenuTrigger asChild>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            disabled={offer.status !== "active"}
-                            className={
-                              offer.status !== "active"
-                                ? "cursor-not-allowed opacity-100"
-                                : ""
-                            }
-                          >
-                            <MoreHorizontal className="h-4 w-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-
-                        <DropdownMenuContent
-                          align="end"
-                          className="max-h-60 overflow-y-auto"
+                        <DropdownMenuItem
+                          onClick={() => handleEditOffer(offer)}
                         >
-                          <div className="px-2 py-1.5 text-xs font-semibold text-gray-500">
-                            Assign To
-                          </div>
+                          <Pencil className="mr-2 h-4 w-4" />
+                          Edit
+                        </DropdownMenuItem>
 
-                          {availableExecutivesLoadingOfferId === offer.id ? (
-                            <DropdownMenuItem disabled>
-                              Loading executives...
-                            </DropdownMenuItem>
-                          ) : (availableExecutivesByOffer[offer.id] ?? [])
-                              .length === 0 ? (
-                            <DropdownMenuItem disabled>
-                              No Eligible Executives
-                            </DropdownMenuItem>
-                          ) : (
-                            availableExecutivesByOffer[offer.id].map(
-                              (executive) => (
-                                <DropdownMenuItem
-                                  key={executive.id}
-                                  onClick={() =>
-                                    handleAssignOffer(offer.id, executive.id)
-                                  }
-                                >
-                                  {executive.name}
-                                </DropdownMenuItem>
-                              ),
-                            )
-                          )}
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </TableCell>
-                  </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
+                        {offer.status === "active" && (
+                          <>
+                            <div className="px-2 py-1.5 text-xs font-semibold text-gray-500">
+                              Assign To
+                            </div>
+
+                            {availableExecutivesLoadingOfferId ===
+                            offer.id ? (
+                              <DropdownMenuItem disabled>
+                                Loading executives...
+                              </DropdownMenuItem>
+                            ) : (availableExecutivesByOffer[offer.id] ?? [])
+                                .length === 0 ? (
+                              <DropdownMenuItem disabled>
+                                No Eligible Executives
+                              </DropdownMenuItem>
+                            ) : (
+                              availableExecutivesByOffer[offer.id].map(
+                                (executive) => (
+                                  <DropdownMenuItem
+                                    key={executive.id}
+                                    onClick={() =>
+                                      handleAssignOffer(
+                                        offer.id,
+                                        executive.id,
+                                      )
+                                    }
+                                  >
+                                    {executive.name}
+                                  </DropdownMenuItem>
+                                ),
+                              )
+                            )}
+                          </>
+                        )}
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </TableCell>
+                  )}
+                </TableRow>
+              ))
+            )}
+          </TableBody>
+        </Table>
       </div>
 
       <TablePaginationFooter
@@ -723,6 +899,12 @@ export default function OrgManagerOffersPage() {
         onLimitChange={setLimit}
         totalLabel="offers"
       />
+        </>
+      ) : (
+        <div className="rounded-lg border border-gray-200 bg-white p-12 text-center text-sm text-gray-500 shadow-sm">
+          You do not have permission to view offers.
+        </div>
+      )}
 
       <AlertDialog
         open={isViewAllErrorOpen}

@@ -5,6 +5,10 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { useState } from "react";
+import { Pencil } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
 
 const NOTE_PREVIEW_LIMIT = 40;
 
@@ -26,9 +30,38 @@ function formatActivityType(type?: string) {
 
 export default function ActivityTimeline({
   activities,
+  canEdit = false,
+  onEdit,
 }: {
   activities: LeadActivity[];
+  canEdit?: boolean;
+  onEdit?: (id: string, newNotes: string) => Promise<void>;
 }) {
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editNotes, setEditNotes] = useState("");
+  const [isSaving, setIsSaving] = useState(false);
+
+  const handleEditClick = (act: LeadActivity) => {
+    setEditingId(act.id);
+    setEditNotes(act.notes);
+  };
+
+  const handleSave = async (id: string) => {
+    if (!onEdit) return;
+    setIsSaving(true);
+    try {
+      await onEdit(id, editNotes);
+      setEditingId(null);
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleCancel = () => {
+    setEditingId(null);
+  };
   if (activities.length === 0) {
     return (
       <p className="py-6 text-center text-sm text-gray-400">
@@ -55,21 +88,62 @@ export default function ActivityTimeline({
           </div>
 
           <div className="min-w-0 flex-1 pb-5">
-            <div className="flex flex-wrap items-center gap-2">
-              <p className="text-sm font-medium text-gray-900">
-                {act.createdByName}
-              </p>
-              <Badge
-                variant="outline"
-                className="border-blue-200 bg-blue-50 text-xs font-medium text-blue-700"
-              >
-                {formatActivityType(act.type)}
-              </Badge>
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <div className="flex flex-wrap items-center gap-2">
+                <p className="text-sm font-medium text-gray-900">
+                  {act.createdByName}
+                </p>
+                <Badge
+                  variant="outline"
+                  className="border-blue-200 bg-blue-50 text-xs font-medium text-blue-700"
+                >
+                  {formatActivityType(act.type)}
+                </Badge>
+              </div>
+              {canEdit && editingId !== act.id && (
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-6 w-6 text-gray-400 hover:text-blue-600"
+                  onClick={() => handleEditClick(act)}
+                  title="Edit Note"
+                >
+                  <Pencil className="h-3.5 w-3.5" />
+                </Button>
+              )}
             </div>
             <p className="mb-1 text-xs text-gray-400">
               {timeAgo(act.createdAt)}
             </p>
-            {act.notes.length > NOTE_PREVIEW_LIMIT ? (
+            {editingId === act.id ? (
+              <div className="mt-2 space-y-2">
+                <Textarea
+                  value={editNotes}
+                  onChange={(e) => setEditNotes(e.target.value)}
+                  className="min-h-[80px] w-full text-sm"
+                  disabled={isSaving}
+                />
+                <div className="flex items-center gap-2">
+                  <Button
+                    size="sm"
+                    className="h-7 text-xs bg-blue-600 text-white hover:bg-blue-700"
+                    onClick={() => handleSave(act.id)}
+                    disabled={isSaving || !editNotes.trim()}
+                  >
+                    {isSaving ? "Saving..." : "Save"}
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    className="h-7 text-xs text-gray-500 hover:text-gray-700"
+                    onClick={handleCancel}
+                    disabled={isSaving}
+                  >
+                    Cancel
+                  </Button>
+                </div>
+              </div>
+            ) : act.notes.length > NOTE_PREVIEW_LIMIT ? (
               <Tooltip>
                 <TooltipTrigger asChild>
                   <p>

@@ -39,7 +39,7 @@ const BLOCKED_PERMISSIONS: Record<string, Record<string, string[]>> = {
     offers: ["import", "delete"],
     permission: ["create", "view", "update", "delete", "import", "export"],
     reports: ["create", "update", "import", "delete"],
-    user: ["import", "delete"],
+    user: ["import", "delete", "update"],
   },
   Executive: {
     lead: ["delete"],

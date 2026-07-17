@@ -1,10 +1,10 @@
 "use client";
 
-import { useMemo, useState, useEffect } from "react";
+import { useCallback, useMemo, useState, useEffect } from "react";
 import Link from "next/link";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import type {
   ExecutivePerformanceRecord,
-  ExecutiveUserRecord,
   TeamPerformanceProps,
   TeamPerformanceRow,
   TeamPerformanceStatCard,
@@ -21,6 +21,7 @@ import {
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardTitle } from "@/components/ui/card";
+import TablePaginationFooter from "@/components/commoncomponents/table-pagination-footer";
 import { Input } from "@/components/ui/input";
 import { Progress } from "@/components/ui/progress";
 import {
@@ -32,8 +33,9 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { useExecutiveExport } from "@/hooks/export";
-import { getExecutiveUsers } from "@/services/leads";
-import { getExecutivePerformance } from "@/services/managerdashboard";
+import { useUrlPagination } from "@/hooks/use-url-pagination";
+import { getReportExecutivePerformance } from "@/services/organizationreports";
+import { createPaginationMeta } from "@/types/pagination";
 
 const fallbackStatIcons = [Users, Award, FileText, CheckCircle, Percent];
 const fallbackStatColors = [
@@ -43,11 +45,6 @@ const fallbackStatColors = [
   "bg-orange-400",
   "bg-purple-500",
 ];
-
-const normalizeName = (value: unknown) =>
-  String(value ?? "")
-    .trim()
-    .toLowerCase();
 
 const toPerformanceRow = (
   executiveId: string,
@@ -84,48 +81,51 @@ export default function TeamPerformanceTab({
   rows,
   orgCode,
 }: TeamPerformanceProps) {
+  const { page, limit, setPage, setLimit } = useUrlPagination();
+  const searchParams = useSearchParams();
+  const pathname = usePathname();
+  const router = useRouter();
+  const initialSearch = searchParams.get("search") ?? "";
   const [executives, setExecutives] = useState(rows);
   const [loading, setLoading] = useState(false);
-  const [search, setSearch] = useState("");
-  const [appliedSearch, setAppliedSearch] = useState("");
+  const [search, setSearch] = useState(initialSearch);
+  const [appliedSearch, setAppliedSearch] = useState(initialSearch);
+
+  useEffect(() => {
+    const query = searchParams.get("search") ?? "";
+    setSearch(query);
+    setAppliedSearch(query);
+  }, [searchParams]);
+
+  const replaceSearchQuery = useCallback(
+    (query: string) => {
+      const params = new URLSearchParams(searchParams.toString());
+
+      if (query) {
+        params.set("search", query.trim());
+      } else {
+        params.delete("search");
+      }
+
+      params.set("page", "1");
+      router.replace(`${pathname}?${params.toString()}`, { scroll: false });
+    },
+    [pathname, router, searchParams],
+  );
 
   useEffect(() => {
     const fetchExecutives = async () => {
       try {
         setLoading(true);
 
-        const [userData, performanceData] = await Promise.all([
-          getExecutiveUsers().catch(() => []),
-          getExecutivePerformance().catch(() => []),
-        ]);
-
-        const users = Array.isArray(userData)
-          ? (userData as ExecutiveUserRecord[])
-          : [];
-        const performanceRows = Array.isArray(performanceData)
-          ? (performanceData as ExecutivePerformanceRecord[])
-          : [];
-
-        const performanceByName = new Map(
-          performanceRows.map((row) => [normalizeName(row.executiveName), row]),
+        const performanceRows = await getReportExecutivePerformance();
+        const mappedRows = performanceRows.map((performance) =>
+          toPerformanceRow(
+            performance.executiveId ?? performance.id ?? "",
+            performance.executiveName ?? performance.name ?? "-",
+            performance,
+          ),
         );
-
-        const mappedRows =
-          users.length > 0
-            ? users.map((user) =>
-                toPerformanceRow(
-                  user.id ?? "",
-                  user.name ?? "-",
-                  performanceByName.get(normalizeName(user.name)),
-                ),
-              )
-            : performanceRows.map((performance) =>
-                toPerformanceRow(
-                  performance.executiveId ?? performance.id ?? "",
-                  performance.executiveName ?? "-",
-                  performance,
-                ),
-              );
 
         setExecutives(mappedRows.length > 0 ? mappedRows : rows);
       } catch (error) {
@@ -151,14 +151,37 @@ export default function TeamPerformanceTab({
   }, [appliedSearch, executives]);
 
   const handleClearSearch = () => {
-    setSearch("");
-    setAppliedSearch("");
+    replaceSearchQuery("");
   };
 
   const performanceRows = useMemo(() => {
     return [...filteredRows].sort(sortByPerformance);
   }, [filteredRows]);
+  const pagination = useMemo(
+    () =>
+      createPaginationMeta({
+        page,
+        limit,
+        total: performanceRows.length,
+      }),
+    [limit, page, performanceRows.length],
+  );
+  const paginatedPerformanceRows = useMemo(() => {
+    const startIndex = (pagination.page - 1) * pagination.limit;
+
+    return performanceRows.slice(startIndex, startIndex + pagination.limit);
+  }, [pagination.limit, pagination.page, performanceRows]);
   const { handleExport } = useExecutiveExport(performanceRows);
+
+  useEffect(() => {
+    if (page > pagination.totalPages) {
+      setPage(pagination.totalPages);
+    }
+  }, [page, pagination.totalPages, setPage]);
+
+  const handleApplySearch = () => {
+    replaceSearchQuery(search);
+  };
 
   const displayStats = useMemo(() => {
     if (stats.length > 0) {
@@ -218,7 +241,7 @@ export default function TeamPerformanceTab({
   }, [executives, stats]);
 
   return (
-    <div className="w-full space-y-6">
+    <div className="w-full space-y-5">
       <section className="grid w-full grid-cols-[repeat(auto-fit,minmax(240px,1fr))] gap-4">
         {displayStats.map(({ label, value, Icon, color }) => {
           const isTextValue = label === "Top Performer";
@@ -257,7 +280,7 @@ export default function TeamPerformanceTab({
       <section className="w-full">
         <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h2 className="text-[1.7rem] font-bold tracking-tight text-slate-900">
+              <h2 className="text-lg font-semibold text-gray-900 sm:text-xl">
               Team Breakdown
             </h2>
             <p className="mt-1 text-sm text-slate-500">
@@ -272,31 +295,31 @@ export default function TeamPerformanceTab({
                 value={search}
                 onChange={(event) => setSearch(event.target.value)}
                 onKeyDown={(event) =>
-                  event.key === "Enter" && setAppliedSearch(search)
+                  event.key === "Enter" && handleApplySearch()
                 }
                 placeholder="Search executive..."
-                className="h-10 rounded-xl border-slate-200 bg-white pl-9 text-sm"
+                className="h-10 rounded-md border-gray-200 bg-white pl-9 text-sm"
               />
             </div>
             <Button
               type="button"
               variant="outline"
               onClick={handleClearSearch}
-              className="h-10 rounded-xl px-4"
+              className="h-10 rounded-md px-4"
             >
               Clear
             </Button>
             <Button
               type="button"
-              onClick={() => setAppliedSearch(search)}
-              className="h-10 rounded-xl bg-blue-600 px-4 text-white hover:bg-blue-700"
+              onClick={handleApplySearch}
+              className="h-10 rounded-md bg-blue-600 px-4 text-white hover:bg-blue-700"
             >
               Apply
             </Button>
             <Button
               type="button"
               onClick={handleExport}
-              className="h-10 rounded-xl bg-green-600 px-4 text-white hover:bg-green-700"
+              className="h-10 rounded-md bg-green-600 px-4 text-white hover:bg-green-700"
             >
               <Download className="size-4" />
               Export
@@ -339,7 +362,7 @@ export default function TeamPerformanceTab({
               )}
 
               {!loading &&
-                performanceRows.map((row) => (
+                paginatedPerformanceRows.map((row) => (
                   <TableRow key={row.executiveId || row.executiveName}>
                     <TableCell className="w-[180px]">
                       <p
@@ -375,7 +398,10 @@ export default function TeamPerformanceTab({
                           className="rounded-md bg-blue-50 text-xs font-bold text-blue-600 hover:bg-blue-100"
                         >
                           <Link
-                            href={`/${orgCode}/org-reports/executive/${row.executiveId}`}
+                            href={{
+                              pathname: `/${orgCode}/org-reports/executive`,
+                              query: { executiveId: row.executiveId },
+                            }}
                           >
                             View
                           </Link>
@@ -406,6 +432,13 @@ export default function TeamPerformanceTab({
             </TableBody>
           </Table>
         </div>
+
+        <TablePaginationFooter
+          pagination={pagination}
+          onPageChange={setPage}
+          onLimitChange={setLimit}
+          totalLabel="executives"
+        />
       </section>
     </div>
   );

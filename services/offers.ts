@@ -13,6 +13,33 @@ export const createOffer = (data: Record<string, unknown>) =>
     body: JSON.stringify(data),
   });
 
+export const updateOffer = (data: Record<string, unknown>) =>
+  api(`/odata/v4/offer/updateOffer`, {
+    method: "POST",
+    body: JSON.stringify(data),
+  });
+
+export const createManagerOffer = (data: Record<string, unknown>) =>
+  api(`/odata/v4/offer/createManagerOffer`, {
+    method: "POST",
+    body: JSON.stringify(data),
+  });
+
+export const updateManagerOffer = (data: Record<string, unknown>) =>
+  api(`/odata/v4/offer/updateManagerOffer`, {
+    method: "POST",
+    body: JSON.stringify(data),
+  });
+
+export const exportOffersAdmin = () =>
+  api(`/odata/v4/offer/exportOffersAdmin`, { method: "POST" });
+
+export const exportOffersManager = () =>
+  api(`/odata/v4/offer/exportOffersManager`, { method: "POST" });
+
+export const exportOffersExecutive = () =>
+  api(`/odata/v4/offer/exportOffersExecutive`, { method: "POST" });
+
 
 export const toggleOfferStatus = (id: string) =>
   api(`/odata/v4/offer/toggleOfferStatus`, {

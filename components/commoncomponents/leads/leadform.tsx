@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
@@ -24,10 +24,12 @@ import {
   LEAD_PRIORITY_OPTIONS,
   LEAD_SOURCE_OPTIONS,
   Option,
+  ExecutiveOption,
 } from "@/types/leadtypes";
 
 import { leadFormSchema } from "@/lib/validators/lead-form-schema";
 import { getCountries, getStatesByCountry } from "@/services/location";
+import { getExecutivesForManager } from "@/services/organizationAdmin";
 
 function normalizeOptionValue(value: string) {
   return value.trim().toLowerCase().replace(/[\s_]+/g, "");
@@ -80,16 +82,31 @@ export default function LeadForm({
   onSubmit,
   onCancel,
   initialData,
+  assignees = [],
 }: {
   onSubmit: (data: LeadFormData) => Promise<void>;
   onCancel?: () => void;
   initialData?: LeadFormData;
+  assignees?: ExecutiveOption[];
 }) {
   const isEditing = Boolean(initialData);
 
   const [countries, setCountries] = useState<Option[]>([]);
   const [states, setStates] = useState<Option[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [selectedManagerId, setSelectedManagerId] = useState("");
+  const [managerError, setManagerError] = useState("");
+  const [managerExecutives, setManagerExecutives] = useState<
+    ExecutiveOption[]
+  >([]);
+
+  const managers = useMemo(
+    () =>
+      assignees.filter(
+        (assignee) => assignee.role?.toLowerCase() === "manager",
+      ),
+    [assignees],
+  );
 
   const {
     register,
@@ -113,6 +130,7 @@ export default function LeadForm({
       leadSource: getLeadSourceValue(initialData?.leadSource),
       priority: initialData?.priority ?? "",
       notes: initialData?.notes ?? "",
+      assignedTo: initialData?.assignedTo ?? "",
     },
   });
 
@@ -130,6 +148,9 @@ export default function LeadForm({
   }, []);
 
   useEffect(() => {
+    setSelectedManagerId("");
+    setManagerExecutives([]);
+    setManagerError("");
     reset({
       name: initialData?.name ?? "",
       gender: initialData?.gender ?? "",
@@ -143,6 +164,7 @@ export default function LeadForm({
       leadSource: getLeadSourceValue(initialData?.leadSource),
       priority: initialData?.priority ?? "",
       notes: initialData?.notes ?? "",
+      assignedTo: initialData?.assignedTo ?? "",
     });
   }, [initialData, reset]);
 
@@ -177,11 +199,31 @@ export default function LeadForm({
     }
   };
 
+  const handleManagerChange = async (managerId: string) => {
+    setSelectedManagerId(managerId);
+    setManagerError("");
+    setManagerExecutives([]);
+    setValue("assignedTo", "");
+
+    try {
+      const executives = await getExecutivesForManager(managerId);
+      setManagerExecutives(Array.isArray(executives) ? executives : []);
+    } catch (error) {
+      console.error(error);
+      toast.error("Failed to load executives for this manager.");
+    }
+  };
+
   const onValid = async (data: LeadFormData) => {
+    if (!isEditing && managers.length > 0 && !selectedManagerId) {
+      setManagerError("Select manager");
+      return;
+    }
+
     setIsSubmitting(true);
 
     try {
-      await onSubmit(data);
+      await onSubmit({ ...data, managerId: selectedManagerId || undefined });
     } catch (error) {
       toast.error(
         error instanceof Error ? error.message : "Failed to save lead.",
@@ -382,6 +424,55 @@ export default function LeadForm({
               )}
             />
           </FieldWrapper>
+
+          {!isEditing && managers.length > 0 && (
+            <FieldWrapper label="Manager" required error={managerError}>
+              <Select
+                value={selectedManagerId}
+                onValueChange={handleManagerChange}
+              >
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Select manager" />
+                </SelectTrigger>
+                <SelectContent>
+                  {managers.map((manager) => (
+                    <SelectItem key={manager.id} value={manager.id}>
+                      {manager.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </FieldWrapper>
+          )}
+
+          {!isEditing && selectedManagerId && (
+            <FieldWrapper label="Assign To Executive">
+              <Controller
+                name="assignedTo"
+                control={control}
+                render={({ field }) => (
+                  <Select value={field.value} onValueChange={field.onChange}>
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="Select executive" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {managerExecutives.length > 0 ? (
+                        managerExecutives.map((executive) => (
+                          <SelectItem key={executive.id} value={executive.id}>
+                            {executive.name}
+                          </SelectItem>
+                        ))
+                      ) : (
+                        <div className="px-3 py-2 text-sm text-gray-400">
+                          No active executives found
+                        </div>
+                      )}
+                    </SelectContent>
+                  </Select>
+                )}
+              />
+            </FieldWrapper>
+          )}
         </div>
       </div>
 

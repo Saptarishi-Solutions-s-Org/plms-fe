@@ -11,6 +11,8 @@ export interface LeadFormData {
   status: string;
   priority: string;
   notes: string;
+  assignedTo?: string;
+  managerId?: string;
 }
 
 export interface Lead extends LeadFormData {
@@ -71,6 +73,8 @@ export interface AddActivityFormData {
 export interface ExecutiveOption {
   id: string;
   name: string;
+  role?: string;
+  reportingManagerId?: string | null;
 }
 
 export type LeadOfferOption = {
@@ -98,6 +102,7 @@ export interface LeadDialogsProps {
   onFormClose: () => void;
   selectedLead: Lead | null;
   onDetailsClose: () => void;
+  assignees?: ExecutiveOption[];
 }
 
 export type LeadFilters = {
@@ -142,11 +147,15 @@ export type LeadHeaderProps = {
   onAddLead: () => void;
   onBulkAssign?: () => void;
   showImportExport?: boolean;
+  showImport?: boolean;
+  showExport?: boolean;
+  showCreate?: boolean;
+  showBulkAssign?: boolean;
 };
 
 export type LeadActionsProps = {
   lead: Lead;
-  onEdit: (lead: Lead) => void;
+  onEdit?: (lead: Lead) => void;
   onViewDetails: (lead: Lead) => void;
   executives?: ExecutiveOption[];
   onAssign?: (lead: Lead, assignedTo: string) => Promise<void> | void;

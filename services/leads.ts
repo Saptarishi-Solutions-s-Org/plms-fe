@@ -1,7 +1,11 @@
 import { api } from "@/lib/api";
 import { buildApiFunctionUrl } from "@/lib/api-function-url";
 import type { LeadImportRow } from "@/types/leadImport";
-import type { AddActivityFormData, LeadPayload } from "@/types/leadtypes";
+import type {
+  AddActivityFormData,
+  ExecutiveOption,
+  LeadPayload,
+} from "@/types/leadtypes";
 
 export type GetLeadsWithStatsParams = {
   page?: number;
@@ -15,6 +19,9 @@ export type GetLeadsWithStatsParams = {
 
 export const getLeadsWithStats = (params?: GetLeadsWithStatsParams) =>
   api(buildApiFunctionUrl("/odata/v4/lead/getLeadsWithStats", params));
+
+export const getAllOrganizationLeads = (params?: GetLeadsWithStatsParams) =>
+  api(buildApiFunctionUrl("/odata/v4/lead/getAllOrganizationLeads", params));
 
 export const getExecutiveUsers = () =>
   api("/odata/v4/lead/getExecutiveUsers()");
@@ -50,6 +57,12 @@ export const addLeadActivity = (leadId: string, data: AddActivityFormData) =>
   api("/odata/v4/lead/addLeadActivity", {
     method: "POST",
     body: JSON.stringify({ leadId, ...data }),
+  });
+
+export const updateLeadActivity = (id: string, notes: string) =>
+  api("/odata/v4/lead/updateLeadActivity", {
+    method: "POST",
+    body: JSON.stringify({ id, notes }),
   });
 
 export const importLeads = (rows: LeadImportRow[]) =>

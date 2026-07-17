@@ -17,6 +17,7 @@ export default function LeadDialogs({
   onFormClose,
   selectedLead,
   onDetailsClose,
+  assignees,
 }: LeadDialogsProps) {
   return (
     <>
@@ -36,6 +37,7 @@ export default function LeadDialogs({
             onSubmit={onFormSubmit}
             onCancel={onFormClose}
             initialData={editingLead ?? undefined}
+            assignees={editingLead ? undefined : assignees}
           />
         </DialogContent>
       </Dialog>

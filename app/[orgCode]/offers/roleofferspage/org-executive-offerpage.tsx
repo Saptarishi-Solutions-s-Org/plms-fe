@@ -18,12 +18,17 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { MultiSelectCombobox } from "@/components/ui/multi-select-combobox";
+import { useExecutiveOfferExport } from "@/hooks/export";
 import { useUrlPagination } from "@/hooks/use-url-pagination";
+import { useUrlOfferFilters } from "@/hooks/useurloffer";
+import { type AuthUser, getUser } from "@/lib/auth";
+import { canAccess } from "@/lib/permissions";
 import { subscribeRealtime } from "@/lib/socket";
+import { Download } from "lucide-react";
 
 import { getExecutiveOffers } from "@/services/executivestats";
 
-import { OFFER_STATUS_OPTIONS, type Offer } from "@/types/Createoffer";
+import { OFFER_STATUS_OPTIONS, type Offer, type OfferFilters } from "@/types/Createoffer";
 import { DISCOUNT_OPTIONS } from "@/lib/validators/offervalidation";
 import { emptyPagination } from "@/types/pagination";
 import type { PaginationMeta } from "@/types/pagination";
@@ -34,16 +39,15 @@ import {
   ExecutiveOfferRow,
   formatDate,
   formatStatusLabel,
-  ExecutiveOfferFilters,
   ExecutiveOffersEnvelope
 } from "@/types/org-manager";
 
 
 
-const DEFAULT_FILTERS: ExecutiveOfferFilters = {
+const DEFAULT_FILTERS: OfferFilters = {
   search: "",
-  discountTypes: [],
-  statuses: [],
+  discountType: [],
+  status: [],
 };
 
 const DISCOUNT_TYPE_LABELS: Record<string, string> = {
@@ -134,6 +138,24 @@ const getDiscountValue = (offer: ExecutiveOfferRow) => {
 };
 
 export default function OrgExecutiveOffersPage() {
+  const [user, setUser] = useState<AuthUser | null>(() => getUser());
+
+  useEffect(() => {
+    const syncUser = () => setUser(getUser());
+    window.addEventListener("LMA-auth-changed", syncUser);
+    return () => window.removeEventListener("LMA-auth-changed", syncUser);
+  }, []);
+
+  const canView = useMemo(
+    () => canAccess(user, ["offers"], ["view"]),
+    [user],
+  );
+  const canExport = useMemo(
+    () => canAccess(user, ["offers"], ["export"]),
+    [user],
+  );
+
+  const { handleExport } = useExecutiveOfferExport();
   const { page, limit, setPage, setLimit } = useUrlPagination();
   const [offers, setOffers] = useState<ExecutiveOfferRow[]>([]);
   const [pagination, setPagination] = useState<PaginationMeta>(
@@ -143,27 +165,38 @@ export default function OrgExecutiveOffersPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [hasLoaded, setHasLoaded] = useState(false);
 
-  const [filters, setFilters] = useState(DEFAULT_FILTERS);
+  const { filters, setFilters } = useUrlOfferFilters();
 
-  const [draftFilters, setDraftFilters] = useState(DEFAULT_FILTERS);
+  const [draftFilters, setDraftFilters] = useState(filters);
+  useEffect(() => {
+    setDraftFilters(filters);
+  }, [filters]);
 
   const selectedStatuses = useMemo(
     () =>
-      filters.statuses.map(
-        (status) => STATUS_LABEL_TO_VALUE.get(status) ?? status,
+      filters.status.map(
+        (s) => STATUS_LABEL_TO_VALUE.get(s) ?? s,
       ),
-    [filters.statuses],
+    [filters.status],
   );
 
   const selectedDiscountTypes = useMemo(
     () =>
-      filters.discountTypes.map(
+      filters.discountType.map(
         (type) => DISCOUNT_LABEL_TO_VALUE.get(type) ?? type,
       ),
-    [filters.discountTypes],
+    [filters.discountType],
   );
 
   const fetchOffers = useCallback(async () => {
+    if (!canView) {
+      setOffers([]);
+      setPagination(emptyPagination(limit));
+      setIsLoading(false);
+      setHasLoaded(true);
+      return;
+    }
+
     try {
       setIsLoading(true);
 
@@ -187,22 +220,23 @@ export default function OrgExecutiveOffersPage() {
       setIsLoading(false);
       setHasLoaded(true);
     }
-  }, [filters.search, limit, page, selectedDiscountTypes, selectedStatuses]);
+  }, [canView, filters.search, limit, page, selectedDiscountTypes, selectedStatuses]);
 
   useEffect(() => {
     fetchOffers();
   }, [fetchOffers]);
 
   useEffect(() => {
+    if (!canView) return;
     return subscribeRealtime(OFFER_LIST_CHANGED, () => {
       fetchOffers();
     });
-  }, [fetchOffers]);
+  }, [canView, fetchOffers]);
 
   const handleFilterChange = useCallback(
-    <K extends keyof ExecutiveOfferFilters>(
+    <K extends keyof OfferFilters>(
       key: K,
-      value: ExecutiveOfferFilters[K],
+      value: OfferFilters[K],
     ) => {
       setDraftFilters((prev) => ({
         ...prev,
@@ -214,15 +248,12 @@ export default function OrgExecutiveOffersPage() {
 
   const handleApplyFilters = useCallback(() => {
     setFilters(draftFilters);
-    setPage(1);
-  }, [draftFilters, setPage]);
+  }, [draftFilters, setFilters]);
 
   const handleClearFilters = useCallback(() => {
     setFilters(DEFAULT_FILTERS);
-
     setDraftFilters(DEFAULT_FILTERS);
-    setPage(1);
-  }, [setPage]);
+  }, [setFilters]);
 
   const rowOffset = (pagination.page - 1) * pagination.limit;
 
@@ -244,9 +275,9 @@ export default function OrgExecutiveOffersPage() {
 
   if (isInitialLoading) {
     return (
-    <>
-      <GlobalLoader />
-    </>
+      <>
+        <GlobalLoader />
+      </>
     );
   }
 
@@ -262,8 +293,22 @@ export default function OrgExecutiveOffersPage() {
             Manage offers and assign them to leads easily.
           </p>
         </div>
+
+        {canExport && (
+          <Button
+            type="button"
+            variant="outline"
+            onClick={handleExport}
+            className="flex h-9 w-full items-center justify-center gap-1.5 rounded-full px-4 sm:w-auto"
+          >
+            <Download className="h-4 w-4" />
+            Export
+          </Button>
+        )}
       </div>
 
+      {canView ? (
+        <>
       {/* Cards */}
       <OfferCards
         totalCount={offerStats.total}
@@ -290,9 +335,9 @@ export default function OrgExecutiveOffersPage() {
 
         <MultiSelectCombobox
           options={DISCOUNT_OPTIONS.map((option) => option.label)}
-          selectedValues={draftFilters.discountTypes}
+          selectedValues={draftFilters.discountType}
           onSelectionChange={(values) =>
-            handleFilterChange("discountTypes", values)
+            handleFilterChange("discountType", values as OfferFilters["discountType"])
           }
           placeholder="All Offer Types"
           width="w-full sm:w-56"
@@ -300,8 +345,8 @@ export default function OrgExecutiveOffersPage() {
 
         <MultiSelectCombobox
           options={OFFER_STATUS_OPTIONS.map((option) => option.label)}
-          selectedValues={draftFilters.statuses}
-          onSelectionChange={(values) => handleFilterChange("statuses", values)}
+          selectedValues={draftFilters.status}
+          onSelectionChange={(values) => handleFilterChange("status", values as OfferFilters["status"])}
           placeholder="All Status"
           width="w-full sm:w-44"
         />
@@ -386,28 +431,27 @@ export default function OrgExecutiveOffersPage() {
                   <TableCell>{formatDate(offer.validTo)}</TableCell>
 
                   <TableCell>
-                      <Badge
-                        variant="outline"
-                        className={
-                          offer.status === "active"
-                            ? "border-green-200 bg-green-50 text-green-700"
-                            : offer.status === "expired"
-                              ? "border-red-200 bg-red-50 text-red-700"
-                              : "border-gray-200 bg-gray-50 text-gray-600"
-                        }
-                      >
-                        <span
-                          className={`mr-1.5 h-1.5 w-1.5 rounded-full ${
-                            offer.status === "active"
-                              ? "bg-green-500"
-                              : offer.status === "expired"
-                                ? "bg-red-500"
-                                : "bg-gray-500"
+                    <Badge
+                      variant="outline"
+                      className={
+                        offer.status === "active"
+                          ? "border-green-200 bg-green-50 text-green-700"
+                          : offer.status === "expired"
+                            ? "border-red-200 bg-red-50 text-red-700"
+                            : "border-gray-200 bg-gray-50 text-gray-600"
+                      }
+                    >
+                      <span
+                        className={`mr-1.5 h-1.5 w-1.5 rounded-full ${offer.status === "active"
+                          ? "bg-green-500"
+                          : offer.status === "expired"
+                            ? "bg-red-500"
+                            : "bg-gray-500"
                           }`}
-                        />
-                        {formatStatusLabel(offer.status)}
-                      </Badge>
-                    </TableCell>
+                      />
+                      {formatStatusLabel(offer.status)}
+                    </Badge>
+                  </TableCell>
                 </TableRow>
               ))
             )}
@@ -421,6 +465,12 @@ export default function OrgExecutiveOffersPage() {
         onLimitChange={setLimit}
         totalLabel="offers"
       />
+        </>
+      ) : (
+        <div className="rounded-lg border border-gray-200 bg-white p-12 text-center text-sm text-gray-500 shadow-sm">
+          You do not have permission to view offers.
+        </div>
+      )}
     </div>
   );
 }

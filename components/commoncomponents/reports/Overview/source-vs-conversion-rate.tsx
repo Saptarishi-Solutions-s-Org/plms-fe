@@ -53,9 +53,9 @@ export const SourceVsConversionRate = ({
   });
 
   return (
-    <Card className="flex h-[420px] w-full flex-col rounded-[2rem] border border-gray-200 bg-white shadow-md">
+    <Card className="flex h-[420px] w-full flex-col rounded-lg border border-gray-200 bg-white shadow-sm">
       <CardHeader className="flex flex-row items-start justify-between gap-4 space-y-0 px-6 pt-6">
-        <CardTitle className="text-[1.7rem] font-bold tracking-tight text-slate-900">
+        <CardTitle className="text-lg font-semibold text-gray-900">
           {title}
         </CardTitle>
       </CardHeader>

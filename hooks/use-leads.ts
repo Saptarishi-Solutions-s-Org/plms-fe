@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import type { Lead, LeadStats } from "@/types/leadtypes";
-import { getLeadsWithStats } from "@/services/leads";
+import { getLeadsWithStats, getAllOrganizationLeads } from "@/services/leads";
 import {
   LEAD_LIST_CHANGED,
   LeadListChangedPayload,
@@ -22,6 +22,7 @@ type UseLeadsOptions = {
   sources?: string[];
   assignedTo?: string[];
   statsScope?: "filtered" | "all";
+  fetchAllAsAdmin?: boolean;
 };
 
 const EMPTY_STATS: LeadStats = {
@@ -78,7 +79,8 @@ export function useLeads(options: UseLeadsOptions = {}) {
         assignedTo,
       };
 
-      const res = await getLeadsWithStats(params);
+      const fetchFn = options.fetchAllAsAdmin ? getAllOrganizationLeads : getLeadsWithStats;
+      const res = await fetchFn(params);
 
       const nextLeads = res.leads ?? [];
 
@@ -106,6 +108,7 @@ export function useLeads(options: UseLeadsOptions = {}) {
     priority,
     leadSource,
     assignedTo,
+    options.fetchAllAsAdmin,
   ]);
 
   useEffect(() => {
