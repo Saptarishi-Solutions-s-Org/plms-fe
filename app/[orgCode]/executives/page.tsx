@@ -27,7 +27,8 @@ import ExecutiveStatCards from "@/components/commoncomponents/managerdashboard/e
 import ExecutiveTableFilters from "@/components/commoncomponents/managerdashboard/executive-table-filter";
 import TablePaginationFooter from "@/components/commoncomponents/table-pagination-footer";
 import { useUrlPagination } from "@/hooks/use-url-pagination";
-import { createPaginationMeta } from "@/types/pagination";
+import { useUrlFilters, type FilterConfig } from "@/hooks/useurlfilters";
+import { createPaginationMeta, type PaginationMeta } from "@/types/pagination";
 import { Button } from "@/components/ui/button";
 import { Download, Plus } from "lucide-react";
 import {
@@ -42,15 +43,17 @@ import AddLeadForm from "@/components/orgadmindashboard/userform";
 import { canAccess } from "@/lib/permissions";
 import { useCurrentUser } from "@/hooks/use-current-user";
 
-const DEFAULT_FILTERS: ExecutiveFilters = {
-  search: "",
-  status: [],
+const executiveFilterConfig: FilterConfig<ExecutiveFilters> = {
+  search: { type: "string", urlKey: "search" },
+  status: { type: "list", urlKey: "status" },
 };
 
 const formatCount = (value: number) => value.toLocaleString("en-IN");
 
 export default function ExecutivesPage() {
   const { page, limit, setPage, setLimit } = useUrlPagination();
+  const { filters, setFilters } = useUrlFilters<ExecutiveFilters>(executiveFilterConfig);
+
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [executives, setExecutives] = useState<ExecutiveRow[]>([]);
 
@@ -64,10 +67,16 @@ export default function ExecutivesPage() {
 
   const [error, setError] = useState<string | null>(null);
 
-  const [filters, setFilters] = useState<ExecutiveFilters>(DEFAULT_FILTERS);
+  const [draftFilters, setDraftFilters] = useState<ExecutiveFilters>(filters);
 
-  const [draftFilters, setDraftFilters] =
-    useState<ExecutiveFilters>(DEFAULT_FILTERS);
+  useEffect(() => {
+    setDraftFilters(filters);
+  }, [filters]);
+
+  const [pagination, setPagination] = useState<PaginationMeta>(
+    createPaginationMeta({ page, limit, total: 0 }),
+  );
+
   const currentUser = useCurrentUser();
   const canCreateExecutives = canAccess(currentUser, ["user"], ["create"]);
   const canExportExecutives = canAccess(currentUser, ["user"], ["export"]);
@@ -78,7 +87,12 @@ export default function ExecutivesPage() {
 
       setError(null);
 
-      const response = await getExecutiveOverview();
+      const response = await getExecutiveOverview({
+        page,
+        limit,
+        search: filters.search,
+        status: filters.status.join(","),
+      });
 
       const data = response?.value || response;
 
@@ -109,14 +123,20 @@ export default function ExecutivesPage() {
       );
 
       setExecutives(formattedExecutives);
+      setPagination(
+        data?.pagination ??
+          createPaginationMeta({ page, limit, total: formattedExecutives.length }),
+      );
     } catch (err) {
       setError(
         err instanceof Error ? err.message : "Failed to load executives",
       );
+      setExecutives([]);
+      setPagination(createPaginationMeta({ page, limit, total: 0 }));
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [page, limit, filters]);
 
   useEffect(() => {
     fetchExecutives(true);
@@ -159,59 +179,21 @@ export default function ExecutivesPage() {
 
   const handleApplyFilters = useCallback(() => {
     setFilters(draftFilters);
-    setPage(1);
-  }, [draftFilters, setPage]);
+  }, [draftFilters, setFilters]);
 
   const handleClearFilters = useCallback(() => {
-    setFilters(DEFAULT_FILTERS);
+    setFilters({ search: "", status: [] });
+  }, [setFilters]);
 
-    setDraftFilters(DEFAULT_FILTERS);
-    setPage(1);
-  }, [setPage]);
-
-  const filteredExecutives = useMemo(
-    () =>
-      executives.filter((executive) => {
-        const query = filters.search.toLowerCase();
-
-        const matchesSearch =
-          !query ||
-          executive.name.toLowerCase().includes(query) ||
-          executive.email.toLowerCase().includes(query) ||
-          executive.phone.toLowerCase().includes(query);
-
-        const matchesStatus =
-          filters.status.length === 0 ||
-          filters.status.some((s) => s.toLowerCase() === executive.status.toLowerCase());
-
-        return matchesSearch && matchesStatus;
-      }),
-    [executives, filters],
-  );
-
-  const pagination = useMemo(
-    () =>
-      createPaginationMeta({
-        page,
-        limit,
-        total: filteredExecutives.length,
-      }),
-    [filteredExecutives.length, limit, page],
-  );
-
-  const paginatedExecutives = useMemo(() => {
-    const startIndex = (pagination.page - 1) * pagination.limit;
-
-    return filteredExecutives.slice(startIndex, startIndex + pagination.limit);
-  }, [filteredExecutives, pagination.limit, pagination.page]);
+  const paginatedExecutives = executives;
 
   const handleExport = useCallback(() => {
-    if (!filteredExecutives.length) return;
+    if (!executives.length) return;
 
     const headers = ["S.No", "Executive Name", "Email", "Phone", "Status", "Leads", "Assigned Offers"];
 
-    const rows = filteredExecutives.map((executive, index) => [
-      index + 1,
+    const rows = executives.map((executive, index) => [
+      (pagination.page - 1) * pagination.limit + index + 1,
       executive.name,
       executive.email,
       executive.phone,
@@ -243,10 +225,10 @@ export default function ExecutivesPage() {
     link.click();
     document.body.removeChild(link);
     URL.revokeObjectURL(url);
-  }, [filteredExecutives]);
+  }, [executives, pagination.page, pagination.limit]);
 
   useEffect(() => {
-    if (page > pagination.totalPages) {
+    if (pagination.totalPages > 0 && page > pagination.totalPages) {
       setPage(pagination.totalPages);
     }
   }, [page, pagination.totalPages, setPage]);
@@ -294,7 +276,7 @@ export default function ExecutivesPage() {
               type="button"
               variant="outline"
               onClick={handleExport}
-              disabled={!filteredExecutives.length}
+              disabled={!executives.length}
               className="flex h-9 w-full items-center justify-center gap-1.5 rounded-full px-4 sm:w-auto"
             >
               <Download className="h-4 w-4" />
@@ -327,98 +309,89 @@ export default function ExecutivesPage() {
       <div>
         <div className="overflow-x-auto rounded-lg border border-gray-200 bg-white shadow-sm">
           <Table>
-            <TableHeader className="bg-[#7677F41A]">
+          <TableHeader className="bg-[#7677F41A]">
+            <TableRow>
+              <TableHead className="w-16 whitespace-nowrap text-xs sm:text-sm">S.No</TableHead>
+
+              <TableHead className="min-w-[160px] whitespace-nowrap text-xs sm:text-sm">Executive Name</TableHead>
+
+              <TableHead className="min-w-[220px] whitespace-nowrap text-xs sm:text-sm">Email</TableHead>
+
+              <TableHead className="min-w-[160px] whitespace-nowrap text-xs sm:text-sm">Phone</TableHead>
+
+              <TableHead className="min-w-[120px] whitespace-nowrap text-xs sm:text-sm">Status</TableHead>
+
+              <TableHead className="min-w-[100px] whitespace-nowrap text-xs sm:text-sm">Leads</TableHead>
+
+              <TableHead className="min-w-[140px] whitespace-nowrap text-xs sm:text-sm">Assigned Offers</TableHead>
+            </TableRow>
+          </TableHeader>
+
+          <TableBody>
+            {error ? (
               <TableRow>
-                <TableHead className="w-16 whitespace-nowrap text-xs sm:text-sm">S.No</TableHead>
-
-                <TableHead className="min-w-[160px] whitespace-nowrap text-xs sm:text-sm">Executive Name</TableHead>
-
-                <TableHead className="min-w-[220px] whitespace-nowrap text-xs sm:text-sm">Email</TableHead>
-
-                <TableHead className="min-w-[160px] whitespace-nowrap text-xs sm:text-sm">Phone</TableHead>
-
-                <TableHead className="min-w-[120px] whitespace-nowrap text-xs sm:text-sm">Status</TableHead>
-
-                <TableHead className="min-w-[100px] whitespace-nowrap text-xs sm:text-sm">Leads</TableHead>
-
-                <TableHead className="min-w-[140px] whitespace-nowrap text-xs sm:text-sm">Assigned Offers</TableHead>
+                <TableCell colSpan={7} className="py-10 text-center text-red-500">
+                  {error}
+                </TableCell>
               </TableRow>
-            </TableHeader>
-
-            <TableBody>
-              {error ? (
-                <TableRow>
-                  <TableCell colSpan={7} className="py-10 text-center text-red-500">
-                    {error}
+            ) : executives.length === 0 ? (
+              <TableRow>
+                <TableCell
+                  colSpan={7}
+                  className="py-10 text-center text-gray-500"
+                >
+                  No Executives Available
+                </TableCell>
+              </TableRow>
+            ) : (
+              paginatedExecutives.map((executive, index) => (
+                <TableRow key={executive.id}>
+                  <TableCell>
+                    {(pagination.page - 1) * pagination.limit + index + 1}
                   </TableCell>
-                </TableRow>
-              ) : executives.length === 0 ? (
-                <TableRow>
-                  <TableCell
-                    colSpan={7}
-                    className="py-10 text-center text-gray-500"
+
+                  <TableCell 
+                    title={executive.name}
+                    className="font-medium"
                   >
-                    No Executives Available
+                    {executive.name}
                   </TableCell>
-                </TableRow>
-              ) : filteredExecutives.length === 0 ? (
-                <TableRow>
+
                   <TableCell
-                    colSpan={7}
-                    className="py-10 text-center text-gray-500"
+                    title={executive.email}
+                    className="max-w-[220px] truncate"
                   >
-                    No Executives Match the Applied Filters
+                    {executive.email}
+                  </TableCell>
+
+                  <TableCell>
+                    {executive.phone}
+                  </TableCell>
+
+                  <TableCell>
+                    <Badge
+                      variant="outline"
+                      className={
+                        executive.status.toLowerCase() === "active"
+                          ? "border-green-200 bg-green-50 text-green-700"
+                          : "border-gray-200 bg-gray-50 text-gray-600"
+                      }
+                    >
+                      {executive.status}
+                    </Badge>
+                  </TableCell>
+
+                  <TableCell className="font-semibold">
+                    {formatCount(executive.leadCount)}
+                  </TableCell>
+
+                  <TableCell className="font-semibold">
+                    {formatCount(executive.offerCount)}
                   </TableCell>
                 </TableRow>
-              ) : (
-                paginatedExecutives.map((executive, index) => (
-                  <TableRow key={executive.id}>
-                    <TableCell>
-                      {(pagination.page - 1) * pagination.limit + index + 1}
-                    </TableCell>
-
-                    <TableCell
-                      title={executive.name}
-                      className="font-medium"
-                    >
-                      {executive.name}
-                    </TableCell>
-
-                    <TableCell
-                      title={executive.email}
-                      className="max-w-[220px] truncate"
-                    >
-                      {executive.email}
-                    </TableCell>
-
-                    <TableCell>
-                      {executive.phone}
-                    </TableCell>
-
-                    <TableCell>
-                      <Badge
-                        variant="outline"
-                        className={
-                          executive.status.toLowerCase() === "active"
-                            ? "border-green-200 bg-green-50 text-green-700"
-                            : "border-gray-200 bg-gray-50 text-gray-600"
-                        }
-                      >
-                        {executive.status}
-                      </Badge>
-                    </TableCell>
-
-                    <TableCell className="font-semibold">
-                      {formatCount(executive.leadCount)}
-                    </TableCell>
-
-                    <TableCell className="font-semibold">
-                      {formatCount(executive.offerCount)}
-                    </TableCell>
-                  </TableRow>
-                ))
-              )}
-            </TableBody>
+              ))
+            )}
+          </TableBody>
           </Table>
         </div>
 
