@@ -70,21 +70,21 @@ export const MENU_CONFIG: MenuGroup[] = [
         permissions: ["view", "create", "update", "delete"],
         roles: ["Executive", "Manager", "Admin"],
       },
+      
+      {
+        href: "/offers",
+        icon: Gift,
+        label: "Offers",
+        modules: ["offers"],
+        permissions: ["view"],
+        roles: ["Admin", "Manager", "Executive"],
+      },
 
       {
         href: "/org-reports",
         icon: FilePen,
         label: "Reports",
         modules: ["reports"],
-        permissions: ["view"],
-        roles: ["Admin", "Manager"],
-      },
-
-      {
-        href: "/offers",
-        icon: Gift,
-        label: "Offers",
-        modules: ["offers"],
         permissions: ["view"],
         roles: ["Admin", "Manager", "Executive"],
       },

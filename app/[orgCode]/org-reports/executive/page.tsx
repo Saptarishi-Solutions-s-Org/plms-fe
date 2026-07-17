@@ -13,7 +13,10 @@ const emptySummary: ExecutiveLeadSummary = {
 export default async function ExecutiveReportDetails({
   params,
   searchParams,
-}: PageProps<"/[orgCode]/org-reports/executive">) {
+}: {
+  params: Promise<{ orgCode: string }>;
+  searchParams: Promise<{ executiveId?: string | string[] }>;
+}) {
   const [{ orgCode }, { executiveId }] = await Promise.all([
     params,
     searchParams,

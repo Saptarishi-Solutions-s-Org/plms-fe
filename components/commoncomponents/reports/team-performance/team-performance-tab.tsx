@@ -12,7 +12,6 @@ import type {
 import {
   Award,
   CheckCircle,
-  Download,
   FileText,
   Percent,
   Search,
@@ -32,7 +31,6 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { useExecutiveExport } from "@/hooks/export";
 import { useUrlPagination } from "@/hooks/use-url-pagination";
 import { getReportExecutivePerformance } from "@/services/organizationreports";
 import { createPaginationMeta } from "@/types/pagination";
@@ -90,7 +88,6 @@ export default function TeamPerformanceTab({
   const [loading, setLoading] = useState(false);
   const [search, setSearch] = useState(initialSearch);
   const [appliedSearch, setAppliedSearch] = useState(initialSearch);
-
   useEffect(() => {
     const query = searchParams.get("search") ?? "";
     setSearch(query);
@@ -171,7 +168,6 @@ export default function TeamPerformanceTab({
 
     return performanceRows.slice(startIndex, startIndex + pagination.limit);
   }, [pagination.limit, pagination.page, performanceRows]);
-  const { handleExport } = useExecutiveExport(performanceRows);
 
   useEffect(() => {
     if (page > pagination.totalPages) {
@@ -316,14 +312,6 @@ export default function TeamPerformanceTab({
             >
               Apply
             </Button>
-            <Button
-              type="button"
-              onClick={handleExport}
-              className="h-10 rounded-md bg-green-600 px-4 text-white hover:bg-green-700"
-            >
-              <Download className="size-4" />
-              Export
-            </Button>
           </div>
         </div>
 
@@ -398,10 +386,7 @@ export default function TeamPerformanceTab({
                           className="rounded-md bg-blue-50 text-xs font-bold text-blue-600 hover:bg-blue-100"
                         >
                           <Link
-                            href={{
-                              pathname: `/${orgCode}/org-reports/executive`,
-                              query: { executiveId: row.executiveId },
-                            }}
+                            href={`/${orgCode}/org-reports?executiveId=${encodeURIComponent(row.executiveId)}`}
                           >
                             View
                           </Link>

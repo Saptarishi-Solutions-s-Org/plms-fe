@@ -1,3 +1,4 @@
+
 "use client";
 
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
@@ -49,9 +50,8 @@ const ExecutivePerformance = ({
                 {/* Progress bar */}
                 <div className="h-2 overflow-hidden rounded-full bg-slate-100">
                   <div
-                    className={`h-full rounded-full ${
-                      progressColors[index % progressColors.length]
-                    }`}
+                    className={`h-full rounded-full ${progressColors[index % progressColors.length]
+                      }`}
                     style={{
                       width: `${Math.min(executive.achievement, 100)}%`,
                     }}
@@ -62,10 +62,10 @@ const ExecutivePerformance = ({
           ))
         ) : (
           <div className="flex h-full items-center justify-center">
-  <p className="text-base font-semibold text-slate-400">
-    No performance data
-  </p>
-</div>
+            <p className="text-base font-semibold text-slate-400">
+              No performance data
+            </p>
+          </div>
         )}
       </CardContent>
     </Card>

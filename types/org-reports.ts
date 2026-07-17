@@ -1,4 +1,5 @@
 import type { ElementType } from "react";
+import type { PaginationMeta } from "@/types/pagination";
 
 export interface OrganizationReportStats {
   total_leads: number;
@@ -10,6 +11,7 @@ export interface OrganizationReportStats {
   active_users?: number;
 }
 export type ReportTab = "overview" | "team-performance";
+export type ExecutiveReportTab = "overview" | "leads-details";
 
 export interface ReportStatsProps {
   stats: OrganizationReportStats;
@@ -144,6 +146,7 @@ export interface LeadWithStatsApiRow{
 
 export interface LeadsWithStatsResponse{
   leads?: LeadWithStatsApiRow[];
+  pagination?: PaginationMeta;
   stats?: {
     total?: number | string;
   };
