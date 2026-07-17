@@ -50,5 +50,5 @@ SELECT
   NOW()
 FROM crm_organization org
 CROSS JOIN crm_segmentfiltertypes ft
-WHERE ft.default = true
+WHERE ft."default" = true
 ON CONFLICT DO NOTHING;

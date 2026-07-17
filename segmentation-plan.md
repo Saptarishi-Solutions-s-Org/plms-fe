@@ -276,6 +276,10 @@ service SegmentationService {
 5. **Action Confirmation Dialogs**:
    - Every saving action (creating, updating, deleting, or archiving segments) **must** prompt the user using the pre-existing `<ActionConfirmationDialog>` component already implemented in the system, maintaining standard UI UX alerts.
 
+6. **Pagination & URL-based Filters**:
+   - The segments lists, matching leads preview lists, and manual lead selection tables must support pagination (standard page-size boundaries aligned with other modules).
+   - Core filter states (search terms, type filters, active status, page index) must be stored in the URL query parameters (e.g. `?page=1&search=...&type=Dynamic`). This aligns with the existing codebase patterns so page reloads preserve user search/filters state.
+
 ---
 
 ## 5. Architectural Alignment & Implementation Guidelines
