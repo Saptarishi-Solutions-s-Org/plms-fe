@@ -238,8 +238,8 @@ export default function ExecutiveLeadsPage({
   ];
 
   return (
-    <div className="w-full h-full p-4 sm:p-5 space-y-5">
-      <div className="flex w-full flex-col gap-5">
+    <div className="h-full w-full space-y-6 p-4 sm:p-6">
+      <div className="flex w-full flex-col gap-6">
         <header className="flex flex-col gap-3 border-b border-slate-200 pb-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-4">
             <Button

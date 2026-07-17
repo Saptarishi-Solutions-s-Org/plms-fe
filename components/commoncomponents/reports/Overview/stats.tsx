@@ -6,16 +6,18 @@ import {
   BriefcaseBusiness,
   CheckCircle,
   Percent,
+  UserCheck,
+  Users,
 } from "lucide-react";
 import { ReportCard, ReportStatsProps } from "@/types/org-reports";
 
-export const ReportStats = ({ stats }: ReportStatsProps) => {
+export const ReportStats = ({ stats, variant = "default" }: ReportStatsProps) => {
   const conversionRate =
     stats.total_leads > 0
       ? (stats.converted_leads / stats.total_leads) * 100
       : 0;
 
-  const cards: ReportCard[] = [
+  const defaultCards: ReportCard[] = [
     {
       title: "Total Leads",
       value: stats.total_leads,
@@ -41,9 +43,34 @@ export const ReportStats = ({ stats }: ReportStatsProps) => {
       color: "bg-purple-500",
     },
   ];
+  const adminCards: ReportCard[] = [
+    {
+      title: "Total Users",
+      value: stats.total_users ?? 0,
+      Icon: Users,
+      color: "bg-indigo-500",
+    },
+    {
+      title: "Active Users",
+      value: stats.active_users ?? 0,
+      Icon: UserCheck,
+      color: "bg-green-500",
+    },
+    {
+      title: "Active Offers",
+      value: stats.active_offers,
+      Icon: BriefcaseBusiness,
+      color: "bg-purple-500",
+    },
+  ];
+  const cards = variant === "admin" ? adminCards : defaultCards;
 
   return (
-    <div className="grid w-full grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+    <div
+      className={`grid w-full grid-cols-1 gap-4 sm:grid-cols-2 ${
+        variant === "admin" ? "lg:grid-cols-3" : "lg:grid-cols-4"
+      }`}
+    >
       {cards.map(({ title, value, Icon, color }) => (
         <Card key={title} className="p-4">
           <div className="flex items-center justify-between">

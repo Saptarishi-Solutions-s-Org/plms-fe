@@ -6,11 +6,14 @@ export interface OrganizationReportStats {
   converted_leads: number;
   active_offers: number;
   offers_utilized: number;
+  total_users?: number;
+  active_users?: number;
 }
 export type ReportTab = "overview" | "team-performance";
 
 export interface ReportStatsProps {
   stats: OrganizationReportStats;
+  variant?: "default" | "admin";
 }
 
 export interface ExecutiveUserRecord {

@@ -1,4 +1,5 @@
 import { api } from "@/lib/api";
+import { buildApiFunctionUrl } from "@/lib/api-function-url";
 import type {
   ExecutivePerformanceRecord,
   ExecutiveUserRecord,
@@ -6,8 +7,14 @@ import type {
 
 export const getReportStats = () =>
   api("/odata/v4/report-dashboard/getReportStats()");
-export const getReportLeads = () =>
-  api("/odata/v4/report-dashboard/getReportLeads()");
+export type GetReportLeadsParams = {
+  assignedTo?: string;
+  page?: number;
+  limit?: number;
+};
+
+export const getReportLeads = (params?: GetReportLeadsParams) =>
+  api(buildApiFunctionUrl("/odata/v4/report-dashboard/getReportLeads", params));
 export const getReportOffers = () =>
   api("/odata/v4/report-dashboard/getReportOffers()");
 export const getReportExecutivePerformance =
@@ -49,5 +56,16 @@ export const getReportExecutives = async (): Promise<
 };
 export const getLeadSourceAnalytics = () =>
   api("/odata/v4/report-dashboard/getLeadSourceAnalytics()");
+export const getReportManagerPerformance = () =>
+  api("/odata/v4/report-dashboard/getReportManagerPerformance()");
+export const getReportManagers = () =>
+  api("/odata/v4/report-dashboard/getReportManagers()");
+export const getReportExecutivesForManager = (managerId: string) =>
+  api(
+    buildApiFunctionUrl(
+      "/odata/v4/report-dashboard/getReportExecutivesForManager",
+      { managerId, limit: 100 },
+    ),
+  );
 export const exportExecutives = () =>
   api("/odata/v4/report-dashboard/exportExecutives", { method: "POST" });

@@ -10,6 +10,7 @@ import {
 import { toast } from "sonner";
 import type { ReportTab } from "@/types/org-reports";
 
+import AdminReportsPage from "@/components/commoncomponents/reports/admin-reports-page";
 import GlobalLoader from "@/components/commoncomponents/globalloader";
 import OverviewTab from "@/components/commoncomponents/reports/Overview/overview-tab";
 import TeamPerformanceTab from "@/components/commoncomponents/reports/team-performance/team-performance-tab";
@@ -21,6 +22,7 @@ import {
   getReportStats,
 } from "@/services/organizationreports";
 import { subscribeRealtime } from "@/lib/socket";
+import { type AuthUser, getUser, refreshSession } from "@/lib/auth";
 import { LEAD_SOURCE_OPTIONS } from "@/types/leadtypes";
 import type {
   LeadSourceAnalyticsRow,
@@ -93,7 +95,7 @@ const getSourceConversionRows = (
 const isReportTab = (value: string | null): value is ReportTab =>
   value === "overview" || value === "team-performance";
 
-export default function OrgReports() {
+function ManagerReportsPage() {
   const params = useParams<{ orgCode: string }>();
   const pathname = usePathname();
   const router = useRouter();
@@ -220,13 +222,13 @@ export default function OrgReports() {
   };
 
   return (
-    <div className="w-full h-full p-4 sm:p-5 space-y-5">
-      <div className="flex w-full flex-col gap-5">
+    <div className="h-full w-full space-y-6 p-4 sm:p-6">
+      <div className="flex w-full flex-col gap-6">
         <div>
           <h1 className="text-lg font-semibold text-gray-900 sm:text-2xl">
             Reports
           </h1>
-          <p className="text-xs text-gray-500 sm:text-sm">
+          <p className="mt-1 text-sm text-gray-500 sm:text-base">
             Analyzing team performance for the current cycle
           </p>
         </div>
@@ -234,7 +236,7 @@ export default function OrgReports() {
         <Tabs
           value={activeTab}
           onValueChange={handleTabChange}
-          className="w-full items-stretch gap-5"
+          className="w-full items-stretch gap-6"
         >
           <div className="w-full border-b border-slate-200">
             <TabsList
@@ -276,5 +278,29 @@ export default function OrgReports() {
         )}
       </div>
     </div>
+  );
+}
+
+export default function OrgReports() {
+  const [user, setUser] = useState<AuthUser | null>(() => getUser());
+
+  useEffect(() => {
+    if (user) return;
+
+    refreshSession().then((session) => {
+      if (session) setUser(session.user);
+    });
+  }, [user]);
+
+  if (!user) return <GlobalLoader />;
+
+  const normalizedRole = user.role?.toLowerCase().trim();
+  const isOrganizationAdmin =
+    normalizedRole === "admin" || normalizedRole === "organization admin";
+
+  return isOrganizationAdmin ? (
+    <AdminReportsPage />
+  ) : (
+    <ManagerReportsPage />
   );
 }
