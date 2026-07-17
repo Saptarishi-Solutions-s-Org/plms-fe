@@ -214,6 +214,9 @@ export default function EditUserDialog({
                 />
               </FieldWrapper>
 
+            </div>
+
+            <div className="mt-4">
               <FieldWrapper
                 label="Email"
                 required
@@ -234,7 +237,7 @@ export default function EditUserDialog({
                 Reporting Details
               </h3>
 
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <div className="grid grid-cols-1 gap-4">
                 <FieldWrapper
                   label="Reporting Manager"
                   required

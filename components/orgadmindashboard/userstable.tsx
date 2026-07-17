@@ -13,7 +13,9 @@ import { MoreHorizontal } from "lucide-react";
 import DeactivateForm from "./deactivatedailog";
 import EditUserDialog from "./edit-user-dialog";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "../ui/dropdown-menu";
-import { useState } from "react";
+import { useMemo, useState } from "react";
+import { getUser } from "@/lib/auth";
+import { canAccess } from "@/lib/permissions";
 
 const actionModes = {
   activate: "activate",
@@ -43,6 +45,10 @@ const UserTable = ({
         name: "",
         role: "",
     });
+
+    const currentUser = useMemo(() => getUser(), []);
+    const canUpdateUsers = canAccess(currentUser, ["user"], ["update"]);
+
     return (
         <div className="rounded-lg border border-gray-200 bg-white shadow-sm overflow-x-auto">
             <Table>
@@ -63,9 +69,11 @@ const UserTable = ({
                         <TableHead className="text-xs sm:text-sm whitespace-nowrap">
                             Status
                         </TableHead>
-                        <TableHead className="text-xs sm:text-sm whitespace-nowrap">
-                            Actions
-                        </TableHead>
+                        {canUpdateUsers ? (
+                            <TableHead className="text-xs sm:text-sm whitespace-nowrap">
+                                Actions
+                            </TableHead>
+                        ) : null}
                     </TableRow>
                 </TableHeader>
 
@@ -93,43 +101,45 @@ const UserTable = ({
                                 <TableCell>
                                     {item.is_active ? "Active" : "Inactive"}
                                 </TableCell>
-                                <TableCell className="text-left">
-                                    <DropdownMenu>
-                                        <DropdownMenuTrigger asChild>
-                                            <Button variant="ghost" size="icon">
-                                                <MoreHorizontal />
-                                            </Button>
-                                        </DropdownMenuTrigger>
+                                {canUpdateUsers ? (
+                                    <TableCell className="text-left">
+                                        <DropdownMenu>
+                                            <DropdownMenuTrigger asChild>
+                                                <Button variant="ghost" size="icon">
+                                                    <MoreHorizontal />
+                                                </Button>
+                                            </DropdownMenuTrigger>
 
-                                        <DropdownMenuContent align="end">
-                                            <DropdownMenuItem
-                                                onClick={() => {
-                                                    setEditingUser(item);
-                                                    setIsEditOpen(true);
-                                                }}
-                                            >
-                                                Edit
-                                            </DropdownMenuItem>
-                                            <DropdownMenuItem
-                                                onClick={() => {
-                                                    setSelectedUser({
-                                                        id: item.id,
-                                                        name: item.name,
-                                                        role: item.role_name,
-                                                    });
-                                                    setSelectedMode(
-                                                        item.is_active
-                                                            ? actionModes.deactivate
-                                                            : actionModes.activate
-                                                    );
-                                                    setIsDeactivateOpen(true);
-                                                }}
-                                            >
-                                                {item.is_active ? "Deactivate" : "Activate"}
-                                            </DropdownMenuItem>
-                                        </DropdownMenuContent>
-                                    </DropdownMenu>
-                                </TableCell>
+                                            <DropdownMenuContent align="end">
+                                                <DropdownMenuItem
+                                                    onClick={() => {
+                                                        setEditingUser(item);
+                                                        setIsEditOpen(true);
+                                                    }}
+                                                >
+                                                    Edit
+                                                </DropdownMenuItem>
+                                                <DropdownMenuItem
+                                                    onClick={() => {
+                                                        setSelectedUser({
+                                                            id: item.id,
+                                                            name: item.name,
+                                                            role: item.role_name,
+                                                        });
+                                                        setSelectedMode(
+                                                            item.is_active
+                                                                ? actionModes.deactivate
+                                                                : actionModes.activate
+                                                        );
+                                                        setIsDeactivateOpen(true);
+                                                    }}
+                                                >
+                                                    {item.is_active ? "Deactivate" : "Activate"}
+                                                </DropdownMenuItem>
+                                            </DropdownMenuContent>
+                                        </DropdownMenu>
+                                    </TableCell>
+                                ) : null}
                             </TableRow>
                         ))
                     )}

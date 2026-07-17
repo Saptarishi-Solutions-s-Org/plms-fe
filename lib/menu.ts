@@ -58,7 +58,7 @@ export const MENU_CONFIG: MenuGroup[] = [
         href: "/executives",
         icon: Users,
         label: "Executives",
-        modules: ["lead"],
+        modules: ["user"],
         permissions: ["view"],
         roles: ["Manager"],
       },

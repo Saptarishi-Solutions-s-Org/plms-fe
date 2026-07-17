@@ -142,7 +142,7 @@ export default function TablePaginationFooter({
   }
 
   return (
-    <div className="flex flex-col items-center gap-3 border-t bg-white px-3 py-3 text-sm text-slate-600 sm:flex-row sm:justify-between">
+    <div className="flex flex-col items-center gap-3 px-3 py-3 text-sm text-slate-600 sm:flex-row sm:justify-between">
       {paginationNav(false)}
       <div className="flex w-full flex-wrap items-center justify-center gap-3 sm:w-auto sm:justify-end">
         <Select
