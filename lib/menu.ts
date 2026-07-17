@@ -70,17 +70,7 @@ export const MENU_CONFIG: MenuGroup[] = [
         permissions: ["view", "create", "update", "delete"],
         roles: ["Executive", "Manager", "Admin"],
       },
-
-      {
-        href: "/org-reports",
-        icon: FilePen,
-        label: "Reports",
-        modules: ["reports"],
-        modules: ["reports"],
-        permissions: ["view"],
-        roles: ["Manager"],
-      },git pull --no-rebase origin dev
-
+      
       {
         href: "/offers",
         icon: Gift,
