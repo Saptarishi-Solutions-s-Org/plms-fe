@@ -43,6 +43,7 @@ type Props = {
     offerIds: string[],
     leadIds: string[],
   ) => Promise<{ successCount: number; failureCount: number }>;
+  isLoadingLeads?: boolean;
 };
 
 export function BulkOfferAssignDrawer({
@@ -50,6 +51,7 @@ export function BulkOfferAssignDrawer({
   leads,
   onClose,
   onAssign,
+  isLoadingLeads = false,
 }: Props) {
   const [offers, setOffers] = useState<OfferOption[]>([]);
   const [offersLoading, setOffersLoading] = useState(false);
@@ -378,7 +380,16 @@ export function BulkOfferAssignDrawer({
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {leads.length === 0 ? (
+                  {isLoadingLeads ? (
+                    <TableRow>
+                      <TableCell
+                        colSpan={4}
+                        className="py-12 text-center text-sm font-semibold text-gray-400"
+                      >
+                        Loading leads...
+                      </TableCell>
+                    </TableRow>
+                  ) : leads.length === 0 ? (
                     <TableRow>
                       <TableCell
                         colSpan={4}

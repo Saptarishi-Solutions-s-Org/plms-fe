@@ -65,24 +65,16 @@ export default function LeadDetailPage() {
   const fetchDetail = useCallback(async () => {
     try {
       setLoading(true);
+      const detailRes =
+        (await getLeadDetail(leadId)) as LeadDetailResponse;
 
-      const leadsRes =
-        (await getLeadsWithStats()) as LeadsWithStatsResponse;
-
-      const lead = leadsRes.leads?.find(
-        (item) => item.leadCode === leadId || item.uuid === leadId,
-      );
-
-      if (!lead) {
+      if (!detailRes || !detailRes.lead) {
         setData(null);
         return;
       }
 
-      const detailRes =
-        (await getLeadDetail(lead.uuid)) as LeadDetailResponse;
-
       setData({
-        lead,
+        lead: detailRes.lead,
         activities: detailRes.activities ?? [],
         offers: detailRes.offers ?? [],
       });

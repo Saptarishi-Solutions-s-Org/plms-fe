@@ -49,10 +49,7 @@ export function BulkLeadActionsDrawer({
     }, {});
   }, [leads]);
 
-  const selectableLeads = useMemo(
-    () => leads.filter((lead) => !lead.assignedTo),
-    [leads],
-  );
+  const selectableLeads = leads;
 
   const allLeadsSelected =
     selectableLeads.length > 0 &&
@@ -72,8 +69,6 @@ export function BulkLeadActionsDrawer({
   };
 
   const toggleLead = (lead: (typeof leads)[number]) => {
-    if (lead.assignedTo) return;
-
     const leadId = lead.uuid;
     setSelectedLeadIds((current) =>
       current.includes(leadId)
@@ -247,24 +242,17 @@ export function BulkLeadActionsDrawer({
                   ) : (
                     leads.map((lead) => {
                       const selected = selectedLeadIds.includes(lead.uuid);
-                      const isAssigned = Boolean(lead.assignedTo);
 
                       return (
                         <TableRow
                           key={lead.uuid}
-                          tabIndex={isAssigned ? -1 : 0}
-                          aria-disabled={isAssigned}
+                          tabIndex={0}
                           data-state={selected ? "selected" : undefined}
-                          className={
-                            isAssigned
-                              ? "cursor-not-allowed bg-gray-50/60 opacity-60"
-                              : "cursor-pointer hover:bg-gray-50/60"
-                          }
+                          className="cursor-pointer hover:bg-gray-50/60"
                           onClick={() => toggleLead(lead)}
                           onKeyDown={(event) => {
                             if (
-                              !isAssigned &&
-                              (event.key === "Enter" || event.key === " ")
+                              event.key === "Enter" || event.key === " "
                             ) {
                               event.preventDefault();
                               toggleLead(lead);
@@ -275,7 +263,6 @@ export function BulkLeadActionsDrawer({
                             <Checkbox
                               checked={selected}
                               aria-label={`Select ${lead.name}`}
-                              disabled={isAssigned}
                               onCheckedChange={() => toggleLead(lead)}
                               onClick={(e) => e.stopPropagation()}
                             />

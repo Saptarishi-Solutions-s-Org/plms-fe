@@ -1,8 +1,11 @@
 import { Calendar } from "lucide-react";
 import type { AssignedOffer } from "@/types/leadtypes";
 
-function formatDate(iso: string) {
-  return new Date(iso).toLocaleDateString(undefined, {
+function formatDate(iso: any) {
+  if (!iso) return "N/A";
+  const d = new Date(iso);
+  if (isNaN(d.getTime())) return "N/A";
+  return d.toLocaleDateString(undefined, {
     day: "numeric",
     month: "short",
     year: "numeric",
@@ -32,9 +35,27 @@ function OfferItem({ offer }: { offer: AssignedOffer }) {
         <p className="text-xs text-gray-600">{offer.description}</p>
       )}
 
-      <div className="flex items-center gap-1.5 text-xs text-gray-500">
-        <Calendar className="h-3.5 w-3.5 shrink-0" />
-        <span>{formatDate(offer.validFrom)} – {formatDate(offer.validTo)}</span>
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-gray-500">
+        <div className="flex items-center gap-1.5">
+          <Calendar className="h-3.5 w-3.5 shrink-0" />
+          <span>{formatDate(offer.validFrom)} – {formatDate(offer.validTo)}</span>
+        </div>
+        {offer.assignedByName && (
+          <>
+            <span className="text-gray-300">•</span>
+            <span
+              className={`font-medium ${
+                offer.assignedByName.startsWith("Segment:")
+                  ? "text-purple-600 bg-purple-50 px-1.5 py-0.5 rounded-md"
+                  : "text-gray-600"
+              }`}
+            >
+              {offer.assignedByName.startsWith("Segment:")
+                ? offer.assignedByName
+                : `Assigned by: ${offer.assignedByName}`}
+            </span>
+          </>
+        )}
       </div>
 
     </div>

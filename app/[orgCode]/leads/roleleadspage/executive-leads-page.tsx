@@ -22,7 +22,7 @@ import {
   assignOffersToLeads,
   getExecutiveOffers,
 } from "@/services/executivestats";
-import { createLead, updateLead } from "@/services/leads";
+import { createLead, updateLead, getLeadsWithStats } from "@/services/leads";
 import {
   type Lead,
   type LeadFormData,
@@ -47,7 +47,9 @@ export default function ExecutiveLeadsPage() {
     sources: filters.sources,
     statsScope: "all",
   });
-  const [currentUser, setCurrentUser] = useState<AuthUser | null>(() => getUser());
+  const [currentUser, setCurrentUser] = useState<AuthUser | null>(() =>
+    getUser(),
+  );
 
   useEffect(() => {
     const syncUser = () => setCurrentUser(getUser());
@@ -56,15 +58,99 @@ export default function ExecutiveLeadsPage() {
   }, []);
   const currentUserId = currentUser?.id;
 
-  const canCreateLead = useMemo(() => canAccess(currentUser, ["lead"], ["create"]), [currentUser]);
-  const canExportLead = useMemo(() => canAccess(currentUser, ["lead"], ["export"]), [currentUser]);
-  const canImportLead = useMemo(() => canAccess(currentUser, ["lead"], ["import"]), [currentUser]);
-  const canUpdateLead = useMemo(() => canAccess(currentUser, ["lead"], ["update"]), [currentUser]);
+  const canCreateLead = useMemo(
+    () => canAccess(currentUser, ["lead"], ["create"]),
+    [currentUser],
+  );
+  const canExportLead = useMemo(
+    () => canAccess(currentUser, ["lead"], ["export"]),
+    [currentUser],
+  );
+  const canImportLead = useMemo(
+    () => canAccess(currentUser, ["lead"], ["import"]),
+    [currentUser],
+  );
+  const canUpdateLead = useMemo(
+    () => canAccess(currentUser, ["lead"], ["update"]),
+    [currentUser],
+  );
 
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingLead, setEditingLead] = useState<Lead | null>(null);
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
   const [isBulkAssignOpen, setIsBulkAssignOpen] = useState(false);
+  const [bulkAssignLeads, setBulkAssignLeads] = useState<Lead[]>([]);
+  const [isBulkAssignLeadsLoading, setIsBulkAssignLeadsLoading] =
+    useState(false);
+
+  const fetchBulkAssignLeads = useCallback(async () => {
+    setIsBulkAssignLeadsLoading(true);
+
+    try {
+      const BULK_ASSIGN_PAGE_LIMIT = 100;
+      const bulkLimit = Math.max(
+        BULK_ASSIGN_PAGE_LIMIT,
+        pagination.total,
+        stats.total,
+        leads.length,
+        limit,
+      );
+      const joinFilterValues = (values?: string[]) => {
+        const filteredValues = values?.filter(Boolean) ?? [];
+        return filteredValues.length ? filteredValues.join(",") : undefined;
+      };
+      const params = {
+        limit: bulkLimit,
+        search: filters.search,
+        status: joinFilterValues(filters.statuses),
+        priority: joinFilterValues(filters.priorities),
+        leadSource: joinFilterValues(filters.sources),
+        assignedTo: currentUserId,
+      };
+      const firstPage = await getLeadsWithStats({
+        ...params,
+        page: 1,
+      });
+      const firstPageLeads = firstPage.leads ?? [];
+      const totalPages = firstPage.pagination?.totalPages ?? 1;
+
+      if (totalPages <= 1) {
+        setBulkAssignLeads(firstPageLeads);
+        return;
+      }
+
+      const remainingPages = await Promise.all(
+        Array.from({ length: totalPages - 1 }, (_, index) =>
+          getLeadsWithStats({
+            ...params,
+            page: index + 2,
+          }),
+        ),
+      );
+
+      setBulkAssignLeads([
+        ...firstPageLeads,
+        ...remainingPages.flatMap((pageData) => pageData.leads ?? []),
+      ]);
+    } catch (error) {
+      console.error(error);
+      setBulkAssignLeads([]);
+      toast.error("Failed to load leads for bulk assignment.");
+    } finally {
+      setIsBulkAssignLeadsLoading(false);
+    }
+  }, [
+    currentUserId,
+    filters.priorities,
+    filters.search,
+    filters.sources,
+    filters.statuses,
+    leads.length,
+    limit,
+    pagination.total,
+    stats.total,
+  ]);
+
   const [offerOptions, setOfferOptions] = useState<LeadOfferOption[]>([]);
   const [isOfferOptionsLoading, setIsOfferOptionsLoading] = useState(false);
 
@@ -216,7 +302,10 @@ export default function ExecutiveLeadsPage() {
               showCreate={canCreateLead}
               showBulkAssign={canUpdateLead}
               onImportComplete={refetch}
-              onBulkAssign={() => setIsBulkAssignOpen(true)}
+              onBulkAssign={() => {
+                setIsBulkAssignOpen(true);
+                void fetchBulkAssignLeads();
+              }}
             />
           </div>
 
@@ -250,7 +339,7 @@ export default function ExecutiveLeadsPage() {
                 onViewDetails={handleViewDetails}
                 offerOptions={offerOptions}
                 isOfferOptionsLoading={isOfferOptionsLoading}
-                onAssignOffer={handleAssignOffer}
+                onAssignOffer={canUpdateLead ? handleAssignOffer : undefined}
               />
             )}
           />
@@ -273,7 +362,8 @@ export default function ExecutiveLeadsPage() {
 
           <BulkOfferAssignDrawer
             open={isBulkAssignOpen}
-            leads={leads}
+            leads={bulkAssignLeads}
+            isLoadingLeads={isBulkAssignLeadsLoading}
             onClose={() => setIsBulkAssignOpen(false)}
             onAssign={handleBulkAssign}
           />

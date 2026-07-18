@@ -397,7 +397,7 @@ export default function NewSegmentPage() {
 
     setIsSaving(true);
     try {
-      await saveSegment({
+      const res = await saveSegment({
         id: segmentId,
         name,
         description,
@@ -411,7 +411,13 @@ export default function NewSegmentPage() {
 
       toast.success(segmentId ? "Segment updated successfully!" : "Segment created successfully!");
       setSaveDialogOpen(false);
-      router.push(`/${orgCode}/dashboard/segments`);
+      
+      const targetCode = res?.code || editCode;
+      if (targetCode) {
+        router.push(`/${orgCode}/dashboard/segments/${targetCode}`);
+      } else {
+        router.push(`/${orgCode}/dashboard/segments`);
+      }
     } catch (err) {
       console.error(err);
       toast.error("Failed to save segment.");

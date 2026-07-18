@@ -1,6 +1,7 @@
 import { LeadDetailData } from "@/types/leadtypes";
 
 export type LeadDetailResponse = {
+  lead?: LeadDetailData["lead"];
   activities?: LeadDetailData["activities"];
   offers?: LeadDetailData["offers"];
 };

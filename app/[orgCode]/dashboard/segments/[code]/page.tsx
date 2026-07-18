@@ -159,9 +159,10 @@ export default function SegmentDetailPage() {
 
   useEffect(() => {
     if (!segment?.id) return;
-    const unsubscribe = subscribeRealtime(SEGMENT_DETAIL_CHANGED, (payload: any) => {
-      if (payload.segmentId === segment.id) {
-        if (payload.reason === "segment-deleted") {
+    const unsubscribe = subscribeRealtime(SEGMENT_DETAIL_CHANGED, (event: any) => {
+      const data = event?.data;
+      if (data && data.segmentId === segment.id) {
+        if (data.reason === "segment-deleted") {
           toast.warning("This segment has been deleted.");
           router.push(`/${orgCode}/dashboard/segments`);
         } else {
@@ -216,6 +217,40 @@ export default function SegmentDetailPage() {
     setSelectedOfferIds(prev => 
       prev.includes(offerId) ? prev.filter(id => id !== offerId) : [...prev, offerId]
     );
+  };
+
+  // Unlink single offer states and handlers
+  const [unlinkDialogOpen, setUnlinkDialogOpen] = useState(false);
+  const [unlinkTargetOffer, setUnlinkTargetOffer] = useState<any>(null);
+
+  const handleUnlinkOfferClick = (offer: any) => {
+    setUnlinkTargetOffer(offer);
+    setUnlinkDialogOpen(true);
+  };
+
+  const handleUnlinkOfferConfirm = async () => {
+    if (!segment || !unlinkTargetOffer) return;
+    setIsLinkingOffers(true);
+    try {
+      const remainingIds = selectedOfferIds.filter(id => id !== unlinkTargetOffer.id);
+      await assignOffersToSegment({
+        segmentId: segment.id,
+        offerIds: remainingIds
+      });
+      toast.success(`Removed offer campaign "${unlinkTargetOffer.title}" from segment.`);
+      setUnlinkDialogOpen(false);
+      setSelectedOfferIds(remainingIds);
+      setSegment((prev: any) => ({
+        ...prev,
+        assigned_offers: prev.assigned_offers.filter((o: any) => o.id !== unlinkTargetOffer.id)
+      }));
+      fetchSegmentDetails();
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to remove offer.");
+    } finally {
+      setIsLinkingOffers(false);
+    }
   };
 
   // 4. Delete segment
@@ -573,14 +608,27 @@ export default function SegmentDetailPage() {
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {segment.assigned_offers?.map((offer: any) => (
-                  <div key={offer.id} className="bg-gray-50 border border-gray-100 rounded-2xl p-4 flex items-start gap-3 hover:border-purple-200 transition">
-                    <div className="p-2.5 bg-purple-100 rounded-xl text-purple-600">
-                      <Gift className="w-4 h-4" />
+                  <div key={offer.id} className="bg-gray-50 border border-gray-100 rounded-2xl p-4 flex items-start justify-between hover:border-purple-200 transition group relative">
+                    <div className="flex items-start gap-3">
+                      <div className="p-2.5 bg-purple-100 rounded-xl text-purple-600">
+                        <Gift className="w-4 h-4" />
+                      </div>
+                      <div>
+                        <h4 className="font-bold text-gray-900 text-xs truncate max-w-[140px]" title={offer.title}>
+                          {offer.title}
+                        </h4>
+                        <code className="text-[10px] text-gray-400 font-mono block mt-0.5">{offer.code}</code>
+                      </div>
                     </div>
-                    <div>
-                      <h4 className="font-bold text-gray-900 text-xs truncate max-w-[160px]">{offer.title}</h4>
-                      <code className="text-[10px] text-gray-400 font-mono block mt-0.5">{offer.code}</code>
-                    </div>
+                    {canUpdate && (
+                      <button
+                        onClick={() => handleUnlinkOfferClick(offer)}
+                        className="text-gray-400 hover:text-red-500 p-1.5 hover:bg-red-50 rounded-xl transition"
+                        title="Remove Offer Campaign"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    )}
                   </div>
                 ))}
               </div>
@@ -655,10 +703,21 @@ export default function SegmentDetailPage() {
         onOpenChange={setDeleteDialogOpen}
         onConfirm={handleDeleteSegment}
         title="Delete Segment"
-        description={`Are you sure you want to delete segment "${segment.name}"? This action will permanently remove all filter criteria and unlink associated campaigns.`}
+        description="Are you sure you want to delete this segment? This action is permanent and cannot be undone."
         confirmText="Delete"
         cancelText="Cancel"
         isLoading={isDeleting}
+      />
+
+      <ActionConfirmationDialog
+        open={unlinkDialogOpen}
+        onOpenChange={setUnlinkDialogOpen}
+        onConfirm={handleUnlinkOfferConfirm}
+        title="Unlink Offer Campaign"
+        description={`Are you sure you want to remove offer campaign "${unlinkTargetOffer?.title}" from this segment? This action can be undone by linking it again.`}
+        confirmText="Remove"
+        cancelText="Cancel"
+        isLoading={isLinkingOffers}
       />
 
       {/* Offer Linking Modal popup */}
