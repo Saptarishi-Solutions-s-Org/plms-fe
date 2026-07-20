@@ -33,6 +33,14 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@/components/ui/dialog";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -42,7 +50,7 @@ import { useUrlOfferFilters } from "@/hooks/useurloffer";
 import { type AuthUser, getUser } from "@/lib/auth";
 import { canAccess } from "@/lib/permissions";
 import { subscribeRealtime } from "@/lib/socket";
-import { MoreHorizontal, ListChecks, Download, Plus, Pencil } from "lucide-react";
+import { MoreHorizontal, ListChecks, Download, Plus, Pencil, UserPlus, Loader2 } from "lucide-react";
 import Image from "next/image";
 
 import {
@@ -193,6 +201,9 @@ export default function OrgManagerOffersPage() {
     availableExecutivesLoadingOfferId,
     setAvailableExecutivesLoadingOfferId,
   ] = useState<string | null>(null);
+
+  const [assignDialogOpen, setAssignDialogOpen] = useState(false);
+  const [offerToAssign, setOfferToAssign] = useState<ManagerOffer | null>(null);
 
   const [isBulkActionsOpen, setIsBulkActionsOpen] = useState(false);
   const [createOpen, setCreateOpen] = useState(false);
@@ -427,25 +438,23 @@ export default function OrgManagerOffersPage() {
     }
   };
 
-  const handleActionsMenuOpenChange = async (
-    offerId: string,
-    open: boolean,
-    status?: string,
-  ) => {
-    if (!open || status !== "active") return;
+  const handleOpenAssignDialog = async (offer: ManagerOffer) => {
+    if (offer.status !== "active") return;
 
-    setAvailableExecutivesLoadingOfferId(offerId);
+    setOfferToAssign(offer);
+    setAssignDialogOpen(true);
+    setAvailableExecutivesLoadingOfferId(offer.id);
 
     try {
-      const response = await getAvailableExecutivesForOffer(offerId);
+      const response = await getAvailableExecutivesForOffer(offer.id);
       setAvailableExecutivesByOffer((current) => ({
         ...current,
-        [offerId]: response ?? [],
+        [offer.id]: response ?? [],
       }));
     } catch (error) {
       setAvailableExecutivesByOffer((current) => ({
         ...current,
-        [offerId]: [],
+        [offer.id]: [],
       }));
 
       toast.error(
@@ -455,9 +464,7 @@ export default function OrgManagerOffersPage() {
       );
 
     } finally {
-      setAvailableExecutivesLoadingOfferId((currentOfferId) =>
-        currentOfferId === offerId ? null : currentOfferId,
-      );
+      setAvailableExecutivesLoadingOfferId(null);
     }
   };
 
@@ -668,237 +675,202 @@ export default function OrgManagerOffersPage() {
 
       {canView ? (
         <>
-      {/* Cards */}
-      <OfferCards
-        totalCount={totalCount}
-        activeCount={activeCount}
-        inactiveCount={inactiveCount}
-        globalCount={globalCount}
-      />
+          {/* Cards */}
+          <OfferCards
+            totalCount={totalCount}
+            activeCount={activeCount}
+            inactiveCount={inactiveCount}
+            globalCount={globalCount}
+          />
 
-      {/* Filters */}
-      <OfferFilters
-        filters={draftFilters}
-        onFilterChange={handleFilterChange}
-        onApply={handleApplyFilters}
-        onClear={handleClearFilters}
-      />
+          {/* Filters */}
+          <OfferFilters
+            filters={draftFilters}
+            onFilterChange={handleFilterChange}
+            onApply={handleApplyFilters}
+            onClear={handleClearFilters}
+          />
 
-      {/* Table */}
-      <TablePaginationFooter
-        pagination={pagination}
-        onPageChange={setPage}
-        onLimitChange={setLimit}
-        placement="top"
-        totalLabel="offers"
-      />
+          {/* Table */}
+          <TablePaginationFooter
+            pagination={pagination}
+            onPageChange={setPage}
+            onLimitChange={setLimit}
+            placement="top"
+            totalLabel="offers"
+          />
 
-      <div className="overflow-x-auto rounded-lg border border-gray-200 bg-white shadow-sm">
-        <Table>
-          <TableHeader className="bg-[#7677F41A]">
-            <TableRow>
-              <TableHead>S.No</TableHead>
+          <div className="overflow-x-auto rounded-lg border border-gray-200 bg-white shadow-sm">
+            <Table>
+              <TableHeader className="bg-[#7677F41A]">
+                <TableRow>
+                  <TableHead>S.No</TableHead>
 
-              <TableHead>Offer Name</TableHead>
+                  <TableHead>Offer Name</TableHead>
 
-              <TableHead>Description</TableHead>
+                  <TableHead>Description</TableHead>
 
-              <TableHead>Discount Type</TableHead>
+                  <TableHead>Discount Type</TableHead>
 
-              <TableHead>Discount Value</TableHead>
+                  <TableHead>Discount Value</TableHead>
 
-              <TableHead>Valid From</TableHead>
+                  <TableHead>Valid From</TableHead>
 
-              <TableHead>Valid To</TableHead>
+                  <TableHead>Valid To</TableHead>
 
-              <TableHead>Status</TableHead>
+                  <TableHead>Status</TableHead>
 
-              <TableHead>Assign Status</TableHead>
+                  <TableHead>Assign Status</TableHead>
 
-              <TableHead>Assigned To</TableHead>
-
-              {canUpdate && (
-                <TableHead className="text-center">Actions</TableHead>
-              )}
-            </TableRow>
-          </TableHeader>
-
-          <TableBody>
-            {isLoading ? (
-              <TableRow>
-                <TableCell colSpan={canUpdate ? 11 : 10} className="py-10 text-center text-gray-500">
-                  Loading offers...
-                </TableCell>
-              </TableRow>
-            ) : offers.length === 0 ? (
-              <TableRow>
-                <TableCell
-                  colSpan={canUpdate ? 11 : 10}
-                  className="py-10 text-center text-gray-500"
-                >
-                  No Offers Available
-                </TableCell>
-              </TableRow>
-            ) : (
-              offers.map((offer, index) => (
-                <TableRow key={offer.id}>
-                  <TableCell>{rowOffset + index + 1}</TableCell>
-
-                  <TableCell className="font-medium">{offer.title}</TableCell>
-
-                  <TableCell className="max-w-[250px] truncate">
-                    {offer.description || "—"}
-                  </TableCell>
-
-                  <TableCell>
-                    {DISCOUNT_TYPE_LABELS[offer.discountType] ??
-                      offer.discountType}
-                  </TableCell>
-
-                  <TableCell>{getDiscountValue(offer)}</TableCell>
-
-                  <TableCell>{formatDate(offer.validFrom)}</TableCell>
-
-                  <TableCell>{formatDate(offer.validTo)}</TableCell>
-
-                  <TableCell>
-                    <Badge
-                      variant="outline"
-                      className={
-                        offer.status === "active"
-                          ? "border-green-200 bg-green-50 text-green-700"
-                          : offer.status === "expired"
-                            ? "border-red-200 bg-red-50 text-red-700"
-                            : "border-gray-200 bg-gray-50 text-gray-600"
-                      }
-                    >
-                      <span
-                        className={`mr-1.5 h-1.5 w-1.5 rounded-full ${offer.status === "active"
-                          ? "bg-green-500"
-                          : offer.status === "expired"
-                            ? "bg-red-400"
-                            : "bg-gray-400"
-                          }`}
-                      />
-                      {formatStatusLabel(offer.status)}
-                    </Badge>
-                  </TableCell>
-
-                  <TableCell>
-                    {offer.assignStatus ? (
-                      <Badge
-                        className={
-                          offer.assignStatus.toLowerCase() === "assigned"
-                            ? "border-purple-200 bg-purple-100 text-purple-700"
-                            : "border-slate-200 bg-slate-100 text-slate-700"
-                        }
-                      >
-                        {offer.assignStatus}
-                      </Badge>
-                    ) : (
-                      "—"
-                    )}
-                  </TableCell>
-
-                  <TableCell>
-                    <Button
-                      variant="link"
-                      className="h-auto p-0 text-blue-600 hover:text-blue-700"
-                      onClick={() => handleViewAssignedExecutives(offer)}
-                    >
-                      View All
-                    </Button>
-                  </TableCell>
+                  <TableHead>Assigned To</TableHead>
 
                   {canUpdate && (
-                  <TableCell className="text-center">
-                    <DropdownMenu
-                      onOpenChange={(open) =>
-                        handleActionsMenuOpenChange(
-                          offer.id,
-                          open,
-                          offer.status,
-                        )
-                      }
-                    >
-                      <DropdownMenuTrigger asChild>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          disabled={offer.status === "expired"}
-                          className={
-                            offer.status === "expired"
-                              ? "cursor-not-allowed opacity-100"
-                              : ""
-                          }
-                        >
-                          <MoreHorizontal className="h-4 w-4" />
-                        </Button>
-                      </DropdownMenuTrigger>
-
-                      <DropdownMenuContent
-                        align="end"
-                        className="max-h-60 overflow-y-auto"
-                      >
-                        <DropdownMenuItem
-                          onClick={() => handleEditOffer(offer)}
-                        >
-                          <Pencil className="mr-2 h-4 w-4" />
-                          Edit
-                        </DropdownMenuItem>
-
-                        {offer.status === "active" && (
-                          <>
-                            <div className="px-2 py-1.5 text-xs font-semibold text-gray-500">
-                              Assign To
-                            </div>
-
-                            {availableExecutivesLoadingOfferId ===
-                            offer.id ? (
-                              <DropdownMenuItem disabled>
-                                Loading executives...
-                              </DropdownMenuItem>
-                            ) : (availableExecutivesByOffer[offer.id] ?? [])
-                                .length === 0 ? (
-                              <DropdownMenuItem disabled>
-                                No Eligible Executives
-                              </DropdownMenuItem>
-                            ) : (
-                              availableExecutivesByOffer[offer.id].map(
-                                (executive) => (
-                                  <DropdownMenuItem
-                                    key={executive.id}
-                                    onClick={() =>
-                                      handleAssignOffer(
-                                        offer.id,
-                                        executive.id,
-                                      )
-                                    }
-                                  >
-                                    {executive.name}
-                                  </DropdownMenuItem>
-                                ),
-                              )
-                            )}
-                          </>
-                        )}
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </TableCell>
+                    <TableHead className="text-center">Actions</TableHead>
                   )}
                 </TableRow>
-              ))
-            )}
-          </TableBody>
-        </Table>
-      </div>
+              </TableHeader>
 
-      <TablePaginationFooter
-        pagination={pagination}
-        onPageChange={setPage}
-        onLimitChange={setLimit}
-        totalLabel="offers"
-      />
+              <TableBody>
+                {isLoading ? (
+                  <TableRow>
+                    <TableCell colSpan={canUpdate ? 11 : 10} className="py-10 text-center text-gray-500">
+                      Loading offers...
+                    </TableCell>
+                  </TableRow>
+                ) : offers.length === 0 ? (
+                  <TableRow>
+                    <TableCell
+                      colSpan={canUpdate ? 11 : 10}
+                      className="py-10 text-center text-gray-500"
+                    >
+                      No Offers Available
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  offers.map((offer, index) => (
+                    <TableRow key={offer.id}>
+                      <TableCell>{rowOffset + index + 1}</TableCell>
+
+                      <TableCell className="font-medium">{offer.title}</TableCell>
+
+                      <TableCell className="max-w-[250px] truncate">
+                        {offer.description || "—"}
+                      </TableCell>
+
+                      <TableCell>
+                        {DISCOUNT_TYPE_LABELS[offer.discountType] ??
+                          offer.discountType}
+                      </TableCell>
+
+                      <TableCell>{getDiscountValue(offer)}</TableCell>
+
+                      <TableCell>{formatDate(offer.validFrom)}</TableCell>
+
+                      <TableCell>{formatDate(offer.validTo)}</TableCell>
+
+                      <TableCell>
+                        <Badge
+                          variant="outline"
+                          className={
+                            offer.status === "active"
+                              ? "border-green-200 bg-green-50 text-green-700"
+                              : offer.status === "expired"
+                                ? "border-red-200 bg-red-50 text-red-700"
+                                : "border-gray-200 bg-gray-50 text-gray-600"
+                          }
+                        >
+                          <span
+                            className={`mr-1.5 h-1.5 w-1.5 rounded-full ${offer.status === "active"
+                              ? "bg-green-500"
+                              : offer.status === "expired"
+                                ? "bg-red-400"
+                                : "bg-gray-400"
+                              }`}
+                          />
+                          {formatStatusLabel(offer.status)}
+                        </Badge>
+                      </TableCell>
+
+                      <TableCell>
+                        {offer.assignStatus ? (
+                          <Badge
+                            className={
+                              offer.assignStatus.toLowerCase() === "assigned"
+                                ? "border-purple-200 bg-purple-100 text-purple-700"
+                                : "border-slate-200 bg-slate-100 text-slate-700"
+                            }
+                          >
+                            {offer.assignStatus}
+                          </Badge>
+                        ) : (
+                          "—"
+                        )}
+                      </TableCell>
+
+                      <TableCell>
+                        <Button
+                          variant="link"
+                          className="h-auto p-0 text-blue-600 hover:text-blue-700"
+                          onClick={() => handleViewAssignedExecutives(offer)}
+                        >
+                          View All
+                        </Button>
+                      </TableCell>
+
+                      {canUpdate && (
+                        <TableCell className="text-center">
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                disabled={offer.status === "expired"}
+                                className={
+                                  offer.status === "expired"
+                                    ? "cursor-not-allowed opacity-100"
+                                    : ""
+                                }
+                              >
+                                <MoreHorizontal className="h-4 w-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+
+                            <DropdownMenuContent
+                              align="end"
+                              className="max-h-60 overflow-y-auto"
+                            >
+                              <DropdownMenuItem
+                                onClick={() => handleEditOffer(offer)}
+                              >
+                                <Pencil className="mr-2 h-4 w-4" />
+                                Edit
+                              </DropdownMenuItem>
+
+                              {offer.status === "active" && (
+                                <DropdownMenuItem
+                                  onClick={() => handleOpenAssignDialog(offer)}
+                                >
+                                  <UserPlus className="mr-2 h-4 w-4" />
+                                  Assign To
+                                </DropdownMenuItem>
+                              )}
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </TableCell>
+                      )}
+                    </TableRow>
+                  ))
+                )}
+              </TableBody>
+            </Table>
+          </div>
+
+          <TablePaginationFooter
+            pagination={pagination}
+            onPageChange={setPage}
+            onLimitChange={setLimit}
+            totalLabel="offers"
+          />
         </>
       ) : (
         <div className="rounded-lg border border-gray-200 bg-white p-12 text-center text-sm text-gray-500 shadow-sm">
@@ -926,7 +898,7 @@ export default function OrgManagerOffersPage() {
               className="h-auto w-[150px] object-contain"
             />
 
-            <AlertDialogTitle className="text-center text-xl font-bold text-gray-950">
+            <AlertDialogTitle className="text-center text-xl font-poppins text-gray-950">
               Assigned Executives
             </AlertDialogTitle>
 
@@ -979,6 +951,69 @@ export default function OrgManagerOffersPage() {
           <AlertDialogFooter className="justify-center sm:justify-center">
             <AlertDialogAction className="h-12 w-full rounded-lg bg-indigo-700 text-sm font-bold text-white hover:bg-indigo-800">
               OK
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={assignDialogOpen} onOpenChange={setAssignDialogOpen}>
+        <AlertDialogContent className="w-[420px] max-w-[calc(100vw-2rem)] rounded-3xl border-0 bg-white p-4 shadow-2xl">
+          <AlertDialogHeader className="flex flex-col items-center space-y-1 text-center">
+            <Image
+              src="/saptarishi.png"
+              alt="SAPtarishi"
+              width={90}
+              height={32}
+              priority
+              className="h-auto w-[90px] object-contain mb-0.5"
+            />
+
+            <AlertDialogTitle className="text-base font-semibold text-slate-900">
+              Assign Offer
+            </AlertDialogTitle>
+
+            <AlertDialogDescription className="max-w-xs text-[11px] text-slate-500">
+              Select an executive to assign this offer.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+
+          <div className="rounded-xl border border-red-100 bg-red-50/70 p-1.5 mt-2">
+            <div className="max-h-[120px] space-y-1.5 overflow-y-auto rounded-lg bg-white p-1.5 shadow-sm custom-scrollbar">
+              {availableExecutivesLoadingOfferId === offerToAssign?.id ? (
+                <div className="flex items-center justify-center py-3 text-slate-500">
+                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                  <p className="text-center text-xs font-medium">Loading executives...</p>
+                </div>
+              ) : (availableExecutivesByOffer[offerToAssign?.id ?? ""] ?? []).length === 0 ? (
+                <p className="text-center text-xs font-medium text-slate-500 py-3">
+                  No eligible executives found.
+                </p>
+              ) : (
+                availableExecutivesByOffer[offerToAssign?.id ?? ""].map((executive) => (
+                  <div key={executive.id} className="flex items-center justify-between p-1.5 hover:bg-slate-50 rounded-lg border border-slate-100">
+                    <span className="font-poppins text-xs font-medium text-gray-950 px-1">{executive.name}</span>
+                    <Button
+                      size="sm"
+                      variant="default"
+                      className="bg-blue-500 hover:bg-blue-600 text-white font-poppins h-6 px-3 text-[11px]"
+                      onClick={() => {
+                        if (offerToAssign) {
+                          handleAssignOffer(offerToAssign.id, executive.id);
+                          setAssignDialogOpen(false);
+                        }
+                      }}
+                    >
+                      Assign
+                    </Button>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+
+          <AlertDialogFooter className="justify-center sm:justify-center mt-3">
+            <AlertDialogAction className="h-9 w-full rounded-lg bg-blue-500 text-xs font-poppins text-white hover:bg-blue-600">
+              Close
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

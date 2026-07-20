@@ -13,7 +13,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 
-import { getExecutiveOverview } from "@/services/managerdashboard";
+import { getExecutiveOverview, getAssignedOffersForExecutive } from "@/services/managerdashboard";
 import type { ExecutiveFilters, ExecutiveRow } from "@/types/org-manager";
 import { subscribeRealtime } from "@/lib/socket";
 import {
@@ -23,6 +23,17 @@ import {
 } from "@/types/realtime";
 import GlobalLoader from "@/components/commoncomponents/globalloader";
 
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import Image from "next/image";
+
 import ExecutiveStatCards from "@/components/commoncomponents/managerdashboard/executive-stat-card";
 import ExecutiveTableFilters from "@/components/commoncomponents/managerdashboard/executive-table-filter";
 import TablePaginationFooter from "@/components/commoncomponents/table-pagination-footer";
@@ -30,7 +41,7 @@ import { useUrlPagination } from "@/hooks/use-url-pagination";
 import { useUrlFilters, type FilterConfig } from "@/hooks/useurlfilters";
 import { createPaginationMeta, type PaginationMeta } from "@/types/pagination";
 import { Button } from "@/components/ui/button";
-import { Download, Plus } from "lucide-react";
+import { Download, Plus, Loader2, EyeIcon } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -65,6 +76,11 @@ export default function ExecutivesPage() {
 
   const [isLoading, setIsLoading] = useState(true);
   const [hasLoaded, setHasLoaded] = useState(false);
+
+  const [assignedOffersDialogOpen, setAssignedOffersDialogOpen] = useState(false);
+  const [selectedExecutive, setSelectedExecutive] = useState<ExecutiveRow | null>(null);
+  const [assignedOffers, setAssignedOffers] = useState<any[]>([]);
+  const [isAssignedOffersLoading, setIsAssignedOffersLoading] = useState(false);
 
   const [error, setError] = useState<string | null>(null);
 
@@ -182,6 +198,21 @@ export default function ExecutivesPage() {
   const handleApplyFilters = useCallback(() => {
     setFilters(draftFilters);
   }, [draftFilters, setFilters]);
+
+  const handleViewAssignedOffers = async (executive: ExecutiveRow) => {
+    setSelectedExecutive(executive);
+    setAssignedOffersDialogOpen(true);
+    setIsAssignedOffersLoading(true);
+    try {
+      const response = await getAssignedOffersForExecutive(executive.id);
+      setAssignedOffers(response?.value || response || []);
+    } catch (error) {
+      console.error(error);
+      setAssignedOffers([]);
+    } finally {
+      setIsAssignedOffersLoading(false);
+    }
+  };
 
   const handleClearFilters = useCallback(() => {
     setFilters({ search: "", status: [] });
@@ -388,7 +419,18 @@ export default function ExecutivesPage() {
                   </TableCell>
 
                   <TableCell className="font-semibold">
-                    {formatCount(executive.offerCount)}
+                    <div className="flex items-center gap-2">
+                      <span>{formatCount(executive.offerCount)}</span>
+                      {executive.offerCount > 0 && (
+                        <Button
+                          variant="link"
+                          className="h-auto p-0 text-blue-600 hover:text-blue-700 text-xs"
+                          onClick={() => handleViewAssignedOffers(executive)}
+                        >
+                          <EyeIcon />
+                        </Button>
+                      )}
+                    </div>
                   </TableCell>
                 </TableRow>
               ))
@@ -404,6 +446,57 @@ export default function ExecutivesPage() {
           totalLabel="executives"
         />
       </div>
+
+      <AlertDialog open={assignedOffersDialogOpen} onOpenChange={setAssignedOffersDialogOpen}>
+        <AlertDialogContent className="w-[360px] max-w-[calc(100vw-2rem)] rounded-3xl border-0 bg-white p-4 shadow-2xl">
+          <AlertDialogHeader className="flex flex-col items-center space-y-1 text-center">
+            <Image
+              src="/saptarishi.png"
+              alt="SAPtarishi"
+              width={90}
+              height={32}
+              priority
+              className="h-auto w-[90px] object-contain mb-0.5"
+            />
+
+            <AlertDialogTitle className="text-base font-semibold text-slate-900">
+              Assigned Offers
+            </AlertDialogTitle>
+
+            <AlertDialogDescription className="max-w-xs text-[11px] text-slate-500">
+              {selectedExecutive?.name ? `Offers assigned to ${selectedExecutive.name}` : 'Assigned offers for this executive'}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+
+          <div className="rounded-xl border border-red-100 bg-red-50/70 p-1.5 mt-2">
+            <div className="max-h-[120px] space-y-1.5 overflow-y-auto rounded-lg bg-white p-1.5 shadow-sm custom-scrollbar">
+              {isAssignedOffersLoading ? (
+                <div className="flex items-center justify-center py-3 text-slate-500">
+                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                  <p className="text-center text-xs font-medium">Loading offers...</p>
+                </div>
+              ) : assignedOffers.length === 0 ? (
+                <p className="text-center text-xs font-medium text-slate-500 py-3">
+                  No offers assigned yet.
+                </p>
+              ) : (
+                assignedOffers.map((offer) => (
+                  <div key={offer.id} className="flex flex-col p-1.5 hover:bg-slate-50 rounded-lg border border-slate-100">
+                    <span className="font-poppins text-xs font-medium text-gray-950 px-1">{offer.title}</span>
+                    <span className="text-[10px] text-gray-500 px-1">{offer.code}</span>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+
+          <AlertDialogFooter className="justify-center sm:justify-center mt-3">
+            <AlertDialogAction className="h-9 w-full rounded-lg bg-blue-500 text-xs font-poppins text-white hover:bg-blue-600">
+              Close
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

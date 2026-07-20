@@ -90,6 +90,7 @@ import {
 import { subscribeRealtime } from "@/lib/socket";
 import {
   ORGANIZATION_DETAIL_CHANGED,
+  SYSTEM_ADMIN_DASHBOARD_CHANGED,
   type OrganizationDetailChangedPayload,
 } from "@/types/realtime";
 import type {
@@ -193,7 +194,7 @@ export default function OrganizationDetailsPage() {
   }, []);
 
   useEffect(() => {
-    return subscribeRealtime<OrganizationDetailChangedPayload>(
+    const unsub1 = subscribeRealtime<OrganizationDetailChangedPayload>(
       ORGANIZATION_DETAIL_CHANGED,
       (event) => {
         const payload = event.data;
@@ -206,6 +207,22 @@ export default function OrganizationDetailsPage() {
         }
       },
     );
+    
+    const unsub2 = subscribeRealtime(
+      SYSTEM_ADMIN_DASHBOARD_CHANGED,
+      (event) => {
+        const payload = event.data as any;
+        const matchesOrgId = payload?.orgId && payload.orgId === data?.organization?.id;
+        if (matchesOrgId || !payload?.orgId) {
+          loadOrganization("realtime");
+        }
+      }
+    );
+
+    return () => {
+      unsub1();
+      unsub2();
+    };
   }, [data?.organization?.id, loadOrganization, orgCode]);
 
   const organization = data?.organization;

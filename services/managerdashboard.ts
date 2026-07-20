@@ -72,3 +72,8 @@ export const getAvailableExecutivesForOffer = (offerId: string) =>
   api(
     `/odata/v4/manager-dashboard/getAvailableExecutivesForOffer(offerId='${offerId}')`,
   );
+
+export const getAssignedOffersForExecutive = (executiveId: string) =>
+  api(
+    `/odata/v4/manager-dashboard/getAssignedOffersForExecutive(executiveId='${executiveId}')`,
+  );
