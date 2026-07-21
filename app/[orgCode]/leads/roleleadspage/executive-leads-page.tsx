@@ -22,7 +22,8 @@ import {
   assignOffersToLeads,
   getExecutiveOffers,
 } from "@/services/executivestats";
-import { createLead, updateLead, getLeadsWithStats } from "@/services/leads";
+import { createLead, getLeadDetail, updateLead, getLeadsWithStats } from "@/services/leads";
+import type { LeadDetailResponse } from "@/types/leadActivity";
 import {
   type Lead,
   type LeadFormData,
@@ -202,8 +203,18 @@ export default function ExecutiveLeadsPage() {
     setIsFormOpen(true);
   };
 
-  const openEditForm = (lead: Lead) => {
-    setEditingLead(lead);
+  const openEditForm = async (lead: Lead) => {
+    try {
+      const detailRes = (await getLeadDetail(lead.leadCode || lead.uuid)) as LeadDetailResponse;
+      if (detailRes?.lead) {
+        setEditingLead(detailRes.lead);
+      } else {
+        setEditingLead(lead);
+      }
+    } catch (err) {
+      console.error(err);
+      setEditingLead(lead);
+    }
     setIsFormOpen(true);
   };
 

@@ -15,8 +15,9 @@ import { useLeadExport } from "@/hooks/export";
 import { useLeads } from "@/hooks/use-leads";
 import { useUrlLeadFilters } from "@/hooks/useurllead-filters";
 import { useUrlPagination } from "@/hooks/use-url-pagination";
-import { createLead, updateLead } from "@/services/leads";
+import { createLead, getLeadDetail, updateLead } from "@/services/leads";
 import { getOrganizationAdminDashboard } from "@/services/organizationAdmin";
+import type { LeadDetailResponse } from "@/types/leadActivity";
 import type {
   ExecutiveOption,
   Lead,

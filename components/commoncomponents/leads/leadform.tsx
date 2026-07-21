@@ -176,15 +176,41 @@ export default function LeadForm({
       }
 
       try {
-        const stateList = await getStatesByCountry(initialData.country);
+        let targetCountryId = initialData.country;
+        if (countries.length > 0) {
+          const matchedCountry = countries.find(
+            (c) =>
+              c.id === initialData.country ||
+              c.name.toLowerCase() === initialData.country.toLowerCase(),
+          );
+          if (matchedCountry) {
+            targetCountryId = matchedCountry.id;
+            if (targetCountryId !== initialData.country) {
+              setValue("country", targetCountryId);
+            }
+          }
+        }
+
+        const stateList = await getStatesByCountry(targetCountryId);
         setStates(stateList);
+
+        if (initialData.state && stateList.length > 0) {
+          const matchedState = stateList.find(
+            (s: Option) =>
+              s.id === initialData.state ||
+              s.name.toLowerCase() === initialData.state.toLowerCase(),
+          );
+          if (matchedState && matchedState.id !== initialData.state) {
+            setValue("state", matchedState.id);
+          }
+        }
       } catch (err) {
         console.error(err);
       }
     };
 
     loadInitialStates();
-  }, [initialData?.country]);
+  }, [initialData?.country, initialData?.state, countries, setValue]);
 
   const handleCountryChange = async (countryId: string) => {
     setValue("country", countryId);

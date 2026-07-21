@@ -20,9 +20,11 @@ import {
   bulkAssignLeads as bulkAssignLeadsRequest,
   createLead,
   getExecutiveUsers,
+  getLeadDetail,
   getLeadsWithStats,
   updateLead,
 } from "@/services/leads";
+import type { LeadDetailResponse } from "@/types/leadActivity";
 import type {
   ExecutiveOption,
   Lead,
@@ -191,8 +193,18 @@ export default function ManagerLeadsPage() {
     setIsFormOpen(true);
   };
 
-  const openEditForm = (lead: Lead) => {
-    setEditingLead(lead);
+  const openEditForm = async (lead: Lead) => {
+    try {
+      const detailRes = (await getLeadDetail(lead.leadCode || lead.uuid)) as LeadDetailResponse;
+      if (detailRes?.lead) {
+        setEditingLead(detailRes.lead);
+      } else {
+        setEditingLead(lead);
+      }
+    } catch (err) {
+      console.error(err);
+      setEditingLead(lead);
+    }
     setIsFormOpen(true);
   };
 
