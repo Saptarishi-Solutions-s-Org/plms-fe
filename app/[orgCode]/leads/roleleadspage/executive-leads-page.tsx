@@ -194,9 +194,6 @@ export default function ExecutiveLeadsPage() {
     }
   }, []);
 
-  useEffect(() => {
-    fetchOfferOptions();
-  }, [fetchOfferOptions]);
 
   const openAddForm = () => {
     setEditingLead(null);
@@ -351,6 +348,7 @@ export default function ExecutiveLeadsPage() {
                 offerOptions={offerOptions}
                 isOfferOptionsLoading={isOfferOptionsLoading}
                 onAssignOffer={canUpdateLead ? handleAssignOffer : undefined}
+                onAssignOfferClick={fetchOfferOptions}
               />
             )}
           />

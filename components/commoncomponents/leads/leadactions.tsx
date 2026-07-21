@@ -34,6 +34,7 @@ export default function LeadActions({
   offerOptions = [],
   isOfferOptionsLoading = false,
   onAssignOffer,
+  onAssignOfferClick,
 }: LeadActionsProps) {
   const { orgCode } = useParams<{ orgCode: string }>();
   const router = useRouter();
@@ -120,6 +121,9 @@ export default function LeadActions({
               onClick={() => {
                 setSelectedOfferId("");
                 setAssignOfferOpen(true);
+                if (onAssignOfferClick) {
+                  onAssignOfferClick();
+                }
               }}
             >
               Assign Offer
