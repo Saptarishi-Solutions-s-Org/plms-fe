@@ -162,6 +162,7 @@ export type LeadActionsProps = {
   offerOptions?: LeadOfferOption[];
   isOfferOptionsLoading?: boolean;
   onAssignOffer?: (lead: Lead, offerId: string) => Promise<void> | void;
+  onAssignOfferClick?: () => void;
 };
 
 export interface LeadSummaryCardsProps {
