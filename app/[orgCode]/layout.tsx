@@ -1,8 +1,9 @@
 "use client";
 
-import { ReactNode, useState, useEffect } from "react";
+import { ReactNode, useState, useEffect, useRef, useCallback } from "react";
 import Image from "next/image";
 import { usePathname, useRouter, useParams } from "next/navigation";
+import { toast } from "sonner";
 
 import {
   Sidebar,
@@ -144,6 +145,31 @@ export default function Layout({ children }: { children: ReactNode }) {
   const orgCode = params.orgCode;
 
   const [logoutOpen, setLogoutOpen] = useState(false);
+  const logoutTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const handleForcedLogout = useCallback((reason: string) => {
+    if (logoutTimeout.current) {
+      clearTimeout(logoutTimeout.current);
+    }
+
+    let title = "Session expired";
+    let description = "You have been signed out for security.";
+
+    if (reason === "session-invalidated") {
+      title = "Session ended";
+      description = "This session was logged out from another device.";
+    }
+
+    toast.error(title, {
+      description,
+      duration: 2500,
+    });
+
+    logoutTimeout.current = setTimeout(() => {
+      clearSession();
+      router.replace("/");
+    }, 2500);
+  }, [router]);
 
   useEffect(() => {
     let cancelled = false;
@@ -193,10 +219,18 @@ export default function Layout({ children }: { children: ReactNode }) {
       if (latestUser) setUser(latestUser);
     };
 
+    const handleSessionExpired = (e: Event) => {
+      const customEvent = e as CustomEvent;
+      handleForcedLogout(customEvent.detail?.reason || "session-expired");
+    };
+
     window.addEventListener("LMA-auth-changed", handleAuthChanged);
-    return () =>
+    window.addEventListener("LMA-session-expired", handleSessionExpired);
+    return () => {
       window.removeEventListener("LMA-auth-changed", handleAuthChanged);
-  }, []);
+      window.removeEventListener("LMA-session-expired", handleSessionExpired);
+    };
+  }, [handleForcedLogout]);
 
   useEffect(() => {
     if (!user?.id) return;
@@ -212,8 +246,7 @@ export default function Layout({ children }: { children: ReactNode }) {
       checking = false;
 
       if (!latestSession) {
-        clearSession();
-        router.replace("/");
+        handleForcedLogout("session-expired");
         return;
       }
 
@@ -236,8 +269,7 @@ export default function Layout({ children }: { children: ReactNode }) {
           event.data?.reason === "session-invalidated" ||
           event.data?.reason === "session-changed"
         ) {
-          clearSession();
-          router.replace("/");
+          handleForcedLogout(event.data.reason);
           return;
         }
 
@@ -254,8 +286,11 @@ export default function Layout({ children }: { children: ReactNode }) {
     return () => {
       unsubscribeProfile();
       unsubscribeUserDetail();
+      if (logoutTimeout.current) {
+        clearTimeout(logoutTimeout.current);
+      }
     };
-  }, [orgCode, router, user?.id]);
+  }, [user?.id, orgCode, router, handleForcedLogout]);
 
   const toggle = (key: string) => {
     setState((prev) => ({ ...prev, [key]: !prev[key] }));

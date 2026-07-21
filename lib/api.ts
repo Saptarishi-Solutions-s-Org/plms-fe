@@ -32,6 +32,7 @@ export async function api(path: string, options: RequestInit = {}) {
       res = await request(path, options);
     } else {
       redirectToLogin();
+      return new Promise(() => {});
     }
   }
 

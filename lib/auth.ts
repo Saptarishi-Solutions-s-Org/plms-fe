@@ -127,10 +127,14 @@ export async function logoutSession() {
 }
 
 export function redirectToLogin() {
-  clearSession();
-
   if (typeof window !== "undefined" && window.location.pathname !== "/") {
-    window.location.replace("/");
+    window.dispatchEvent(
+      new CustomEvent("LMA-session-expired", {
+        detail: { reason: "session-expired" },
+      }),
+    );
+  } else {
+    clearSession();
   }
 }
 

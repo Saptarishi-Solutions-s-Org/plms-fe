@@ -34,6 +34,8 @@ import { ActionConfirmationDialog } from "@/components/commoncomponents/action-c
 import { getOrganizationAdminPermissions, updateRolePermissions } from "@/services/organizationAdmin";
 import { toggleSegmentFilter } from "@/services/segments";
 import { getUser } from "@/lib/auth";
+import { subscribeRealtime } from "@/lib/socket";
+import { ORGANIZATION_DETAIL_CHANGED, type OrganizationDetailChangedPayload } from "@/types/realtime";
 import type {
   OrganizationAdminPermissionsResponse,
   OrganizationPermission,
@@ -109,6 +111,18 @@ export default function PermissionsPage() {
 
   useEffect(() => {
     loadPermissions("initial");
+  }, [loadPermissions]);
+
+  useEffect(() => {
+    return subscribeRealtime<OrganizationDetailChangedPayload>(
+      ORGANIZATION_DETAIL_CHANGED,
+      (event) => {
+        const payload = event.data;
+        if (payload?.reason === "segment-filter-updated") {
+          loadPermissions("realtime");
+        }
+      }
+    );
   }, [loadPermissions]);
 
   const permissions = useMemo(() => data?.permissions || [], [data?.permissions]);
