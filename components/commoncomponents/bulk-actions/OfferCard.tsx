@@ -39,7 +39,7 @@ export function OfferCard({ offer, selected, onSelect }: OfferCardProps) {
         }
       }}
     >
-      <TableCell className="w-14">
+      <TableCell className="w-10">
         <Checkbox
           checked={selected}
           aria-label={`Select ${offer.title}`}
@@ -48,13 +48,16 @@ export function OfferCard({ offer, selected, onSelect }: OfferCardProps) {
         />
       </TableCell>
 
-      <TableCell className="min-w-[120px]">
-        <p className="text-xs font-medium text-gray-800 sm:text-sm">
+      <TableCell
+        className="max-w-0 truncate"
+        title={offer.title}
+      >
+        <p className="truncate text-xs font-medium text-gray-800 sm:text-sm">
           {offer.title}
         </p>
       </TableCell>
 
-      <TableCell className="min-w-[240px]">
+      <TableCell className="max-w-0 truncate">
         <p
           title={offer.description || undefined}
           className="truncate text-xs text-gray-500"
@@ -63,11 +66,11 @@ export function OfferCard({ offer, selected, onSelect }: OfferCardProps) {
         </p>
       </TableCell>
 
-      <TableCell className="min-w-[100px] whitespace-nowrap text-xs text-gray-600 sm:text-sm">
+      <TableCell className="whitespace-nowrap text-xs text-gray-600 sm:text-sm">
         {offer.validTo ? formatDate(offer.validTo) : "-"}
       </TableCell>
 
-      <TableCell className="min-w-[80px]">
+      <TableCell className="whitespace-nowrap">
         <span
           className={`inline-flex items-center gap-1.5 rounded-full border px-2 py-0.5 text-xs font-medium ${
             isActive

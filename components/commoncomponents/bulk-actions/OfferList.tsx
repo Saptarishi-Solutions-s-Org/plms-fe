@@ -26,11 +26,11 @@ export function OfferList({
     hasSelectableRows && selectedOfferIds.length > 0 && !allSelected;
 
   return (
-    <div className="min-h-0 w-full flex-1 overflow-y-auto overflow-x-hidden rounded-lg border border-gray-200 bg-white shadow-sm">
+    <div className="min-h-0 w-full flex-1 overflow-auto rounded-lg border border-gray-200 bg-white shadow-sm">
       <Table className="table-fixed">
         <TableHeader className="sticky top-0 z-10 border-b border-gray-200 bg-[#7677F41A]">
           <TableRow>
-            <TableHead className="w-14 text-xs sm:text-sm">
+            <TableHead className="w-10 text-xs sm:text-sm">
               <div className="flex items-center justify-right">
                 <Checkbox
                   checked={allSelected ? true : someSelected ? "indeterminate" : false}
@@ -42,16 +42,16 @@ export function OfferList({
                 />
               </div>
             </TableHead>
-            <TableHead className="min-w-[120px] text-xs sm:text-sm">
+            <TableHead className="w-[24%] text-xs sm:text-sm">
               Offer Name
             </TableHead>
-            <TableHead className="min-w-[240px] text-xs sm:text-sm">
+            <TableHead className="w-[34%] text-xs sm:text-sm">
               Description
             </TableHead>
-            <TableHead className="min-w-[100px] text-xs sm:text-sm">
+            <TableHead className="w-20 text-xs sm:text-sm">
               Valid To
             </TableHead>
-            <TableHead className="min-w-[80px] text-xs sm:text-sm">
+            <TableHead className="w-18 text-xs sm:text-sm">
               Status
             </TableHead>
           </TableRow>
