@@ -147,6 +147,12 @@ export default function SegmentsPage() {
     return () => unsubscribe();
   }, [hasViewAccess, page, limit, searchParams]);
 
+  useEffect(() => {
+    if (user && !hasViewAccess) {
+      router.replace("/not-authorized");
+    }
+  }, [user, hasViewAccess, router]);
+
   // 4. URL State Update Handlers
   const handleApplyFilters = () => {
     const current = new URLSearchParams(searchParams.toString());
@@ -278,15 +284,7 @@ export default function SegmentsPage() {
   if (!user) return <GlobalLoader />;
 
   if (!hasViewAccess) {
-    return (
-      <div className="w-full min-h-[70vh] flex flex-col items-center justify-center p-6 bg-gray-50/50 rounded-3xl border border-gray-100">
-        <AlertCircle className="w-12 h-12 text-red-500 mb-4 animate-bounce" />
-        <h1 className="text-xl font-bold text-gray-900 mb-2">Access Denied</h1>
-        <p className="text-sm text-gray-500 text-center max-w-sm">
-          You do not have view permissions to access the leads segmentation module. Please contact your system administrator.
-        </p>
-      </div>
-    );
+    return null;
   }
 
   const isInitialLoading = isLoading && !hasLoaded;
