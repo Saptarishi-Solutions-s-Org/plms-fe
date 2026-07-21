@@ -33,14 +33,6 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-  DialogFooter,
-} from "@/components/ui/dialog";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -50,7 +42,7 @@ import { useUrlOfferFilters } from "@/hooks/useurloffer";
 import { type AuthUser, getUser } from "@/lib/auth";
 import { canAccess } from "@/lib/permissions";
 import { subscribeRealtime } from "@/lib/socket";
-import { MoreHorizontal, ListChecks, Download, Plus, Pencil, UserPlus, Loader2 } from "lucide-react";
+import { MoreHorizontal, ListChecks, Download, Plus, UserPlus, Loader2 } from "lucide-react";
 import Image from "next/image";
 
 import {
@@ -624,7 +616,7 @@ export default function OrgManagerOffersPage() {
               type="button"
               variant="outline"
               onClick={handleExport}
-              className="flex h-9 w-full items-center justify-center gap-1.5 rounded-full px-4 sm:w-auto"
+              className="flex h-9 w-full items-center justify-center gap-1.5 rounded-full border-blue-600 px-4 text-blue-600 hover:bg-blue-50 hover:text-blue-700 sm:w-auto"
             >
               <Download className="h-4 w-4" />
               Export
@@ -633,10 +625,10 @@ export default function OrgManagerOffersPage() {
 
           {canUpdate && (
             <Button
+              type="button"
               variant="outline"
-              size="lg"
-              className="w-full sm:w-auto rounded-full bg-blue-600 text-white hover:bg-blue-600 hover:text-white font-medium"
               onClick={() => setIsBulkActionsOpen(true)}
+              className="flex h-9 w-full items-center justify-center gap-1.5 rounded-full border-blue-600 px-4 text-blue-600 hover:bg-blue-50 hover:text-blue-700 sm:w-auto"
             >
               <ListChecks className="h-4 w-4" />
               Bulk Action
@@ -645,8 +637,9 @@ export default function OrgManagerOffersPage() {
 
           {canCreate && (
             <Button
+              type="button"
               onClick={() => setCreateOpen(true)}
-              className="flex h-9 w-full items-center justify-center gap-1.5 rounded-full bg-blue-600 px-4 text-white hover:bg-blue-700 sm:w-auto"
+              className="flex h-9 w-full items-center justify-center gap-1.5 rounded-full bg-blue-600 px-4 text-sm font-semibold text-white hover:bg-blue-700 sm:w-auto"
             >
               <Plus className="h-4 w-4" />
               Create Offer
@@ -835,16 +828,15 @@ export default function OrgManagerOffersPage() {
                               </Button>
                             </DropdownMenuTrigger>
 
-                            <DropdownMenuContent
-                              align="end"
-                              className="max-h-60 overflow-y-auto"
-                            >
-                              <DropdownMenuItem
-                                onClick={() => handleEditOffer(offer)}
-                              >
-                                <Pencil className="mr-2 h-4 w-4" />
-                                Edit
-                              </DropdownMenuItem>
+                      <DropdownMenuContent
+                        align="end"
+                        className="max-h-60 overflow-y-auto"
+                      >
+                        <DropdownMenuItem
+                          onClick={() => handleEditOffer(offer)}
+                        >
+                          Edit
+                        </DropdownMenuItem>
 
                               {offer.status === "active" && (
                                 <DropdownMenuItem
@@ -887,7 +879,7 @@ export default function OrgManagerOffersPage() {
           }
         }}
       >
-        <AlertDialogContent className="w-[540px] max-w-[calc(100vw-2rem)] rounded-[2rem] border-0 bg-white px-5 py-6 shadow-2xl sm:px-6">
+        <AlertDialogContent className="w-[420px] max-w-[calc(100vw-2rem)] rounded-[2rem] border-0 bg-white px-5 py-6 shadow-2xl sm:px-6">
           <AlertDialogHeader className="items-center gap-2 text-center">
             <Image
               src="/saptarishi.png"
@@ -949,7 +941,7 @@ export default function OrgManagerOffersPage() {
           </div>
 
           <AlertDialogFooter className="justify-center sm:justify-center">
-            <AlertDialogAction className="h-12 w-full rounded-lg bg-indigo-700 text-sm font-bold text-white hover:bg-indigo-800">
+            <AlertDialogAction className="h-12 w-full rounded-lg bg-blue-500 text-sm font-bold text-white hover:bg-blue-600">
               OK
             </AlertDialogAction>
           </AlertDialogFooter>

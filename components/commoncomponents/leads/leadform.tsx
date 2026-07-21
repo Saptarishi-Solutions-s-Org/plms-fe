@@ -404,26 +404,32 @@ export default function LeadForm({
             />
           </FieldWrapper>
 
-          <FieldWrapper label="Priority" required error={errors.priority?.message}>
-            <Controller
-              name="priority"
-              control={control}
-              render={({ field }) => (
-                <Select value={field.value} onValueChange={field.onChange}>
-                  <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Select priority" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {LEAD_PRIORITY_OPTIONS.map((option) => (
-                      <SelectItem key={option.value} value={option.value}>
-                        {option.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              )}
-            />
-          </FieldWrapper>
+          <div className="sm:col-span-2">
+            <FieldWrapper
+              label="Priority"
+              required
+              error={errors.priority?.message}
+            >
+              <Controller
+                name="priority"
+                control={control}
+                render={({ field }) => (
+                  <Select value={field.value} onValueChange={field.onChange}>
+                    <SelectTrigger className="w-full min-w-0">
+                      <SelectValue placeholder="Select priority" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {LEAD_PRIORITY_OPTIONS.map((option) => (
+                        <SelectItem key={option.value} value={option.value}>
+                          {option.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
+              />
+            </FieldWrapper>
+          </div>
 
           {!isEditing && managers.length > 0 && (
             <FieldWrapper label="Manager" required error={managerError}>

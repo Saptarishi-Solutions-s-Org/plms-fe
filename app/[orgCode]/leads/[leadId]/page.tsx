@@ -169,37 +169,48 @@ export default function LeadDetailPage() {
 
         <LeadHeroCard lead={lead} />
 
-        <div className="grid grid-cols-1 items-start gap-4 lg:grid-cols-[2fr_3fr]">
-          <div className="flex flex-col gap-5">
-            <div className="flex h-[400px] flex-col overflow-hidden rounded-xl border border-gray-300 bg-white lg:h-[560px]">
-              <div className="flex h-16 shrink-0 items-center border-b border-gray-200 px-5">
-                <h2 className="text-base font-semibold text-gray-800">
-                  Timeline
-                </h2>
-              </div>
-              <div className="min-h-0 flex-1 overflow-x-hidden overflow-y-auto">
-                {canViewActivity ? (
-                  <ActivityTimeline 
+        {canViewActivity ? (
+          <div className="grid grid-cols-1 items-start gap-4 lg:grid-cols-[2fr_3fr]">
+            <div className="flex flex-col gap-5">
+              <div className="flex h-[400px] flex-col overflow-hidden rounded-xl border border-gray-300 bg-white lg:h-[560px]">
+                <div className="flex h-16 shrink-0 items-center border-b border-gray-200 px-5">
+                  <h2 className="text-base font-semibold text-gray-800">
+                    Timeline
+                  </h2>
+                </div>
+                <div className="min-h-0 flex-1 overflow-x-hidden overflow-y-auto">
+                  <ActivityTimeline
                     activities={activities}
                     canEdit={canUpdateActivity}
                     onEdit={handleEditActivity}
                   />
-                ) : (
-                  <div className="flex h-full items-center justify-center p-4 text-sm text-gray-500 text-center">
-                    You do not have permission to view lead activities.
-                  </div>
-                )}
+                </div>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 gap-4 lg:h-[560px] lg:auto-rows-fr">
+              {canCreateActivity && (
+                <div className="min-h-0 flex flex-1 flex-col">
+                  <AddNoteForm leadId={lead.uuid} onAdded={fetchDetail} />
+                </div>
+              )}
+              <div className="min-h-0 flex flex-1 flex-col">
+                <OfferCard offers={offers} />
               </div>
             </div>
           </div>
-
-          <div className="flex flex-col gap-4 lg:h-[560px]">
+        ) : (
+          <div className="grid grid-cols-1 gap-4 lg:grid-cols-2 lg:h-[560px] lg:auto-rows-fr">
             {canCreateActivity && (
-              <AddNoteForm leadId={lead.uuid} onAdded={fetchDetail} />
+              <div className="min-h-0 flex h-full flex-1 flex-col">
+                <AddNoteForm leadId={lead.uuid} onAdded={fetchDetail} />
+              </div>
             )}
-            <OfferCard offers={offers} />
+            <div className="min-h-0 flex h-full flex-1 flex-col">
+              <OfferCard offers={offers} />
+            </div>
           </div>
-        </div>
+        )}
       </div>
 
       <Dialog open={isEditOpen} onOpenChange={setEditOpen}>
