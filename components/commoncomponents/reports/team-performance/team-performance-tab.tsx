@@ -319,6 +319,9 @@ export default function TeamPerformanceTab({
           <Table>
             <TableHeader className="border-b border-gray-200 bg-[#7677F41A]">
               <TableRow>
+                <TableHead className="w-[40px] whitespace-nowrap text-xs sm:text-sm">
+                  S.NO
+                </TableHead>
                 <TableHead className="w-[180px] whitespace-nowrap text-xs sm:text-sm">
                   Executive
                 </TableHead>
@@ -350,8 +353,11 @@ export default function TeamPerformanceTab({
               )}
 
               {!loading &&
-                paginatedPerformanceRows.map((row) => (
+                paginatedPerformanceRows.map((row, index) => (
                   <TableRow key={row.executiveId || row.executiveName}>
+                    <TableCell className="w-[40px]">
+                      <p className="text-gray-600">{index + 1}</p>
+                    </TableCell>
                     <TableCell className="w-[180px]">
                       <p
                         className="max-w-[180px] truncate font-medium text-gray-800 sm:max-w-[220px]"

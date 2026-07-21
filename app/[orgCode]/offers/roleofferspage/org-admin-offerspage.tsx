@@ -164,43 +164,40 @@ export default function OrgAdminOffersPage() {
             "inactive",
 
           discountType:
-            item.discount_type,
+            item.discount_type ?? "-",
 
           discountAmount:
-            item.discount_amount,
+            item.discount_amount ?? "-",
 
           discountPercentage:
-            item.discount_percentage,
+            item.discount_percentage ?? "-",
 
           maxDiscountAmount:
-            item.max_discount_amount,
+            item.max_discount_amount ?? "-",
 
           comboDescription:
-            item.combo_description,
+            item.combo_description ?? "-",
 
           buyQuantity:
-            item.buy_quantity,
+            item.buy_quantity ?? "-",
 
           getQuantity:
-            item.get_quantity,
+            item.get_quantity ?? "-",
 
           minPurchaseAmount:
-            item.min_purchase_amount,
+            item.min_purchase_amount ?? "-",
 
           conditionalDiscountValue:
-            item.discount_value,
+            item.discount_value ?? "-",
 
           flagDiscountAmount:
-            item.flag_discount_amount,
+            item.flag_discount_amount ?? "-",
 
           validFrom:
-            item.valid_from,
+            item.valid_from ?? "-",
 
           validTo:
-            item.valid_to,
-
-          createdAt:
-            item.created_at,
+            item.valid_to ?? "-",
 
           createdBy: "",
 
