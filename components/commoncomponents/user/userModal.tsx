@@ -33,8 +33,12 @@ import { format } from "date-fns";
 import { CalendarIcon } from "lucide-react";
 
 import { createUser, updateUser } from "@/services/user";
+import type { UserForm, UserModalProps } from "@/types/user";
 import { getCountries, getStatesByCountry } from "@/services/location";
-import { createUserSchema } from "@/lib/validators/user";
+import { createUserSchema, editUserSchema } from "@/lib/validators/user";
+import type {  Country, State } from "@/types/organization";
+
+
 
 const months = [
   "January",
@@ -56,14 +60,23 @@ const years = Array.from(
   (_, i) => new Date().getFullYear() - i,
 );
 
+function toDateInputValue(value?: string | null) {
+  if (!value) return "";
+
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "";
+
+  return date.toLocaleDateString("en-CA");
+}
+
 export default function UserModal({
   open,
   setOpen,
   user,
   onSuccess,
   organizationId,
-}: any) {
-  const [form, setForm] = useState<any>({
+}: UserModalProps) {
+  const [form, setForm] = useState<UserForm>({
     name: "",
     email: "",
     phone: "",
@@ -74,9 +87,11 @@ export default function UserModal({
     is_active: true,
   });
 
-  const [countries, setCountries] = useState<any[]>([]);
-  const [states, setStates] = useState<any[]>([]);
-  const [errors, setErrors] = useState<any>({});
+  const [countries, setCountries] = useState<Country[]>([]);
+  const [states, setStates] = useState<State[]>([]);
+  const [errors, setErrors] = useState<Partial<Record<keyof UserForm, string>>>(
+    {},
+  );
   const [loading, setLoading] = useState(false);
 
   const reset = () => {
@@ -93,9 +108,9 @@ export default function UserModal({
     setErrors({});
   };
 
-  const updateField = (f: string, v: any) => {
-    setForm((p: any) => ({ ...p, [f]: v }));
-    setErrors((p: any) => ({ ...p, [f]: "" }));
+  const updateField = <K extends keyof UserForm>(field: K, value: UserForm[K]) => {
+    setForm((current) => ({ ...current, [field]: value }));
+    setErrors((current) => ({ ...current, [field]: "" }));
   };
 
   useEffect(() => {
@@ -113,23 +128,32 @@ export default function UserModal({
   useEffect(() => {
     if (open && user) {
       setForm({
-        ...user,
-        country: user.country_id,
-        state: user.state_id,
+        name: user.name ?? "",
+        email: user.email ?? "",
+        phone: user.phone ?? "",
+        dob: toDateInputValue(user.dob),
+        gender: user.gender ?? "",
+        country: user.country_id ?? "",
+        state: user.state_id ?? "",
+        is_active: user.is_active,
       });
     }
   }, [open, user]);
 
   const handleSubmit = async () => {
-    const parsed = createUserSchema.safeParse({
+    const schema = user ? editUserSchema : createUserSchema;
+    const parsed = schema.safeParse({
       ...form,
       phone: String(form.phone),
     });
 
     if (!parsed.success) {
-      const fieldErrors: any = {};
+      const fieldErrors: Partial<Record<keyof UserForm, string>> = {};
       parsed.error.issues.forEach((i) => {
-        fieldErrors[i.path[0]] = i.message;
+        const field = i.path[0];
+        if (typeof field === "string" && field in form) {
+          fieldErrors[field as keyof UserForm] = i.message;
+        }
       });
       setErrors(fieldErrors);
       return;
@@ -143,7 +167,10 @@ export default function UserModal({
         await updateUser({
           id: user.id,
           name: form.name,
+          email: form.email,
           phone: form.phone,
+          gender: form.gender,
+          dob: form.dob,
           is_active: form.is_active,
           state: form.state,
           country: form.country,
@@ -370,7 +397,7 @@ export default function UserModal({
             <Select
               value={form.country}
               onValueChange={(v) =>
-                setForm((p: any) => ({ ...p, country: v, state: "" }))
+                setForm((current) => ({ ...current, country: v, state: "" }))
               }
             >
               <SelectTrigger

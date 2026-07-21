@@ -158,7 +158,10 @@ export default function LeadDetailPage() {
             <Button
               type="button"
               size="sm"
-              onClick={() => setEditOpen(true)}
+              onClick={async () => {
+                await fetchDetail();
+                setEditOpen(true);
+              }}
               className="flex shrink-0 items-center gap-1 bg-blue-600 text-white hover:bg-blue-700"
             >
               <Pencil className="h-4 w-4" />
