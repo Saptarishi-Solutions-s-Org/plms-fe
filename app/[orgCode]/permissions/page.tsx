@@ -267,15 +267,15 @@ export default function PermissionsPage() {
   return (
     <div className="p-6 space-y-6">
       {/* Title Header */}
-      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
-        <div>
+      <div className="flex flex-wrap items-start justify-between gap-4">
+        <div className="min-w-0 flex-1">
           <h1 className="text-2xl font-semibold">Permissions</h1>
           <p className="text-sm text-muted-foreground">
             View and manage role-based access for each module
           </p>
         </div>
 
-        <div className="flex items-center gap-4">
+        <div className="flex shrink-0 items-center gap-4">
           {canEditSelectedRole && (
             <Button
               type="button"
@@ -537,7 +537,7 @@ export default function PermissionsPage() {
             </div>
             <div>
               <CardTitle className="text-lg">Segmentation Filters Configuration</CardTitle>
-              <p className="text-xs text-muted-foreground">Enable or disable specific search filters for your organization's segments builder.</p>
+              <p className="text-xs text-muted-foreground">Enable or disable specific search filters for your organizations segments builder.</p>
             </div>
           </CardHeader>
           <CardContent className="pt-4">

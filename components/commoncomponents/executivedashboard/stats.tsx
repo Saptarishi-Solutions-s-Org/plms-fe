@@ -34,7 +34,7 @@ const ExecutiveCards = ({ stats }: ExecutiveCardsProps) => {
       {cards.map(({ title, value, Icon, color }) => (
         <div
           key={title}
-          className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm flex items-center gap-4 hover:shadow-md transition duration-200"
+          className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm flex min-h-[120px] items-center gap-4 hover:shadow-md transition duration-200"
         >
           <div className={`p-3 rounded-xl ${color}`}>
             <Icon className="w-6 h-6" />
