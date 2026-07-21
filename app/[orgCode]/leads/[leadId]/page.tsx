@@ -153,8 +153,6 @@ export default function LeadDetailPage() {
     }
   }, []);
 
-  // fetchOfferOptions is now called on demand when the button is clicked
-
   const isInitialLoading = isLoading && !hasLoaded;
 
   if (isInitialLoading) {
