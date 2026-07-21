@@ -105,7 +105,7 @@ const DeactivateForm = ({
           // Deactivate executive and reassign leads
           if (!selectedExecutiveId) {
             setError(
-              "Please select an executive to reassign leads"
+              "Please select an executive to reassign leads and segments"
             );
             setIsLoading(false);
             return;
@@ -164,7 +164,7 @@ const DeactivateForm = ({
                 {isActivate
                   ? `Are you sure you want to activate ${selectedUser.name}?`
                   : isExecutive
-                  ? "Select an Executive to reassign leads"
+                  ? "Select an Executive to reassign leads and segments"
                   : "Please select a Manager to reassign executives and segments"}
               </div>
               <div className="text-sm text-gray-500">
