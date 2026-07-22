@@ -243,7 +243,9 @@ export default function OrgManagerOffersPage() {
 
   const bulkActionOffers = useMemo(
     (): BulkOffer[] =>
-      bulkOffers.map((offer) => ({
+      bulkOffers
+        .filter((offer) => offer.status !== "expired")
+        .map((offer) => ({
         id: offer.id,
         title: offer.title,
         description: offer.description,
@@ -253,7 +255,7 @@ export default function OrgManagerOffersPage() {
           : offer.status === "inactive"
             ? "INACTIVE"
             : "EXPIRED") as BulkOffer["status"],
-      })),
+        })),
     [bulkOffers],
   );
 
@@ -338,19 +340,54 @@ export default function OrgManagerOffersPage() {
       setIsBulkOffersLoading(true);
       setBulkOffersError(null);
 
-      const response = await getManagerOfferOverview({
-        all: true,
+      const bulkLimit = Math.max(
+        pagination.total,
+        totalCount,
+        offers.length,
+        limit,
+      );
+      const params = {
+        limit: bulkLimit,
+        search: filters.search,
+        status: filters.status.join(","),
+        discountType: filters.discountType.join(","),
+      };
+      const firstResponse = await getManagerOfferOverview({
+        ...params,
+        page: 1,
       });
-      const data = response?.value || response;
+      const firstPage = firstResponse?.value || firstResponse;
+      const firstPageOffers = firstPage?.offers ?? [];
+      const totalPages = firstPage?.pagination?.totalPages ?? 1;
 
-      setBulkOffers(formatManagerOffers(data?.offers));
-    } catch {
+      if (totalPages <= 1) {
+        setBulkOffers(formatManagerOffers(firstPageOffers));
+        return;
+      }
+
+      const remainingPages = await Promise.all(
+        Array.from({ length: totalPages - 1 }, (_, index) =>
+          getManagerOfferOverview({ ...params, page: index + 2 }),
+        ),
+      );
+
+      setBulkOffers(
+        formatManagerOffers([
+          ...firstPageOffers,
+          ...remainingPages.flatMap((response) => {
+            const pageData = response?.value || response;
+            return pageData?.offers ?? [];
+          }),
+        ]),
+      );
+    } catch (error) {
+      console.error("Failed to load offers for bulk assignment", error);
       setBulkOffers([]);
-      setBulkOffersError(null);
+      setBulkOffersError("Failed to load offers for bulk assignment.");
     } finally {
       setIsBulkOffersLoading(false);
     }
-  }, []);
+  }, [filters, limit, offers.length, pagination.total, totalCount]);
 
   useEffect(() => {
     if (isBulkActionsOpen && canUpdate) {
