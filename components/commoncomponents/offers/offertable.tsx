@@ -270,7 +270,7 @@ export function OffersTable({
                     {offer.title}
                   </TableCell>
 
-                  <TableCell className="min-w-[200px] max-w-[200px] truncate text-xs text-gray-600 sm:text-sm">
+                  <TableCell className="min-w-[200px] max-w-[200px] truncate text-xs text-gray-600 sm:text-sm" title={offer.description}>
                     {offer.description || "—"}
                   </TableCell>
 

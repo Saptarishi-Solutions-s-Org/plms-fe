@@ -783,9 +783,9 @@ export default function OrgManagerOffersPage() {
                     <TableRow key={offer.id}>
                       <TableCell>{rowOffset + index + 1}</TableCell>
 
-                      <TableCell className="font-medium max-w-50">
+                      <TableCell className="font-medium max-w-50" title={offer.title}>
                         <div className="flex items-center gap-2">
-                          <span className="truncate" title={offer.title}>
+                          <span className="truncate">
                             {offer.title}
                           </span>
                           {offer.isGlobal && (
@@ -799,7 +799,7 @@ export default function OrgManagerOffersPage() {
                         </div>
                       </TableCell>
 
-                      <TableCell className="max-w-[250px] truncate">
+                      <TableCell className="max-w-[250px] truncate" title={offer.description}>
                         {offer.description || "—"}
                       </TableCell>
 
