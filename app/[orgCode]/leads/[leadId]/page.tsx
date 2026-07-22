@@ -211,7 +211,7 @@ export default function LeadDetailPage() {
               asChild
               variant="ghost"
               size="icon"
-              className="mt-4 px-4 py-2 text-xs font-semibold text-white bg-purple-600 rounded-xl"
+              className="p-2 text-gray-500 hover:text-purple-600 bg-white rounded-xl shadow-sm border border-gray-100 hover:shadow"
             >
               <Link href={`/${orgCode}/leads`} aria-label="Back to leads">
                 <ArrowLeft className="w-5 h-5" />
