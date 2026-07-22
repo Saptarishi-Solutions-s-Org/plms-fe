@@ -341,11 +341,11 @@ export default function OrgAdminOffersPage() {
           success: true as const,
         };
 
-      } catch {
+      } catch (error) {
         return {
           success: false as const,
           error:
-            "Failed to create offer",
+            error instanceof Error ? error.message : "Failed to create offer",
         };
       }
     },
@@ -365,11 +365,11 @@ export default function OrgAdminOffersPage() {
           success: true as const,
         };
 
-      } catch {
+      } catch (error) {
         return {
           success: false as const,
           error:
-            "Failed to update offer",
+            error instanceof Error ? error.message : "Failed to update offer",
         };
       }
     },

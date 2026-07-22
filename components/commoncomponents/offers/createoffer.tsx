@@ -129,7 +129,6 @@ export function CreateOfferDialog({
   const isManagerScope = scope === "manager";
   const [managers, setManagers] = useState<Manager[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [submitError, setSubmitError] = useState("");
 
   const {
     register,
@@ -201,7 +200,6 @@ export function CreateOfferDialog({
     if (!next && isSubmitting) return;
     if (!next) {
       reset(EMPTY_FORM);
-      setSubmitError("");
       setManagers([]);
     }
     onOpenChange(next);
@@ -225,7 +223,6 @@ export function CreateOfferDialog({
 
   const onValid = async (data: OfferFormData) => {
     setIsSubmitting(true);
-    setSubmitError("");
     try {
       const result = await onSubmit(
         buildOfferPayload(data, offer?.id),
@@ -234,9 +231,7 @@ export function CreateOfferDialog({
         toast.success(isEditing ? "Offer updated" : "Offer created");
         handleOpenChange(false);
       } else {
-        setSubmitError(
-          result.error || "Something went wrong. Please try again.",
-        );
+        toast.error(result.error || "Something went wrong. Please try again.");
       }
     } finally {
       setIsSubmitting(false);
@@ -282,12 +277,6 @@ export function CreateOfferDialog({
         >
           <ScrollArea className="max-h-[75vh]">
             <div className="flex flex-col gap-5 px-6 py-5">
-              {submitError && (
-                <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600">
-                  {submitError}
-                </div>
-              )}
-
               {/* Offer Scope */}
               {!isManagerScope && (
                 <div>
