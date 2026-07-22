@@ -166,13 +166,13 @@ export default function ExecutiveLeadsPage({
 
         const filteredLeads = Array.isArray(leads)
           ? leads.filter(
-              (lead) =>
-                lead.assignedTo === executiveId &&
-                isWithinDateRange(
-                  lead.createdAt ?? lead.createdat,
-                  appliedDateRange,
-                ),
-            )
+            (lead) =>
+              lead.assignedTo === executiveId &&
+              isWithinDateRange(
+                lead.createdAt ?? lead.createdat,
+                appliedDateRange,
+              ),
+          )
           : [];
 
         const rows = filteredLeads.map(mapApiLeadToRow);
@@ -254,25 +254,26 @@ export default function ExecutiveLeadsPage({
       <div className="flex w-full flex-col gap-6">
         <header className="flex flex-col gap-3 border-b border-slate-200 pb-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-4">
+
             <Button
               asChild
               variant="ghost"
               size="icon"
-              className="h-8 w-8 text-slate-500 hover:text-slate-900 rounded-full shrink-0"
+              className="p-2 text-gray-500 hover:text-purple-600 bg-white rounded-xl shadow-sm border border-gray-100 hover:shadow"
             >
               <Link
                 href={`/${orgCode}/org-reports/?tab=team-performance`}
                 aria-label="Back to reports"
               >
-                <ArrowLeft className="w-5 h-5" />
+                <ArrowLeft className="h-5 w-5" />
               </Link>
             </Button>
             <div className="h-6 w-px bg-slate-200" />
             <div>
-              <h1 className="text-lg font-semibold text-gray-900 sm:text-2xl">
+              <h1 className="text-xl font-bold text-gray-900">
                 Report Details
               </h1>
-              <p className="text-xs text-gray-500 sm:text-sm">
+              <p className="text-xs text-gray-500">
                 Review executive lead activity and performance
               </p>
             </div>

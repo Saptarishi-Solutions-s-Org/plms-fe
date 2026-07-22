@@ -3,7 +3,6 @@ import { buildApiFunctionUrl } from "@/lib/api-function-url";
 import type { LeadImportRow } from "@/types/leadImport";
 import type {
   AddActivityFormData,
-  ExecutiveOption,
   LeadPayload,
 } from "@/types/leadtypes";
 

@@ -617,13 +617,14 @@ function PerformanceTable({
         <div className="flex items-center gap-3">
           {onBack && (
             <Button
-              variant="outline"
-              size="sm"
+              asChild={false}
               onClick={onBack}
-              className="size-9 rounded-md p-0"
+              variant="ghost"
+              size="icon"
+              className="p-2 text-gray-500 hover:text-purple-600 bg-white rounded-xl shadow-sm border border-gray-100 hover:shadow"
               aria-label="Go back"
             >
-              <ArrowLeft className="size-4" />
+              <ArrowLeft className="h-5 w-5" />
             </Button>
           )}
           <h2 className="text-xl font-semibold text-gray-900 sm:text-2xl">
@@ -654,27 +655,27 @@ function PerformanceTable({
                 <TableCell className="py-4 text-sm text-gray-600 sm:text-base">
                   {startIndex + rowIndex + 1}
                 </TableCell>
-                  {row.map((cell, cellIndex) => (
-                    <TableCell
-                      key={cellIndex}
-                      className="py-4 text-sm text-gray-600 sm:text-base"
-                    >
-                      {cell}
-                    </TableCell>
-                  ))}
-                </TableRow>
+                {row.map((cell, cellIndex) => (
+                  <TableCell
+                    key={cellIndex}
+                    className="py-4 text-sm text-gray-600 sm:text-base"
+                  >
+                    {cell}
+                  </TableCell>
+                ))}
+              </TableRow>
             ))}
-                {!rows.length && (
-                  <TableRow>
-                    <TableCell
-                      colSpan={headers.length}
-                      className="py-12 text-center text-sm font-semibold text-gray-400"
-                    >
-                      No records found
-                    </TableCell>
-                  </TableRow>
-                )}
-              </TableBody>
+            {!rows.length && (
+              <TableRow>
+                <TableCell
+                  colSpan={headers.length}
+                  className="py-12 text-center text-sm font-semibold text-gray-400"
+                >
+                  No records found
+                </TableCell>
+              </TableRow>
+            )}
+          </TableBody>
         </Table>
       </div>
       <TablePaginationFooter

@@ -3,7 +3,18 @@
 import { useCallback, useEffect, useState } from "react";
 import { Tags, X } from "lucide-react";
 import { toast } from "sonner";
+import Image from "next/image";
 
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -42,6 +53,7 @@ type Props = {
   onAssign: (
     offerIds: string[],
     leadIds: string[],
+    preview?: boolean
   ) => Promise<{ successCount: number; failureCount: number }>;
   isLoadingLeads?: boolean;
 };
@@ -58,6 +70,8 @@ export function BulkOfferAssignDrawer({
   const [selectedOfferIds, setSelectedOfferIds] = useState<string[]>([]);
   const [selectedLeadIds, setSelectedLeadIds] = useState<string[]>([]);
   const [isSaving, setIsSaving] = useState(false);
+  const [isAlertOpen, setIsAlertOpen] = useState(false);
+  const [alertContent, setAlertContent] = useState<{title: string, description: string, success: boolean} | null>(null);
 
   const fetchOffers = useCallback(async () => {
     setOffersLoading(true);
@@ -87,13 +101,15 @@ export function BulkOfferAssignDrawer({
       }
 
       setOffers(
-        items.map((item) => ({
-          id: item.id ?? "",
-          title: item.title ?? "",
-          description: item.description ?? "",
-          status: (item.status ?? "inactive").toLowerCase(),
-          validTo: item.validTo ?? "",
-        })),
+        items
+          .filter((item) => (item.status ?? "inactive").toLowerCase() === "active")
+          .map((item) => ({
+            id: item.id ?? "",
+            title: item.title ?? "",
+            description: item.description ?? "",
+            status: "active",
+            validTo: item.validTo ?? "",
+          })),
       );
     } catch {
       setOffers([]);
@@ -154,31 +170,45 @@ export function BulkOfferAssignDrawer({
 
     try {
       setIsSaving(true);
-      const result = await onAssign(selectedOfferIds, selectedLeadIds);
-
+      const result = await onAssign(selectedOfferIds, selectedLeadIds, true);
+      
+      let description = `The offer can be assigned to ${result.successCount} leads and ${result.failureCount} leads are skipped as the offer is already assigned to them`;
       if (result.failureCount === 0) {
-        toast.success(
-          `${selectedOfferIds.length === 1 ? "Offer" : "Offers"} Successfully Assigned to ${pluralize(selectedLeadIds.length, "Selected Lead")}.`,
-        );
-        resetSelections();
-        onClose();
-      } else if (result.successCount > 0) {
-        toast.warning(
-          `${pluralize(selectedOfferIds.length, "Offer")} assigned successfully to ${pluralize(result.successCount, "selected lead")}. 
-           The Other ${pluralize(result.failureCount, "selected lead")} ${result.failureCount === 1 ? "was" : "were"} already assigned to ${selectedOfferIds.length === 1 ? "the selected offer" : "the selected offers"}.`,
-        );
-        resetSelections();
-      } else {
-        toast.error(
-          `${selectedOfferIds.length === 1 ? "This Offer was" : "These Offers were"} ${selectedLeadIds.length === 1 ? "already assigned to this lead" : "already assigned to these leads"}.`,
-        );
+        description = `The ${selectedOfferIds.length === 1 ? 'offer' : 'offers'} can be assigned to ${result.successCount} ${result.successCount === 1 ? 'lead' : 'leads'}.`;
+      } else if (result.successCount === 0) {
+        description = `All ${result.failureCount} selected ${result.failureCount === 1 ? 'lead is' : 'leads are'} skipped as the offer is already assigned to them.`;
       }
+
+      setAlertContent({
+        title: "Confirm Assignment",
+        description,
+        success: true
+      });
+      setIsAlertOpen(true);
+    } catch (error) {
+      toast.error("Failed to fetch assignment preview");
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const confirmAssign = async () => {
+    try {
+      setIsSaving(true);
+      await onAssign(selectedOfferIds, selectedLeadIds, false);
+
+      toast.success("Assigned successfully");
+
+      resetSelections();
+      setIsAlertOpen(false);
+      onClose();
     } catch (error) {
       toast.error(
         error instanceof Error
           ? error.message
           : "Failed to assign offers to leads.",
       );
+      setIsAlertOpen(false);
     } finally {
       setIsSaving(false);
     }
@@ -463,6 +493,60 @@ export function BulkOfferAssignDrawer({
           </div>
         </div>
       </DrawerContent>
+
+      <AlertDialog
+        open={isAlertOpen}
+        onOpenChange={(open) => {
+          setIsAlertOpen(open);
+          if (!open) {
+            resetSelections();
+            if (alertContent?.success) {
+              onClose();
+            }
+          }
+        }}
+      >
+        <AlertDialogContent className="w-[380px] max-w-[calc(100vw-2rem)] rounded-3xl border-0 bg-white p-5 shadow-2xl z-[9999]">
+          <AlertDialogHeader className="flex flex-col items-center space-y-1 text-center">
+            <Image
+              src="/saptarishi.png"
+              alt="SAPtarishi"
+              width={90}
+              height={32}
+              priority
+              className="h-auto w-[90px] object-contain mb-1"
+            />
+            <AlertDialogTitle className="text-base font-semibold text-slate-900">
+              {alertContent?.title}
+            </AlertDialogTitle>
+            <AlertDialogDescription className="max-w-xs text-[13px] leading-relaxed text-slate-500">
+              {alertContent?.description}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="mt-4 flex w-full flex-row gap-3 sm:justify-center">
+            <AlertDialogCancel 
+              className="mt-0 flex-1 h-9 rounded-lg text-xs font-medium"
+              onClick={() => {
+                setIsAlertOpen(false);
+                resetSelections();
+                onClose();
+              }}
+            >
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction 
+              className="flex-1 h-9 rounded-lg bg-blue-500 text-xs font-medium text-white hover:bg-blue-600"
+              onClick={(e) => {
+                e.preventDefault();
+                confirmAssign();
+              }}
+              disabled={isSaving}
+            >
+              {isSaving ? "Assigning..." : "OK"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Drawer>
   );
 }
