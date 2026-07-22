@@ -783,13 +783,15 @@ export default function OrgManagerOffersPage() {
                     <TableRow key={offer.id}>
                       <TableCell>{rowOffset + index + 1}</TableCell>
 
-                      <TableCell className="font-medium">
+                      <TableCell className="font-medium max-w-50">
                         <div className="flex items-center gap-2">
-                          <span>{offer.title}</span>
+                          <span className="truncate" title={offer.title}>
+                            {offer.title}
+                          </span>
                           {offer.isGlobal && (
                             <Badge
                               variant="outline"
-                              className="border-blue-200 bg-blue-50 text-blue-700"
+                              className="shrink-0 border-blue-200 bg-blue-50 text-blue-700"
                             >
                               Global
                             </Badge>
