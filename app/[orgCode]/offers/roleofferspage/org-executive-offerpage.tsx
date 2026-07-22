@@ -420,7 +420,7 @@ export default function OrgExecutiveOffersPage() {
                     {offer.title}
                   </TableCell>
 
-                  <TableCell className="max-w-[250px] truncate">
+                  <TableCell className="max-w-[250px] truncate" title={offer.description}>
                     {offer.description || "—"}
                   </TableCell>
 
