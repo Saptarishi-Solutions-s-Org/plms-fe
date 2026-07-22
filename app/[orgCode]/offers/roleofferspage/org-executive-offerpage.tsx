@@ -413,7 +413,12 @@ export default function OrgExecutiveOffersPage() {
                 <TableRow key={offer.id || index}>
                   <TableCell>{rowOffset + index + 1}</TableCell>
 
-                  <TableCell className="font-medium">{offer.title}</TableCell>
+                  <TableCell
+                    className="max-w-50 truncate font-medium"
+                    title={offer.title}
+                  >
+                    {offer.title}
+                  </TableCell>
 
                   <TableCell className="max-w-[250px] truncate">
                     {offer.description || "—"}
