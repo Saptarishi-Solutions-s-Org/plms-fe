@@ -20,11 +20,12 @@ function OfferItem({ offer }: { offer: AssignedOffer }) {
           <p className="text-sm font-semibold text-gray-900">{offer.title}</p>
         </div>
         <span
-          className={`flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-xs font-medium ${
-            offer.status === "Active"
-              ? "border-green-200 bg-green-50 text-green-700"
+          className={`flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-xs font-medium ${offer.status === "Active"
+            ? "border-green-200 bg-green-50 text-green-700"
+            : offer.status === "Expired"
+              ? "border-red-200 bg-red-50 text-red-700"
               : "border-gray-200 bg-gray-100 text-gray-600"
-          }`}
+            }`}
         >
           <div className="h-1.5 w-1.5 rounded-full bg-current"></div>
           {offer.status}
@@ -44,11 +45,10 @@ function OfferItem({ offer }: { offer: AssignedOffer }) {
           <>
             <span className="text-gray-300">•</span>
             <span
-              className={`font-medium ${
-                offer.assignedByName.startsWith("Segment:")
-                  ? "text-purple-600 bg-purple-50 px-1.5 py-0.5 rounded-md"
-                  : "text-gray-600"
-              }`}
+              className={`font-medium ${offer.assignedByName.startsWith("Segment:")
+                ? "text-purple-600 bg-purple-50 px-1.5 py-0.5 rounded-md"
+                : "text-gray-600"
+                }`}
             >
               {offer.assignedByName.startsWith("Segment:")
                 ? offer.assignedByName

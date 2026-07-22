@@ -44,7 +44,6 @@ export function useLeads(options: UseLeadsOptions = {}) {
   const page = options.page ?? 1;
   const limit = options.limit ?? DEFAULT_PAGE_LIMIT;
   const search = options.search;
-  const statsScope = options.statsScope ?? "filtered";
 
   // Convert arrays into stable primitive strings
   const status = joinFilterValues(options.statuses);
