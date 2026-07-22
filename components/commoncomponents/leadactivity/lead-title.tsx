@@ -47,14 +47,21 @@ export default function LeadTitleCard({ lead }: LeadTitleCardProps) {
             {priority && (
               <Badge
                 variant="outline"
-                className={`text-xs font-semibold ${
-                  PRIORITY_COLORS[priority] ?? ""
-                }`}
+                className={`text-xs font-semibold ${PRIORITY_COLORS[priority] ?? ""
+                  }`}
               >
                 {priority.toUpperCase()} PRIORITY
               </Badge>
             )}
           </div>
+
+          <div className="mt-2 text-sm">
+            <span className="text-gray-400">Created By </span>
+            <span className="font-semibold text-gray-800">
+              {lead.createdByName}
+            </span>
+          </div>
+
           <div className="mt-3 flex flex-col gap-2">
             <div className="flex flex-wrap gap-x-5 gap-y-2">
               <ContactMeta icon={Phone} value={lead.phone || "-"} />
@@ -64,9 +71,7 @@ export default function LeadTitleCard({ lead }: LeadTitleCardProps) {
           </div>
         </div>
 
-        <div className="shrink-0 text-right text-sm">
-          <p className="text-xs text-gray-400">Created By</p>
-          <p className="font-semibold text-gray-800">{lead.createdByName}</p>
+        <div className="shrink-0 text-left text-sm">
           <p className="mt-2 text-xs text-gray-400">Source</p>
           <p className="font-semibold text-gray-800">{source}</p>
         </div>

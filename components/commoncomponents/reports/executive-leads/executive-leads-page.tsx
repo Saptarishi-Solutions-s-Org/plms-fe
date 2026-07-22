@@ -166,13 +166,13 @@ export default function ExecutiveLeadsPage({
 
         const filteredLeads = Array.isArray(leads)
           ? leads.filter(
-              (lead) =>
-                lead.assignedTo === executiveId &&
-                isWithinDateRange(
-                  lead.createdAt ?? lead.createdat,
-                  appliedDateRange,
-                ),
-            )
+            (lead) =>
+              lead.assignedTo === executiveId &&
+              isWithinDateRange(
+                lead.createdAt ?? lead.createdat,
+                appliedDateRange,
+              ),
+          )
           : [];
 
         const rows = filteredLeads.map(mapApiLeadToRow);
@@ -254,14 +254,20 @@ export default function ExecutiveLeadsPage({
       <div className="flex w-full flex-col gap-6">
         <header className="flex flex-col gap-3 border-b border-slate-200 pb-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-4">
-            
+
+            <Button
+              asChild
+              variant="ghost"
+              size="icon"
+              className="p-2 text-gray-500 hover:text-purple-600 bg-white rounded-xl shadow-sm border border-gray-100 hover:shadow"
+            >
               <Link
                 href={`/${orgCode}/org-reports/?tab=team-performance`}
                 aria-label="Back to reports"
-                className="t-4 px-4 py-2 text-xs font-semibold text-white bg-purple-600 rounded-xl"
               >
-                <ArrowLeft className="w-4 h-4" />
+                <ArrowLeft className="h-5 w-5" />
               </Link>
+            </Button>
             <div className="h-6 w-px bg-slate-200" />
             <div>
               <h1 className="text-xl font-bold text-gray-900">
