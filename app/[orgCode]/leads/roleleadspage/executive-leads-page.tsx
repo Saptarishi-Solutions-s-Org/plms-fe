@@ -242,9 +242,9 @@ export default function ExecutiveLeadsPage() {
     });
   };
 
-  const handleBulkAssign = async (offerIds: string[], leadIds: string[]) => {
+  const handleBulkAssign = async (offerIds: string[], leadIds: string[], preview: boolean = false) => {
     const results = await Promise.allSettled(
-      offerIds.map((offerId) => assignOffersToLeads({ offerId, leadIds })),
+      offerIds.map((offerId) => assignOffersToLeads({ offerId, leadIds, preview })),
     );
 
     const successCount = results.reduce(

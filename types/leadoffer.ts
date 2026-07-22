@@ -46,6 +46,7 @@ export type AssignOfferToLeadPayload = {
 export type AssignOffersToLeadsPayload = {
   offerId: string;
   leadIds: string[];
+  preview?: boolean;
 };
 
 export type AssignOffersToLeadsResponse = {
