@@ -33,7 +33,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
-import { MoreHorizontal, Pencil } from "lucide-react";
+import { MoreHorizontal } from "lucide-react";
 
 const formatDate = (date: string | Date | null | undefined): string => {
   if (!date) return "—";
@@ -336,7 +336,6 @@ export function OffersTable({
                             <DropdownMenuItem
                               onClick={() => handleEdit(offer)}
                             >
-                              <Pencil className="mr-2 h-4 w-4" />
                               Edit
                             </DropdownMenuItem>
                           )}
