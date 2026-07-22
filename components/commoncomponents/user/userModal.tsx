@@ -9,6 +9,7 @@ import {
   DialogFooter,
   DialogDescription,
 } from "@/components/ui/dialog";
+import { toast } from "sonner";
 
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -167,7 +168,6 @@ export default function UserModal({
         await updateUser({
           id: user.id,
           name: form.name,
-          email: form.email,
           phone: form.phone,
           gender: form.gender,
           dob: form.dob,
@@ -185,8 +185,9 @@ export default function UserModal({
       setOpen(false);
       reset();
       onSuccess();
-    } catch {
-      console.error(user ? "Update failed" : "Create failed");
+    } catch (err: any) {
+      console.error(err);
+      toast.error(err.message || (user ? "Update failed" : "Create failed"));
     } finally {
       setLoading(false);
     }
@@ -233,8 +234,7 @@ export default function UserModal({
             )}
           </div>
 
-          {!user && (
-            <div className="space-y-1">
+          <div className="space-y-1">
               <Label required>Email</Label>
               <Input
                 placeholder="Enter email"
@@ -247,8 +247,6 @@ export default function UserModal({
                 <p className="text-sm text-red-500">{errors.email}</p>
               )}
             </div>
-          )}
-
           <div className="space-y-1">
             <Label required>Phone</Label>
             <Input
