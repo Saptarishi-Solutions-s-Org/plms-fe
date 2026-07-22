@@ -180,13 +180,12 @@ export default function ExecutiveLeadsPage() {
         items = [firstItems, ...remainingResponses.map(getOfferItems)].flat();
       }
 
-      setOfferOptions(
-        items.map((offer) => ({
-          id: offer.id ?? "",
-          title: offer.title ?? "",
-          status: offer.status ?? "inactive",
-        })),
-      );
+      const mappedOffers = items.map((offer) => ({
+        id: offer.id ?? "",
+        title: offer.title ?? "",
+        status: offer.status ?? "inactive",
+      }));
+      setOfferOptions(mappedOffers.filter(offer => offer.status?.toLowerCase() === "active"));
     } catch {
       setOfferOptions([]);
     } finally {
