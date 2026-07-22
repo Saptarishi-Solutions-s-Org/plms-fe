@@ -176,15 +176,41 @@ export default function LeadForm({
       }
 
       try {
-        const stateList = await getStatesByCountry(initialData.country);
+        let targetCountryId = initialData.country;
+        if (countries.length > 0) {
+          const matchedCountry = countries.find(
+            (c) =>
+              c.id === initialData.country ||
+              c.name.toLowerCase() === initialData.country.toLowerCase(),
+          );
+          if (matchedCountry) {
+            targetCountryId = matchedCountry.id;
+            if (targetCountryId !== initialData.country) {
+              setValue("country", targetCountryId);
+            }
+          }
+        }
+
+        const stateList = await getStatesByCountry(targetCountryId);
         setStates(stateList);
+
+        if (initialData.state && stateList.length > 0) {
+          const matchedState = stateList.find(
+            (s: Option) =>
+              s.id === initialData.state ||
+              s.name.toLowerCase() === initialData.state.toLowerCase(),
+          );
+          if (matchedState && matchedState.id !== initialData.state) {
+            setValue("state", matchedState.id);
+          }
+        }
       } catch (err) {
         console.error(err);
       }
     };
 
     loadInitialStates();
-  }, [initialData?.country]);
+  }, [initialData?.country, initialData?.state, countries, setValue]);
 
   const handleCountryChange = async (countryId: string) => {
     setValue("country", countryId);
@@ -404,26 +430,32 @@ export default function LeadForm({
             />
           </FieldWrapper>
 
-          <FieldWrapper label="Priority" required error={errors.priority?.message}>
-            <Controller
-              name="priority"
-              control={control}
-              render={({ field }) => (
-                <Select value={field.value} onValueChange={field.onChange}>
-                  <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Select priority" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {LEAD_PRIORITY_OPTIONS.map((option) => (
-                      <SelectItem key={option.value} value={option.value}>
-                        {option.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              )}
-            />
-          </FieldWrapper>
+          <div className="sm:col-span-2">
+            <FieldWrapper
+              label="Priority"
+              required
+              error={errors.priority?.message}
+            >
+              <Controller
+                name="priority"
+                control={control}
+                render={({ field }) => (
+                  <Select value={field.value} onValueChange={field.onChange}>
+                    <SelectTrigger className="w-full min-w-0">
+                      <SelectValue placeholder="Select priority" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {LEAD_PRIORITY_OPTIONS.map((option) => (
+                        <SelectItem key={option.value} value={option.value}>
+                          {option.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
+              />
+            </FieldWrapper>
+          </div>
 
           {!isEditing && managers.length > 0 && (
             <FieldWrapper label="Manager" required error={managerError}>

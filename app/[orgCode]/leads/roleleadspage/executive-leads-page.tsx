@@ -22,7 +22,8 @@ import {
   assignOffersToLeads,
   getExecutiveOffers,
 } from "@/services/executivestats";
-import { createLead, updateLead, getLeadsWithStats } from "@/services/leads";
+import { createLead, getLeadDetail, updateLead, getLeadsWithStats } from "@/services/leads";
+import type { LeadDetailResponse } from "@/types/leadActivity";
 import {
   type Lead,
   type LeadFormData,
@@ -179,13 +180,12 @@ export default function ExecutiveLeadsPage() {
         items = [firstItems, ...remainingResponses.map(getOfferItems)].flat();
       }
 
-      setOfferOptions(
-        items.map((offer) => ({
-          id: offer.id ?? "",
-          title: offer.title ?? "",
-          status: offer.status ?? "inactive",
-        })),
-      );
+      const mappedOffers = items.map((offer) => ({
+        id: offer.id ?? "",
+        title: offer.title ?? "",
+        status: offer.status ?? "inactive",
+      }));
+      setOfferOptions(mappedOffers.filter(offer => offer.status?.toLowerCase() === "active"));
     } catch {
       setOfferOptions([]);
     } finally {
@@ -193,17 +193,24 @@ export default function ExecutiveLeadsPage() {
     }
   }, []);
 
-  useEffect(() => {
-    fetchOfferOptions();
-  }, [fetchOfferOptions]);
 
   const openAddForm = () => {
     setEditingLead(null);
     setIsFormOpen(true);
   };
 
-  const openEditForm = (lead: Lead) => {
-    setEditingLead(lead);
+  const openEditForm = async (lead: Lead) => {
+    try {
+      const detailRes = (await getLeadDetail(lead.leadCode || lead.uuid)) as LeadDetailResponse;
+      if (detailRes?.lead) {
+        setEditingLead(detailRes.lead);
+      } else {
+        setEditingLead(lead);
+      }
+    } catch (err) {
+      console.error(err);
+      setEditingLead(lead);
+    }
     setIsFormOpen(true);
   };
 
@@ -340,6 +347,7 @@ export default function ExecutiveLeadsPage() {
                 offerOptions={offerOptions}
                 isOfferOptionsLoading={isOfferOptionsLoading}
                 onAssignOffer={canUpdateLead ? handleAssignOffer : undefined}
+                onAssignOfferClick={fetchOfferOptions}
               />
             )}
           />

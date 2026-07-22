@@ -61,21 +61,8 @@ export function BulkActionsDrawer({
   const pluralize = (count: number, singular: string, plural = `${singular}s`) =>
     `${count} ${count === 1 ? singular : plural}`;
 
-  const formatSkippedReason = (reason: string) => {
-    switch (reason) {
-      case "already_assigned":
-        return "already assigned to this executive";
-      default:
-        return reason.replace(/_/g, " ");
-    }
-  };
-
-  const buildSkippedMessage = (
-    skipped: Array<{ offerId: string; executiveId: string; reason: string }>,
-  ) =>
-    [...new Set(skipped.map((item) => formatSkippedReason(item.reason)))].join(
-      "; ",
-    );
+  const uniqueCount = <T,>(items: T[], getId: (item: T) => string) =>
+    new Set(items.map(getId)).size;
 
   const handleClose = () => {
     resetSelections();
@@ -108,28 +95,23 @@ export function BulkActionsDrawer({
 
       const result = await onAssignOffer(payload);
       const assignedCount = result.assigned.length;
-      const skippedCount = result.skipped.length;
-      const skippedMessage = buildSkippedMessage(result.skipped);
+      const assignedOfferCount = uniqueCount(result.assigned, (item) => item.offerId);
+      const assignedExecutiveCount = uniqueCount(
+        result.assigned,
+        (item) => item.executiveId,
+      );
 
-      if (skippedCount === 0) {
+      if (assignedCount > 0) {
         toast.success(
-          `${selectedOfferIds.length === 1 ? "Offer" : "Offers"} Successfully Assigned to ${pluralize(selectedExecutiveIds.length, "Selected Executive")}.`,
+          `${pluralize(assignedOfferCount, "offer")} successfully assigned to ${pluralize(assignedExecutiveCount, "selected executive")}.`,
         );
         handleClose();
-      } else if (assignedCount > 0) {
-        toast.warning(
-          `${pluralize(assignedCount, "Offer")} assigned successfully to ${pluralize(assignedCount, "selected executive")}.
-           The Other ${pluralize(skippedCount, "selected offer")} ${
-             skippedCount === 1 ? "was" : "were"
-           } ${skippedMessage || "already assigned"}.`,
-        );
-        resetSelections();
       } else {
         toast.error(
           `${selectedOfferIds.length === 1 ? "This Offer was" : "These Offers were"} ${
             selectedExecutiveIds.length === 1
-              ? skippedMessage || "already assigned to this executive"
-              : skippedMessage || "already assigned to these executives"
+              ? "already assigned to this executive"
+              : "already assigned to these executives"
           }.`,
         );
       }
@@ -180,6 +162,7 @@ export function BulkActionsDrawer({
               variant="ghost"
               size="icon"
               onClick={handleClose}
+              disabled={isSaving}
               className="h-8 w-8 text-gray-400 hover:bg-gray-100 hover:text-gray-600"
               aria-label="Close"
             >
@@ -188,8 +171,8 @@ export function BulkActionsDrawer({
           </div>
         </DrawerHeader>
 
-        <div className="grid min-h-0 flex-1 gap-5 overflow-y-auto p-5 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] md:overflow-hidden">
-          <section className="flex min-h-[380px] min-w-0 flex-col md:min-h-0">
+        <div className="grid min-h-0 flex-1 gap-5 overflow-y-auto p-5 md:grid-cols-[minmax(0,0.8fr)_minmax(0,1.2fr)] md:overflow-hidden">
+          <section className="flex min-h-[300px] min-w-0 flex-col md:min-h-0">
             <h3 className="mb-3 text-lg font-semibold text-gray-800">
               Executives
             </h3>
@@ -219,27 +202,25 @@ export function BulkActionsDrawer({
         </div>
 
         <div className="border-t border-gray-200 bg-white px-5 py-3">
-          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-            <p className="text-sm text-gray-500"></p>
-            <div className="flex shrink-0 justify-end gap-2">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={handleClose}
-                size="sm"
-              >
-                Cancel
-              </Button>
-              <Button
-                type="button"
-                onClick={handleSave}
-                disabled={isSaveDisabled}
-                size="sm"
-                className="bg-blue-600 text-white hover:bg-blue-700"
-              >
-                {isSaving ? "Assigning..." : "Assign Offer"}
-              </Button>
-            </div>
+          <div className="flex justify-end gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={handleClose}
+              disabled={isSaving}
+              size="sm"
+            >
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              onClick={handleSave}
+              disabled={isSaveDisabled}
+              size="sm"
+              className="bg-blue-600 text-white hover:bg-blue-700"
+            >
+              {isSaving ? "Assigning..." : "Assign Offers"}
+            </Button>
           </div>
         </div>
       </DrawerContent>

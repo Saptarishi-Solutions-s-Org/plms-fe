@@ -73,24 +73,24 @@ const toPeople = (response: unknown, key: string): Person[] => {
     ? data
     : data && typeof data === "object"
       ? [key, "items", "results", "data"]
-          .map((candidate) => (data as Record<string, unknown>)[candidate])
-          .find(Array.isArray) ?? []
+        .map((candidate) => (data as Record<string, unknown>)[candidate])
+        .find(Array.isArray) ?? []
       : [];
 
   return Array.isArray(rows)
     ? rows
-        .map((row) => {
-          const record = toRecord(row);
-          return {
-            id: String(
-              record.id ?? record.userId ?? record.executiveId ?? "",
-            ),
-            name: String(
-              record.name ?? record.userName ?? record.executiveName ?? "-",
-            ),
-          };
-        })
-        .filter((row) => row.id)
+      .map((row) => {
+        const record = toRecord(row);
+        return {
+          id: String(
+            record.id ?? record.userId ?? record.executiveId ?? "",
+          ),
+          name: String(
+            record.name ?? record.userName ?? record.executiveName ?? "-",
+          ),
+        };
+      })
+      .filter((row) => row.id)
     : [];
 };
 
@@ -375,8 +375,9 @@ export default function AdminReportsPage() {
     if (selectedExecutive) {
       downloadCsv(
         "ExecutiveLeadsReport",
-        ["Lead", "Status", "Source", "Assigned By"],
-        executiveLeads.map((lead) => [
+        ["S.NO", "Lead", "Status", "Source", "Assigned By"],
+        executiveLeads.map((lead, index) => [
+          index + 1,
           lead.name,
           lead.status,
           lead.leadSource ?? lead.source,
@@ -389,8 +390,9 @@ export default function AdminReportsPage() {
     if (selectedManager) {
       downloadCsv(
         "ManagerExecutivesReport",
-        ["Executive", "Leads", "Converted", "Conversion Rate"],
-        executiveRows.map((row) => [
+        ["S.NO", "Executive", "Leads", "Converted", "Conversion Rate"],
+        executiveRows.map((row, index) => [
+          index + 1,
           row.name,
           row.leads,
           row.converted,
@@ -402,8 +404,9 @@ export default function AdminReportsPage() {
 
     downloadCsv(
       "OrganizationManagersReport",
-      ["Manager", "Executives", "Leads", "Conversion Rate"],
-      managers.map((manager) => [
+      ["S.NO", "Manager", "Executives", "Leads", "Conversion Rate"],
+      managers.map((manager, index) => [
+        index + 1,
         manager.name,
         manager.executives.length,
         manager.leads,
@@ -445,111 +448,111 @@ export default function AdminReportsPage() {
           }
           className="w-full items-stretch gap-6"
         >
-        <div className="w-full border-b border-slate-200">
-          <TabsList
-            variant="line"
-            className="flex w-fit justify-start rounded-none"
-          >
-            <TabsTrigger
-              value="overview"
-              className="h-11 px-5 text-sm font-semibold data-[state=active]:text-blue-600 data-[state=active]:after:bg-blue-600"
+          <div className="w-full border-b border-slate-200">
+            <TabsList
+              variant="line"
+              className="flex w-fit justify-start rounded-none"
             >
-              Overview
-            </TabsTrigger>
-            <TabsTrigger
-              value="organization-performance"
-              className="h-11 px-5 text-sm font-semibold data-[state=active]:text-blue-600 data-[state=active]:after:bg-blue-600"
-            >
-              Organization Performance
-            </TabsTrigger>
-          </TabsList>
-        </div>
-        <TabsContent value="overview" className="w-full">
-          <div className="w-full space-y-6">
-            <div className="w-full overflow-x-auto">
-              <ReportStats stats={stats} variant="admin" />
-            </div>
-            <section className="grid w-full grid-cols-1 gap-6 lg:grid-cols-2">
-              <div className="w-full min-w-0 overflow-hidden rounded-lg">
-                <ManagerPerformanceCard managers={managers} />
-              </div>
-              <div className="w-full min-w-0 overflow-hidden rounded-lg">
-                <SourceVsConversionRate
-                  title="Source vs Conversion Rate"
-                  data={sourceConversion}
-                />
-              </div>
-            </section>
+              <TabsTrigger
+                value="overview"
+                className="h-11 px-5 text-sm font-semibold data-[state=active]:text-blue-600 data-[state=active]:after:bg-blue-600"
+              >
+                Overview
+              </TabsTrigger>
+              <TabsTrigger
+                value="organization-performance"
+                className="h-11 px-5 text-sm font-semibold data-[state=active]:text-blue-600 data-[state=active]:after:bg-blue-600"
+              >
+                Organization Performance
+              </TabsTrigger>
+            </TabsList>
           </div>
-        </TabsContent>
-        <TabsContent value="organization-performance" className="w-full">
-          {selectedExecutive ? (
-            <PerformanceTable
-              key={`executive-${selectedExecutive.id}`}
-              title={`${selectedExecutive.name} Leads`}
-              totalLabel="leads"
-              onBack={() => replaceQuery({ executiveId: null })}
-              headers={["Lead", "Status", "Source", "Assigned By"]}
-              rows={executiveLeads.map((lead) => [
-                lead.name ?? "-",
-                lead.status ?? "-",
-                (lead.leadSource ?? lead.source ?? "-").replace(/_/g, " "),
-                lead.createdByName ?? "-",
-              ])}
-            />
-          ) : selectedManager ? (
-            <PerformanceTable
-              key={`manager-${selectedManager.id}`}
-              title={`${selectedManager.name} Executives`}
-              totalLabel="executives"
-              onBack={() => replaceQuery({ managerId: null })}
-              headers={[
-                "Executive",
-                "Leads Assigned",
-                "Converted",
-                "Conversion Rate",
-                "Detail",
-              ]}
-              rows={executiveRows.map((row) => [
-                row.name,
-                row.leads,
-                row.converted,
-                <Performance key={`${row.id}-rate`} value={row.conversionRate} />,
-                <ViewButton
-                  key={`${row.id}-view`}
-                  onClick={() => replaceQuery({ executiveId: row.id })}
-                />,
-              ])}
-            />
-          ) : (
-            <PerformanceTable
-              key="managers"
-              title="Managers"
-              totalLabel="managers"
-              headers={[
-                "Manager",
-                "Executives",
-                "Leads Assigned",
-                "Conversion Rate",
-                "Detail",
-              ]}
-              rows={managers.map((manager) => [
-                manager.name,
-                manager.executives.length,
-                manager.leads,
-                <Performance
-                  key={`${manager.id}-rate`}
-                  value={manager.conversionRate}
-                />,
-                <ViewButton
-                  key={`${manager.id}-view`}
-                  onClick={() => replaceQuery({ managerId: manager.id })}
-                />,
-              ])}
-            />
-          )}
-        </TabsContent>
-      </Tabs>
+          <TabsContent value="overview" className="w-full">
+            <div className="w-full space-y-6">
+              <div className="w-full overflow-x-auto">
+                <ReportStats stats={stats} variant="admin" />
+              </div>
+              <section className="grid w-full grid-cols-1 gap-6 lg:grid-cols-2">
+                <div className="w-full min-w-0 overflow-hidden rounded-lg">
+                  <ManagerPerformanceCard managers={managers} />
+                </div>
+                <div className="w-full min-w-0 overflow-hidden rounded-lg">
+                  <SourceVsConversionRate
+                    title="Source vs Conversion Rate"
+                    data={sourceConversion}
+                  />
+                </div>
+              </section>
+            </div>
+          </TabsContent>
+          <TabsContent value="organization-performance" className="w-full">
+            {selectedExecutive ? (
+              <PerformanceTable
+                key={`executive-${selectedExecutive.id}`}
+                title={`${selectedExecutive.name} Leads`}
+                totalLabel="leads"
+                onBack={() => replaceQuery({ executiveId: null })}
+                headers={["Lead", "Status", "Source", "Assigned By"]}
+                rows={executiveLeads.map((lead) => [
+                  lead.name ?? "-",
+                  lead.status ?? "-",
+                  (lead.leadSource ?? lead.source ?? "-").replace(/_/g, " "),
+                  lead.createdByName ?? "-",
+                ])}
+              />
+            ) : selectedManager ? (
+              <PerformanceTable
+                key={`manager-${selectedManager.id}`}
+                title={`${selectedManager.name} Executives`}
+                totalLabel="executives"
+                onBack={() => replaceQuery({ managerId: null })}
+                headers={[
+                  "Executive",
+                  "Leads Assigned",
+                  "Converted",
+                  "Conversion Rate",
+                  "Detail",
+                ]}
+                rows={executiveRows.map((row) => [
+                  row.name,
+                  row.leads,
+                  row.converted,
+                  <Performance key={`${row.id}-rate`} value={row.conversionRate} />,
+                  <ViewButton
+                    key={`${row.id}-view`}
+                    onClick={() => replaceQuery({ executiveId: row.id })}
+                  />,
+                ])}
+              />
+            ) : (
+              <PerformanceTable
+                key="managers"
+                title="Managers"
+                totalLabel="managers"
+                headers={[
+                  "Manager",
+                  "Executives",
+                  "Leads Assigned",
+                  "Conversion Rate",
+                  "Detail",
+                ]}
+                rows={managers.map((manager) => [
+                  manager.name,
+                  manager.executives.length,
+                  manager.leads,
+                  <Performance
+                    key={`${manager.id}-rate`}
+                    value={manager.conversionRate}
+                  />,
+                  <ViewButton
+                    key={`${manager.id}-view`}
+                    onClick={() => replaceQuery({ managerId: manager.id })}
+                  />,
+                ])}
+              />
+            )}
+          </TabsContent>
+        </Tabs>
       </div>
     </div>
   );
@@ -601,10 +604,10 @@ function PerformanceTable({
     currentPage === page
       ? pagination
       : createPaginationMeta({
-          page: currentPage,
-          limit,
-          total: rows.length,
-        });
+        page: currentPage,
+        limit,
+        total: rows.length,
+      });
   const startIndex = (currentPage - 1) * limit;
   const paginatedRows = rows.slice(startIndex, startIndex + limit);
 
@@ -632,6 +635,9 @@ function PerformanceTable({
         <Table>
           <TableHeader className="border-b border-gray-200 bg-[#7677F41A]">
             <TableRow>
+              <TableHead className="w-20 whitespace-nowrap text-sm font-semibold sm:text-base">
+                S.NO
+              </TableHead>
               {headers.map((header) => (
                 <TableHead
                   key={header}
@@ -645,27 +651,30 @@ function PerformanceTable({
           <TableBody>
             {paginatedRows.map((row, rowIndex) => (
               <TableRow key={startIndex + rowIndex}>
-                {row.map((cell, cellIndex) => (
-                  <TableCell
-                    key={cellIndex}
-                    className="py-4 text-sm text-gray-600 sm:text-base"
-                  >
-                    {cell}
-                  </TableCell>
-                ))}
-              </TableRow>
-            ))}
-            {!rows.length && (
-              <TableRow>
-                <TableCell
-                  colSpan={headers.length}
-                  className="py-12 text-center text-sm font-semibold text-gray-400"
-                >
-                  No records found
+                <TableCell className="py-4 text-sm text-gray-600 sm:text-base">
+                  {startIndex + rowIndex + 1}
                 </TableCell>
-              </TableRow>
-            )}
-          </TableBody>
+                  {row.map((cell, cellIndex) => (
+                    <TableCell
+                      key={cellIndex}
+                      className="py-4 text-sm text-gray-600 sm:text-base"
+                    >
+                      {cell}
+                    </TableCell>
+                  ))}
+                </TableRow>
+            ))}
+                {!rows.length && (
+                  <TableRow>
+                    <TableCell
+                      colSpan={headers.length}
+                      className="py-12 text-center text-sm font-semibold text-gray-400"
+                    >
+                      No records found
+                    </TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
         </Table>
       </div>
       <TablePaginationFooter

@@ -26,8 +26,8 @@ export function ExecutiveList({
     hasSelectableRows && selectedExecutiveIds.length > 0 && !allSelected;
 
   return (
-    <div className="min-h-0 w-full flex-1 overflow-y-auto overflow-x-hidden rounded-lg border border-gray-200 bg-white shadow-sm">
-      <Table className="table-fixed">
+    <div className="min-h-0 w-full flex-1 overflow-auto rounded-lg border border-gray-200 bg-white shadow-sm">
+      <Table>
         <TableHeader className="sticky top-0 z-10 border-b border-gray-200 bg-[#7677F41A]">
           <TableRow>
             <TableHead className="w-14 text-xs sm:text-sm">
@@ -42,13 +42,13 @@ export function ExecutiveList({
                 />
               </div>
             </TableHead>
-            <TableHead className="min-w-[140px] text-xs sm:text-sm">
+            <TableHead className="min-w-35 text-xs sm:text-sm">
               Executive Name
             </TableHead>
-            <TableHead className="min-w-[80px] text-xs sm:text-sm">
+            <TableHead className="min-w-20 text-xs sm:text-sm">
               Leads
             </TableHead>
-            <TableHead className="min-w-[120px] text-xs sm:text-sm">
+            <TableHead className="min-w-30 text-xs sm:text-sm">
               Active Offers
             </TableHead>
           </TableRow>

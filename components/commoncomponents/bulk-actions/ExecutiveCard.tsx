@@ -37,13 +37,16 @@ export function ExecutiveRow({
           onClick={(event) => event.stopPropagation()}
         />
       </TableCell>
-      <TableCell className="min-w-[140px] text-xs font-medium text-gray-800 sm:text-sm">
+      <TableCell
+        className="max-w-0 truncate text-xs font-medium text-gray-800 sm:text-sm"
+        title={executive.name}
+      >
         {executive.name}
       </TableCell>
-      <TableCell className="min-w-[80px] text-xs text-gray-600 sm:text-sm">
+      <TableCell className="min-w-20 text-xs text-gray-600 sm:text-sm">
         {executive.leadCount}
       </TableCell>
-      <TableCell className="min-w-[120px] text-xs text-gray-600 sm:text-sm">
+      <TableCell className="min-w-30 text-xs text-gray-600 sm:text-sm">
         {executive.activeOfferCount}
       </TableCell>
     </TableRow>

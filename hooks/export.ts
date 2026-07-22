@@ -7,6 +7,7 @@ import {
 } from "@/services/offers";
 import type { ExecutiveLeadRow, TeamPerformanceRow } from "@/types/org-reports";
 import { format } from "date-fns";
+import { toast } from "sonner";
 
 const getReportFilename = (reportName: string) => {
   const now = new Date();
@@ -26,7 +27,7 @@ async function exportRowsAsCsv(
     const rows = await fetchRows();
 
     if (!rows?.length) {
-      window.alert(emptyMessage);
+      toast.error(emptyMessage);
       return;
     }
 
@@ -57,7 +58,7 @@ async function exportRowsAsCsv(
 
     URL.revokeObjectURL(url);
   } catch {
-    window.alert("Export failed. Please try again.");
+    toast.error("Export failed. Please try again.");
   }
 }
 
@@ -115,7 +116,7 @@ export function useExecutiveOfferExport() {
 export function useExecutiveExport(rows: TeamPerformanceRow[]) {
   const handleExport = () => {
     if (!rows.length) {
-      window.alert("There are no executives to export.");
+      toast.error("There are no executives to export.");
       return;
     }
 
@@ -166,7 +167,7 @@ export function useExecutiveExport(rows: TeamPerformanceRow[]) {
 export function useExecutiveLeadsExport(rows: ExecutiveLeadRow[]) {
   const handleExport = () => {
     if (!rows.length) {
-      window.alert("There are no leads to export.");
+      toast.error("There are no leads to export.");
       return;
     }
 
