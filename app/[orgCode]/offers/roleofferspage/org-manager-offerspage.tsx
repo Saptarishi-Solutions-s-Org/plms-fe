@@ -885,11 +885,13 @@ export default function OrgManagerOffersPage() {
                         align="end"
                         className="max-h-60 overflow-y-auto"
                       >
-                        <DropdownMenuItem
-                          onClick={() => handleEditOffer(offer)}
-                        >
-                          Edit
-                        </DropdownMenuItem>
+                        {!offer.isGlobal && (
+                          <DropdownMenuItem
+                            onClick={() => handleEditOffer(offer)}
+                          >
+                            Edit
+                          </DropdownMenuItem>
+                        )}
 
                               {offer.status === "active" && (
                                 <DropdownMenuItem
