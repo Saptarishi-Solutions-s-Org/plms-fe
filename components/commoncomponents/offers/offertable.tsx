@@ -263,11 +263,14 @@ export function OffersTable({
                     {rowOffset + index + 1}
                   </TableCell>
 
-                  <TableCell className="min-w-[160px] whitespace-nowrap text-xs font-medium text-gray-800 sm:text-sm">
+                  <TableCell
+                    className="max-w-50 truncate text-xs font-medium text-gray-800 sm:text-sm"
+                    title={offer.title}
+                  >
                     {offer.title}
                   </TableCell>
 
-                  <TableCell className="min-w-[200px] max-w-[200px] truncate text-xs text-gray-600 sm:text-sm">
+                  <TableCell className="min-w-[200px] max-w-[200px] truncate text-xs text-gray-600 sm:text-sm" title={offer.description}>
                     {offer.description || "—"}
                   </TableCell>
 

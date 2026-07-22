@@ -571,10 +571,11 @@ export default function OrgManagerOffersPage() {
       await fetchOffers();
 
       return { success: true as const };
-    } catch {
+    } catch (error) {
       return {
         success: false as const,
-        error: "Failed to create offer",
+        error:
+          error instanceof Error ? error.message : "Failed to create offer",
       };
     }
   };
@@ -586,10 +587,11 @@ export default function OrgManagerOffersPage() {
       await fetchOffers();
 
       return { success: true as const };
-    } catch {
+    } catch (error) {
       return {
         success: false as const,
-        error: "Failed to update offer",
+        error:
+          error instanceof Error ? error.message : "Failed to update offer",
       };
     }
   };
@@ -781,9 +783,23 @@ export default function OrgManagerOffersPage() {
                     <TableRow key={offer.id}>
                       <TableCell>{rowOffset + index + 1}</TableCell>
 
-                      <TableCell className="font-medium">{offer.title}</TableCell>
+                      <TableCell className="font-medium max-w-50" title={offer.title}>
+                        <div className="flex items-center gap-2">
+                          <span className="truncate">
+                            {offer.title}
+                          </span>
+                          {offer.isGlobal && (
+                            <Badge
+                              variant="outline"
+                              className="shrink-0 border-blue-200 bg-blue-50 text-blue-700"
+                            >
+                              Global
+                            </Badge>
+                          )}
+                        </div>
+                      </TableCell>
 
-                      <TableCell className="max-w-[250px] truncate">
+                      <TableCell className="max-w-[250px] truncate" title={offer.description}>
                         {offer.description || "—"}
                       </TableCell>
 
