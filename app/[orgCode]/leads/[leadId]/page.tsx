@@ -139,13 +139,12 @@ export default function LeadDetailPage() {
         items = [firstItems, ...remainingResponses.map(getOfferItems)].flat();
       }
 
-      setOfferOptions(
-        items.map((offer) => ({
-          id: offer.id ?? "",
-          title: offer.title ?? "",
-          status: offer.status ?? "inactive",
-        })),
-      );
+      const mappedOffers = items.map((offer) => ({
+        id: offer.id ?? "",
+        title: offer.title ?? "",
+        status: offer.status ?? "inactive",
+      }));
+      setOfferOptions(mappedOffers.filter(offer => offer.status?.toLowerCase() === "active"));
     } catch {
       setOfferOptions([]);
     } finally {
@@ -205,7 +204,7 @@ export default function LeadDetailPage() {
 
   return (
     <>
-       <div className="min-h-full w-full space-y-4 p-4 sm:p-5">
+      <div className="min-h-full w-full space-y-4 p-4 sm:p-5">
         <div className="flex items-start justify-between gap-3 border-b border-slate-200 pb-4">
           <div className="flex items-center gap-4">
             <Button
@@ -228,7 +227,7 @@ export default function LeadDetailPage() {
               </p>
             </div>
           </div>
-          
+
           <div className="flex shrink-0 items-center gap-2">
             {canAssignOffer && (
               <Button
