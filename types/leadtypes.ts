@@ -53,8 +53,10 @@ export interface AssignedOffer {
 
 export interface LeadDetailData {
   lead: Lead & {
-    stateName: string;
+    stateId: string;
+    countryId: string;
     countryName: string;
+    stateName: string;
     importType: string;
     createdAt: string;
     createdById: string;

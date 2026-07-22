@@ -617,13 +617,11 @@ function PerformanceTable({
         <div className="flex items-center gap-3">
           {onBack && (
             <Button
-              variant="outline"
-              size="sm"
               onClick={onBack}
-              className="size-9 rounded-md p-0"
+              className="t-4 px-4 py-2 text-xs font-semibold text-white bg-purple-600 rounded-xl"
               aria-label="Go back"
             >
-              <ArrowLeft className="size-4" />
+              <ArrowLeft className="w-4 h-4" />
             </Button>
           )}
           <h2 className="text-xl font-semibold text-gray-900 sm:text-2xl">

@@ -42,7 +42,7 @@ import { useUrlOfferFilters } from "@/hooks/useurloffer";
 import { type AuthUser, getUser } from "@/lib/auth";
 import { canAccess } from "@/lib/permissions";
 import { subscribeRealtime } from "@/lib/socket";
-import { MoreHorizontal, ListChecks, Download, Plus, UserPlus, Loader2 } from "lucide-react";
+import { MoreHorizontal, ListChecks, Download, Plus, Loader2 } from "lucide-react";
 import Image from "next/image";
 
 import {
@@ -879,7 +879,6 @@ export default function OrgManagerOffersPage() {
                                 <DropdownMenuItem
                                   onClick={() => handleOpenAssignDialog(offer)}
                                 >
-                                  <UserPlus className="mr-2 h-4 w-4" />
                                   Assign To
                                 </DropdownMenuItem>
                               )}

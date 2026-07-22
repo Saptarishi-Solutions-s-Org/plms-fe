@@ -254,25 +254,20 @@ export default function ExecutiveLeadsPage({
       <div className="flex w-full flex-col gap-6">
         <header className="flex flex-col gap-3 border-b border-slate-200 pb-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-4">
-            <Button
-              asChild
-              variant="ghost"
-              size="icon"
-              className="h-8 w-8 text-slate-500 hover:text-slate-900 rounded-full shrink-0"
-            >
+            
               <Link
                 href={`/${orgCode}/org-reports/?tab=team-performance`}
                 aria-label="Back to reports"
+                className="t-4 px-4 py-2 text-xs font-semibold text-white bg-purple-600 rounded-xl"
               >
-                <ArrowLeft className="w-5 h-5" />
+                <ArrowLeft className="w-4 h-4" />
               </Link>
-            </Button>
             <div className="h-6 w-px bg-slate-200" />
             <div>
-              <h1 className="text-lg font-semibold text-gray-900 sm:text-2xl">
+              <h1 className="text-xl font-bold text-gray-900">
                 Report Details
               </h1>
-              <p className="text-xs text-gray-500 sm:text-sm">
+              <p className="text-xs text-gray-500">
                 Review executive lead activity and performance
               </p>
             </div>
