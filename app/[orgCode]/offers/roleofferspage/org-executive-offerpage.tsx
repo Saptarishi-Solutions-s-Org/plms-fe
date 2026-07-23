@@ -48,6 +48,7 @@ const DEFAULT_FILTERS: OfferFilters = {
   search: "",
   discountType: [],
   status: [],
+  scope: [],
 };
 
 const DISCOUNT_TYPE_LABELS: Record<string, string> = {

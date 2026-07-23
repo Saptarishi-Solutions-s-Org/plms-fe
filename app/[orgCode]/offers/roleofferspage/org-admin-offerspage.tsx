@@ -39,6 +39,7 @@ const DEFAULT_FILTERS: OfferFiltersType = {
   search: "",
   status: [],
   discountType: [],
+  scope: [],
 };
 
 export default function OrgAdminOffersPage() {
@@ -120,6 +121,7 @@ export default function OrgAdminOffersPage() {
               search: filters.search,
               status: filters.status.join(","),
               discountType: filters.discountType.join(","),
+              scope: filters.scope.join(","),
             }),
             getOfferSummary(),
           ]);
@@ -531,6 +533,7 @@ export default function OrgAdminOffersPage() {
             }
             onApply={handleApplyFilters}
             onClear={handleClearFilters}
+            showScope
           />
 
           {/* Table */}

@@ -138,10 +138,13 @@ export interface OfferPayload {
 
   flag_discount_amount?: number;
 }
+export type OfferScope = "global" | "manager";
+
 export interface OfferFilters {
   search: string;
   status: OfferStatus[];
   discountType: DiscountType[];
+  scope: OfferScope[];
 }
 
 export const OFFER_STATUS_OPTIONS = [
@@ -150,11 +153,17 @@ export const OFFER_STATUS_OPTIONS = [
   { value: "expired", label: "Expired" },
 ] as const;
 
+export const OFFER_SCOPE_OPTIONS = [
+  { value: "global", label: "Global" },
+  { value: "manager", label: "Manager" },
+] as const;
+
 export type GetOffersParams = {
   page?: number;
   limit?: number;
   search?: string;
   status?: string;
   discountType?: string;
+  scope?: string;
   all?: boolean;
 };

@@ -83,6 +83,7 @@ const DEFAULT_FILTERS: OfferFiltersType = {
   search: "",
   status: [],
   discountType: [],
+  scope: [],
 };
 
 const DISCOUNT_TYPE_LABELS: Record<string, string> = {
@@ -211,11 +212,8 @@ export default function OrgManagerOffersPage() {
   const [assignedExecutivesError, setAssignedExecutivesError] = useState("");
 
   const [totalCount, setTotalCount] = useState(0);
-
   const [activeCount, setActiveCount] = useState(0);
-
   const [inactiveCount, setInactiveCount] = useState(0);
-
   const [globalCount, setGlobalCount] = useState(0);
 
   const [isLoading, setIsLoading] = useState(true);
@@ -283,6 +281,7 @@ export default function OrgManagerOffersPage() {
           search: filters.search,
           status: filters.status.join(","),
           discountType: filters.discountType.join(","),
+          scope: filters.scope.join(","),
         }),
         getExecutiveOverview(),
       ]);
@@ -351,6 +350,7 @@ export default function OrgManagerOffersPage() {
         search: filters.search,
         status: filters.status.join(","),
         discountType: filters.discountType.join(","),
+        scope: filters.scope.join(","),
       };
       const firstResponse = await getManagerOfferOverview({
         ...params,
@@ -721,6 +721,7 @@ export default function OrgManagerOffersPage() {
             onFilterChange={handleFilterChange}
             onApply={handleApplyFilters}
             onClear={handleClearFilters}
+            showScope
           />
 
           {/* Table */}

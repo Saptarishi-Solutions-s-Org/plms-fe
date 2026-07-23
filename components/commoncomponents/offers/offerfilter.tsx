@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { MultiSelectCombobox } from "@/components/ui/multi-select-combobox";
 import { DISCOUNT_OPTIONS } from "@/lib/validators/offervalidation";
 import type { OfferFilters } from "@/types/Createoffer";
-import { OFFER_STATUS_OPTIONS } from "@/types/Createoffer";
+import { OFFER_SCOPE_OPTIONS, OFFER_STATUS_OPTIONS } from "@/types/Createoffer";
 
 const DISCOUNT_TYPE_LABEL_BY_VALUE = Object.fromEntries(
   DISCOUNT_OPTIONS.map((option) => [option.value, option.label]),
@@ -24,6 +24,14 @@ const OFFER_STATUS_VALUE_BY_LABEL = Object.fromEntries(
   OFFER_STATUS_OPTIONS.map((option) => [option.label, option.value]),
 ) as Record<string, string>;
 
+const OFFER_SCOPE_LABEL_BY_VALUE = Object.fromEntries(
+  OFFER_SCOPE_OPTIONS.map((option) => [option.value, option.label]),
+) as Record<string, string>;
+
+const OFFER_SCOPE_VALUE_BY_LABEL = Object.fromEntries(
+  OFFER_SCOPE_OPTIONS.map((option) => [option.label, option.value]),
+) as Record<string, string>;
+
 interface OfferFiltersProps {
   filters: OfferFilters;
   onFilterChange: <K extends keyof OfferFilters>(
@@ -32,9 +40,16 @@ interface OfferFiltersProps {
   ) => void;
   onApply: () => void;
   onClear: () => void;
+  showScope?: boolean;
 }
 
-export function OfferFilters({ filters, onFilterChange, onApply, onClear }: OfferFiltersProps) {
+export function OfferFilters({
+  filters,
+  onFilterChange,
+  onApply,
+  onClear,
+  showScope = false,
+}: OfferFiltersProps) {
   const discountTypeOptions = DISCOUNT_OPTIONS.map((option) => option.label);
   const statusOptions = OFFER_STATUS_OPTIONS.map((option) => option.label);
 
@@ -43,6 +58,10 @@ export function OfferFilters({ filters, onFilterChange, onApply, onClear }: Offe
   );
   const selectedStatusLabels = filters.status.map(
     (value) => OFFER_STATUS_LABEL_BY_VALUE[value] ?? value,
+  );
+  const scopeOptions = OFFER_SCOPE_OPTIONS.map((option) => option.label);
+  const selectedScopeLabels = filters.scope.map(
+    (value) => OFFER_SCOPE_LABEL_BY_VALUE[value] ?? value,
   );
 
   return (
@@ -89,6 +108,23 @@ export function OfferFilters({ filters, onFilterChange, onApply, onClear }: Offe
           placeholder="Filter by status"
           width="w-full sm:w-44"
         />
+
+        {showScope && (
+          <MultiSelectCombobox
+            options={scopeOptions}
+            selectedValues={selectedScopeLabels}
+            onSelectionChange={(selected) =>
+              onFilterChange(
+                "scope",
+                selected
+                  .map((label) => OFFER_SCOPE_VALUE_BY_LABEL[label])
+                  .filter(Boolean) as OfferFilters["scope"],
+              )
+            }
+            placeholder="Filter by scope"
+            width="w-full sm:w-44"
+          />
+        )}
 
         <div className="flex gap-2">
           <Button variant="outline" onClick={onClear}>
