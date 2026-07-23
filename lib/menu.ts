@@ -6,6 +6,7 @@ import {
   Users,
   FilePen,
   ShieldCheck,
+  Layers,
 } from "lucide-react";
 
 import { MenuGroup } from "@/types/menu";
@@ -80,7 +81,7 @@ export const MENU_CONFIG: MenuGroup[] = [
       },
       {
         href: "/dashboard/segments",
-        icon: Users,
+        icon: Layers,
         label: "Segments",
         modules: ["segmentation"],
         permissions: ["view"],
