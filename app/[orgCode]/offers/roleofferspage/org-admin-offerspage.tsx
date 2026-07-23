@@ -72,6 +72,8 @@ export default function OrgAdminOffersPage() {
   const [offers, setOffers] = useState<Offer[]>([]);
   const [totalCount, setTotalCount] = useState(0);
   const [globalCount, setGlobalCount] = useState(0);
+  const [activeCount, setActiveCount] = useState(0);
+  const [inactiveCount, setInactiveCount] = useState(0);
   const [pagination, setPagination] = useState<PaginationMeta>(
     emptyPagination(limit),
   );
@@ -93,28 +95,14 @@ export default function OrgAdminOffersPage() {
   useEffect(() => {
     setDraftFilters(filters);
   }, [filters]);
-  const activeCount = useMemo(
-    () =>
-      offers.filter(
-        (offer) => offer.status === "active"
-      ).length,
-    [offers]
-  );
-
-  const inactiveCount = useMemo(
-    () =>
-      offers.filter(
-        (offer) => offer.status === "inactive"
-      ).length,
-    [offers]
-  );
-
   const fetchOffers = useCallback(
     async () => {
       if (!canView) {
         setOffers([]);
         setTotalCount(0);
         setGlobalCount(0);
+        setActiveCount(0);
+        setInactiveCount(0);
         setPagination(emptyPagination(limit));
         setIsLoading(false);
         setHasLoaded(true);
@@ -217,15 +205,21 @@ export default function OrgAdminOffersPage() {
 
         setPagination(offersResponse?.pagination ?? emptyPagination(limit));
 
-        setTotalCount(summary.totalCount);
+        setTotalCount(summary.totalCount ?? 0);
 
-        setGlobalCount(summary.globalCount);
+        setGlobalCount(summary.globalCount ?? 0);
+
+        setActiveCount(summary.activeCount ?? 0);
+
+        setInactiveCount(summary.inactiveCount ?? 0);
 
       } catch (err) {
         console.error("Failed to load offers", err);
         setOffers([]);
         setTotalCount(0);
         setGlobalCount(0);
+        setActiveCount(0);
+        setInactiveCount(0);
         setPagination(emptyPagination(limit));
       } finally {
         setIsLoading(false);
