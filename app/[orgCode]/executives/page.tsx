@@ -284,6 +284,19 @@ export default function ExecutivesPage() {
         </div>
 
         <div className="flex w-full flex-col gap-3 sm:w-auto sm:flex-row">
+          {canExportExecutives ? (
+            <Button
+              type="button"
+              variant="outline"
+              onClick={handleExport}
+              disabled={!executives.length}
+              className="flex h-9 w-full items-center justify-center gap-1.5 rounded-full px-4 sm:w-auto"
+            >
+              <Download className="h-4 w-4" />
+              Export
+            </Button>
+          ) : null}
+
           {canCreateExecutives ? (
             <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
               <DialogTrigger asChild>
@@ -302,19 +315,6 @@ export default function ExecutivesPage() {
                 <AddLeadForm mode="manager" onClose={() => setIsCreateOpen(false)} />
               </DialogContent>
             </Dialog>
-          ) : null}
-
-          {canExportExecutives ? (
-            <Button
-              type="button"
-              variant="outline"
-              onClick={handleExport}
-              disabled={!executives.length}
-              className="flex h-9 w-full items-center justify-center gap-1.5 rounded-full px-4 sm:w-auto"
-            >
-              <Download className="h-4 w-4" />
-              Export
-            </Button>
           ) : null}
         </div>
       </div>
