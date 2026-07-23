@@ -198,14 +198,25 @@ export default function OrganizationAdminDashboard() {
           </div>
 
           {/* Button + Dialog */}
-          <div className="w-full flex flex-col sm:flex-row sm:items-center sm:justify-end gap-4 h-auto sm:h-20">
+          <div className="w-full flex flex-col sm:flex-row sm:items-center sm:justify-end gap-2 h-auto sm:h-20">
+            {canExportUsers ? (
+              <Button
+                variant="outline"
+                onClick={handleExportUsers}
+                className="flex h-9 w-full items-center justify-center gap-1.5 rounded-full px-4 sm:w-auto"
+              >
+                <Download className="h-4 w-4" />
+                Export Users
+              </Button>
+            ) : null}
+
             {canCreateUsers ? (
               <Dialog open={open} onOpenChange={setOpen}>
                 <DialogTrigger asChild>
                   <Button
                     variant="outline"
                     size="lg"
-                    className="w-full sm:w-auto rounded-full bg-blue-500 text-white hover:bg-blue-600 hover:text-white font-medium"
+                    className="w-full sm:w-auto rounded-full bg-blue-600 text-white hover:bg-blue-700 hover:text-white font-medium"
                   >
                     <Plus className="mr-2 h-4 w-4" />
                     Add User
@@ -227,17 +238,6 @@ export default function OrganizationAdminDashboard() {
                   />
                 </DialogContent>
               </Dialog>
-            ) : null}
-
-            {canExportUsers ? (
-              <Button
-                variant="outline"
-                onClick={handleExportUsers}
-                className="flex h-9 w-full items-center justify-center gap-1.5 rounded-full px-4 sm:w-auto"
-              >
-                <Download className="h-4 w-4" />
-                Export Users
-              </Button>
             ) : null}
           </div>
 

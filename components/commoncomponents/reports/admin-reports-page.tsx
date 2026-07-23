@@ -172,12 +172,18 @@ export default function AdminReportsPage() {
     () => canAccess(currentUser, ["reports"], ["export"]),
     [currentUser],
   );
+  const [tablePage, setTablePage] = useState(1);
+  const [tableLimit, setTableLimit] = useState(25);
 
   useEffect(() => {
     const syncUser = () => setCurrentUser(getUser());
     window.addEventListener("LMA-auth-changed", syncUser);
     return () => window.removeEventListener("LMA-auth-changed", syncUser);
   }, []);
+
+  useEffect(() => {
+    setTablePage(1);
+  }, [activeTab, selectedManagerId, selectedExecutiveId]);
 
   const replaceQuery = useCallback(
     (changes: Record<string, string | null>) => {
@@ -371,11 +377,23 @@ export default function AdminReportsPage() {
       }),
     [leads, selectedManager],
   );
+  const activeRowsTotal = selectedExecutive
+    ? executiveLeads.length
+    : selectedManager
+      ? executiveRows.length
+      : managers.length;
+  const tablePagination = createPaginationMeta({
+    page: tablePage,
+    limit: tableLimit,
+    total: activeRowsTotal,
+  });
+  const currentTablePage = Math.min(tablePage, tablePagination.totalPages);
+
   const handleHeaderExport = () => {
     if (selectedExecutive) {
       downloadCsv(
         "ExecutiveLeadsReport",
-        ["S.NO", "Lead", "Status", "Source", "Assigned By"],
+        ["S.No", "Lead", "Status", "Source", "Assigned By"],
         executiveLeads.map((lead, index) => [
           index + 1,
           lead.name,
@@ -390,7 +408,7 @@ export default function AdminReportsPage() {
     if (selectedManager) {
       downloadCsv(
         "ManagerExecutivesReport",
-        ["S.NO", "Executive", "Leads", "Converted", "Conversion Rate"],
+        ["S.No", "Executive", "Leads", "Converted", "Conversion Rate"],
         executiveRows.map((row, index) => [
           index + 1,
           row.name,
@@ -404,7 +422,7 @@ export default function AdminReportsPage() {
 
     downloadCsv(
       "OrganizationManagersReport",
-      ["S.NO", "Manager", "Executives", "Leads", "Conversion Rate"],
+      ["S.No", "Manager", "Executives", "Leads", "Conversion Rate"],
       managers.map((manager, index) => [
         index + 1,
         manager.name,
@@ -492,6 +510,13 @@ export default function AdminReportsPage() {
                 title={`${selectedExecutive.name} Leads`}
                 totalLabel="leads"
                 onBack={() => replaceQuery({ executiveId: null })}
+                page={currentTablePage}
+                limit={tableLimit}
+                onPageChange={setTablePage}
+                onLimitChange={(nextLimit) => {
+                  setTableLimit(nextLimit);
+                  setTablePage(1);
+                }}
                 headers={["Lead", "Status", "Source", "Assigned By"]}
                 rows={executiveLeads.map((lead) => [
                   lead.name ?? "-",
@@ -506,6 +531,13 @@ export default function AdminReportsPage() {
                 title={`${selectedManager.name} Executives`}
                 totalLabel="executives"
                 onBack={() => replaceQuery({ managerId: null })}
+                page={currentTablePage}
+                limit={tableLimit}
+                onPageChange={setTablePage}
+                onLimitChange={(nextLimit) => {
+                  setTableLimit(nextLimit);
+                  setTablePage(1);
+                }}
                 headers={[
                   "Executive",
                   "Leads Assigned",
@@ -529,6 +561,13 @@ export default function AdminReportsPage() {
                 key="managers"
                 title="Managers"
                 totalLabel="managers"
+                page={currentTablePage}
+                limit={tableLimit}
+                onPageChange={setTablePage}
+                onLimitChange={(nextLimit) => {
+                  setTableLimit(nextLimit);
+                  setTablePage(1);
+                }}
                 headers={[
                   "Manager",
                   "Executives",
@@ -589,15 +628,21 @@ function PerformanceTable({
   rows,
   onBack,
   totalLabel,
+  page,
+  limit,
+  onPageChange,
+  onLimitChange,
 }: {
   title: string;
   headers: string[];
   rows: React.ReactNode[][];
   onBack?: () => void;
   totalLabel: string;
+  page: number;
+  limit: number;
+  onPageChange: (page: number) => void;
+  onLimitChange: (limit: number) => void;
 }) {
-  const [page, setPage] = useState(1);
-  const [limit, setLimit] = useState(25);
   const pagination = createPaginationMeta({ page, limit, total: rows.length });
   const currentPage = Math.min(page, pagination.totalPages);
   const currentPagination =
@@ -637,7 +682,7 @@ function PerformanceTable({
           <TableHeader className="border-b border-gray-200 bg-[#7677F41A]">
             <TableRow>
               <TableHead className="w-20 whitespace-nowrap text-sm font-semibold sm:text-base">
-                S.NO
+                S.No
               </TableHead>
               {headers.map((header) => (
                 <TableHead
@@ -680,11 +725,8 @@ function PerformanceTable({
       </div>
       <TablePaginationFooter
         pagination={currentPagination}
-        onPageChange={setPage}
-        onLimitChange={(nextLimit) => {
-          setLimit(nextLimit);
-          setPage(1);
-        }}
+        onPageChange={onPageChange}
+        onLimitChange={onLimitChange}
         totalLabel={totalLabel}
       />
     </section>

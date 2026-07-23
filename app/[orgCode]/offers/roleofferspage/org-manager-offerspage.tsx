@@ -36,7 +36,6 @@ import {
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { useManagerOfferExport } from "@/hooks/export";
 import { useUrlPagination } from "@/hooks/use-url-pagination";
 import { useUrlOfferFilters } from "@/hooks/useurloffer";
 import { type AuthUser, getUser } from "@/lib/auth";
@@ -83,6 +82,7 @@ const DEFAULT_FILTERS: OfferFiltersType = {
   search: "",
   status: [],
   discountType: [],
+  scope: [],
 };
 
 const DISCOUNT_TYPE_LABELS: Record<string, string> = {
@@ -92,6 +92,64 @@ const DISCOUNT_TYPE_LABELS: Record<string, string> = {
   Buy_One_Get_One_Free: "Buy One Get One",
   Conditional_Discount: "Conditional",
   Flag_Discount: "Flag Discount",
+};
+
+const getOfferDiscountValue = (offer: Offer) => {
+  switch (offer.discountType) {
+    case "Fixed_Amount":
+      return `₹${offer.discountAmount}`;
+
+    case "Percentage":
+      return `${offer.discountPercentage}%`;
+
+    case "Combo_Offer":
+      return offer.comboDescription || "—";
+
+    case "Buy_One_Get_One_Free":
+      return `Buy ${offer.buyQuantity} Get ${offer.getQuantity}`;
+
+    case "Conditional_Discount":
+      return `₹${offer.conditionalDiscountValue}`;
+
+    case "Flag_Discount":
+      return `₹${offer.flagDiscountAmount}`;
+
+    default:
+      return "—";
+  }
+};
+
+const getExportFilename = (prefix: string) => {
+  const now = new Date();
+  const pad = (value: number) => String(value).padStart(2, "0");
+  const stamp = `${now.getFullYear()}${pad(now.getMonth() + 1)}${pad(now.getDate())}-${pad(now.getHours())}${pad(now.getMinutes())}${pad(now.getSeconds())}`;
+
+  return `${prefix}_${stamp}.csv`;
+};
+
+const downloadOffersCsv = (
+  filenamePrefix: string,
+  headers: string[],
+  rows: (string | number)[][],
+) => {
+  const escapeCsvValue = (value: unknown) => {
+    const text = String(value ?? "").replace(/"/g, '""');
+    return /[",\n]/.test(text) ? `"${text}"` : text;
+  };
+
+  const csvContent = [headers, ...rows]
+    .map((row) => row.map(escapeCsvValue).join(","))
+    .join("\n");
+
+  const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = getExportFilename(filenamePrefix);
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(url);
 };
 
 const formatManagerOffers = (
@@ -175,7 +233,6 @@ export default function OrgManagerOffersPage() {
     [user],
   );
 
-  const { handleExport } = useManagerOfferExport();
   const { page, limit, setPage, setLimit } = useUrlPagination();
   const [offers, setOffers] = useState<ManagerOffer[]>([]);
   const [bulkOffers, setBulkOffers] = useState<ManagerOffer[]>([]);
@@ -211,11 +268,8 @@ export default function OrgManagerOffersPage() {
   const [assignedExecutivesError, setAssignedExecutivesError] = useState("");
 
   const [totalCount, setTotalCount] = useState(0);
-
   const [activeCount, setActiveCount] = useState(0);
-
   const [inactiveCount, setInactiveCount] = useState(0);
-
   const [globalCount, setGlobalCount] = useState(0);
 
   const [isLoading, setIsLoading] = useState(true);
@@ -283,6 +337,7 @@ export default function OrgManagerOffersPage() {
           search: filters.search,
           status: filters.status.join(","),
           discountType: filters.discountType.join(","),
+          scope: filters.scope.join(","),
         }),
         getExecutiveOverview(),
       ]);
@@ -351,6 +406,7 @@ export default function OrgManagerOffersPage() {
         search: filters.search,
         status: filters.status.join(","),
         discountType: filters.discountType.join(","),
+        scope: filters.scope.join(","),
       };
       const firstResponse = await getManagerOfferOverview({
         ...params,
@@ -415,6 +471,81 @@ export default function OrgManagerOffersPage() {
   }, [setFilters]);
 
   const rowOffset = (pagination.page - 1) * pagination.limit;
+  const [isExporting, setIsExporting] = useState(false);
+
+  const handleExport = useCallback(async () => {
+    setIsExporting(true);
+
+    try {
+      const params = {
+        search: filters.search,
+        status: filters.status.join(","),
+        discountType: filters.discountType.join(","),
+        scope: filters.scope.join(","),
+      };
+
+      const firstResponse = await getManagerOfferOverview({
+        ...params,
+        page: 1,
+        limit: pagination.total || limit,
+      });
+      const firstPage = firstResponse?.value || firstResponse;
+      const totalPages = firstPage?.pagination?.totalPages ?? 1;
+
+      let allOfferItems = firstPage?.offers ?? [];
+
+      if (totalPages > 1) {
+        const remainingResponses = await Promise.all(
+          Array.from({ length: totalPages - 1 }, (_, index) =>
+            getManagerOfferOverview({ ...params, page: index + 2, limit }),
+          ),
+        );
+
+        allOfferItems = [
+          ...allOfferItems,
+          ...remainingResponses.flatMap((response) => {
+            const pageData = response?.value || response;
+            return pageData?.offers ?? [];
+          }),
+        ];
+      }
+
+      const allOffers = formatManagerOffers(allOfferItems);
+
+      if (!allOffers.length) return;
+
+      const headers = [
+        "S.No",
+        "Offer Name",
+        "Description",
+        "Discount Type",
+        "Discount Value",
+        "Valid From",
+        "Valid To",
+        "Status",
+        "Assign Status",
+      ];
+
+      const rows = allOffers.map((offer, index) => [
+        index + 1,
+        offer.title,
+        offer.description || "—",
+        DISCOUNT_TYPE_LABELS[offer.discountType] ?? offer.discountType,
+        getOfferDiscountValue(offer),
+        formatDate(offer.validFrom),
+        formatDate(offer.validTo),
+        formatStatusLabel(offer.status),
+        offer.assignStatus || "—",
+      ]);
+
+      downloadOffersCsv("OffersReport", headers, rows);
+    } catch (error) {
+      console.error("Failed to export offers", error);
+      toast.error("Failed to export offers.");
+    } finally {
+      setIsExporting(false);
+    }
+  }, [filters, pagination.total, limit]);
 
   const getDiscountValue = (offer: Offer) => {
     switch (offer.discountType) {
@@ -655,10 +786,11 @@ export default function OrgManagerOffersPage() {
               type="button"
               variant="outline"
               onClick={handleExport}
-              className="flex h-9 w-full items-center justify-center gap-1.5 rounded-full px-4 sm:w-auto"
+              disabled={isExporting}
+              className="flex h-9 w-full items-center justify-center gap-1.5 rounded-full border-blue-600 px-4 text-blue-600 hover:bg-blue-50 hover:text-blue-700 sm:w-auto"
             >
               <Download className="h-4 w-4" />
-              Export
+              {isExporting ? "Exporting..." : "Export"}
             </Button>
           )}
 
@@ -721,6 +853,7 @@ export default function OrgManagerOffersPage() {
             onFilterChange={handleFilterChange}
             onApply={handleApplyFilters}
             onClear={handleClearFilters}
+            showScope
           />
 
           {/* Table */}
