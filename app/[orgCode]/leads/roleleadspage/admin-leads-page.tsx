@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 
 import GlobalLoader from "@/components/commoncomponents/globalloader";
@@ -11,23 +11,68 @@ import LeadSummaryCards from "@/components/commoncomponents/leads/lead-cards";
 import LeadTable from "@/components/commoncomponents/leads/leadtable";
 import LeadTableFilters from "@/components/commoncomponents/leads/leadtable-filters";
 import TablePaginationFooter from "@/components/commoncomponents/table-pagination-footer";
-import { useLeadExport } from "@/hooks/export";
 import { useLeads } from "@/hooks/use-leads";
 import { useUrlLeadFilters } from "@/hooks/useurllead-filters";
 import { useUrlPagination } from "@/hooks/use-url-pagination";
-import { createLead, getLeadDetail, updateLead } from "@/services/leads";
+import {
+  createLead,
+  getAllOrganizationLeads,
+  getLeadDetail,
+  updateLead,
+} from "@/services/leads";
 import { getOrganizationAdminDashboard } from "@/services/organizationAdmin";
 import type { LeadDetailResponse } from "@/types/leadActivity";
-import type {
-  ExecutiveOption,
-  Lead,
-  LeadFormData,
-  LeadPayload,
+import {
+  LEAD_SOURCE_OPTIONS,
+  type ExecutiveOption,
+  type Lead,
+  type LeadFormData,
+  type LeadPayload,
 } from "@/types/leadtypes";
 import type { UserDetails } from "@/types/organizationadmindashboard/dashboardtypes";
 
 import { type AuthUser, getUser } from "@/lib/auth";
 import { canAccess } from "@/lib/permissions";
+
+const LEAD_SOURCE_LABELS: Record<string, string> = Object.fromEntries(
+  LEAD_SOURCE_OPTIONS.map((option) => [option.value, option.label]),
+);
+
+const getLeadSourceLabel = (source?: string) =>
+  LEAD_SOURCE_LABELS[source ?? ""] ?? source?.replace(/_/g, " ") ?? "-";
+
+const getExportFilename = (prefix: string) => {
+  const now = new Date();
+  const pad = (value: number) => String(value).padStart(2, "0");
+  const stamp = `${now.getFullYear()}${pad(now.getMonth() + 1)}${pad(now.getDate())}-${pad(now.getHours())}${pad(now.getMinutes())}${pad(now.getSeconds())}`;
+
+  return `${prefix}_${stamp}.csv`;
+};
+
+const downloadLeadsCsv = (
+  filenamePrefix: string,
+  headers: string[],
+  rows: (string | number)[][],
+) => {
+  const escapeCsvValue = (value: unknown) => {
+    const text = String(value ?? "").replace(/"/g, '""');
+    return /[",\n]/.test(text) ? `"${text}"` : text;
+  };
+
+  const csvContent = [headers, ...rows]
+    .map((row) => row.map(escapeCsvValue).join(","))
+    .join("\n");
+
+  const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = getExportFilename(filenamePrefix);
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(url);
+};
 
 function toLeadPayload(lead: Lead, assignedTo: string): LeadPayload {
   return {
@@ -62,7 +107,6 @@ export default function AdminLeadsPage() {
 
   const { page, limit, setPage, setLimit } = useUrlPagination();
   const { filters, setFilters } = useUrlLeadFilters();
-  const { handleExport } = useLeadExport();
 
   const [assignees, setAssignees] = useState<ExecutiveOption[]>([]);
   const [isFormOpen, setIsFormOpen] = useState(false);
@@ -117,6 +161,78 @@ export default function AdminLeadsPage() {
     statsScope: "all",
     fetchAllAsAdmin: true,
   });
+
+  const [isExporting, setIsExporting] = useState(false);
+
+  const handleExport = useCallback(async () => {
+    setIsExporting(true);
+
+    try {
+      const params = {
+        search: filters.search,
+        status: filters.statuses.filter(Boolean).join(",") || undefined,
+        priority: filters.priorities.filter(Boolean).join(",") || undefined,
+        leadSource: filters.sources?.filter(Boolean).join(",") || undefined,
+        assignedTo: assigneeIds[0],
+      };
+
+      const firstResponse = await getAllOrganizationLeads({
+        ...params,
+        page: 1,
+        limit: pagination.total || limit,
+      });
+      const firstLeads: Lead[] = firstResponse?.leads ?? [];
+      const totalPages = firstResponse?.pagination?.totalPages ?? 1;
+
+      let allLeads = firstLeads;
+
+      if (totalPages > 1) {
+        const remainingResponses = await Promise.all(
+          Array.from({ length: totalPages - 1 }, (_, index) =>
+            getAllOrganizationLeads({ ...params, page: index + 2, limit }),
+          ),
+        );
+
+        allLeads = [
+          ...allLeads,
+          ...remainingResponses.flatMap((response) => response?.leads ?? []),
+        ];
+      }
+
+      if (!allLeads.length) return;
+
+      const headers = [
+        "S.No",
+        "Lead Name",
+        "Email",
+        "Phone",
+        "Status",
+        "Priority",
+        "Source",
+        "Assigned To",
+      ];
+
+      const rows = allLeads.map((lead, index) => [
+        index + 1,
+        lead.name,
+        lead.email,
+        lead.phone,
+        lead.status,
+        lead.priority,
+        getLeadSourceLabel(lead.leadSource),
+        assignees.find((assignee) => assignee.id === lead.assignedTo)?.name ||
+          lead.assignedToName ||
+          "-",
+      ]);
+
+      downloadLeadsCsv("LeadsReport", headers, rows);
+    } catch (error) {
+      console.error("Failed to export leads", error);
+      toast.error("Failed to export leads.");
+    } finally {
+      setIsExporting(false);
+    }
+  }, [filters, assigneeIds, pagination.total, limit, assignees]);
 
   const openAddForm = () => {
     setEditingLead(null);
@@ -189,6 +305,7 @@ export default function AdminLeadsPage() {
           showExport={canExportLead}
           showCreate={canCreateLead}
           showBulkAssign={canUpdateLead}
+          exportDisabled={isExporting}
         />
       </div>
 

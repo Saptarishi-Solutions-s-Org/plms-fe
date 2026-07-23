@@ -13,7 +13,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { subscribeRealtime } from "@/lib/socket";
 import { type AuthUser, getUser } from "@/lib/auth";
 import { canAccess } from "@/lib/permissions";
-import { useExecutiveLeadsExport } from "@/hooks/export";
 import { useUrlPagination } from "@/hooks/use-url-pagination";
 import {
   getLeadSourceAnalytics,
@@ -54,6 +53,39 @@ const isExecutiveReportTab = (
   value: string | null,
 ): value is ExecutiveReportTab =>
   value === "overview" || value === "leads-details";
+
+const getExportFilename = (prefix: string) => {
+  const now = new Date();
+  const pad = (value: number) => String(value).padStart(2, "0");
+  const stamp = `${now.getFullYear()}${pad(now.getMonth() + 1)}${pad(now.getDate())}-${pad(now.getHours())}${pad(now.getMinutes())}${pad(now.getSeconds())}`;
+
+  return `${prefix}_${stamp}.csv`;
+};
+
+const downloadCsv = (
+  filenamePrefix: string,
+  headers: string[],
+  rows: (string | number)[][],
+) => {
+  const escapeCsvValue = (value: unknown) => {
+    const text = String(value ?? "").replace(/"/g, '""');
+    return /[",\n]/.test(text) ? `"${text}"` : text;
+  };
+
+  const csvContent = [headers, ...rows]
+    .map((row) => row.map(escapeCsvValue).join(","))
+    .join("\n");
+
+  const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = getExportFilename(filenamePrefix);
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(url);
+};
 
 const formatSource = (source?: string) =>
   source ? source.replace(/_/g, " ") : "-";
@@ -206,7 +238,66 @@ export default function ExecutiveReportsPage() {
   );
   const [currentUser, setCurrentUser] = useState<AuthUser | null>(() => getUser());
   const canExportReports = canAccess(currentUser, ["reports"], ["export"]);
-  const { handleExport } = useExecutiveLeadsExport(leads);
+  const [isExporting, setIsExporting] = useState(false);
+
+  const handleExport = useCallback(async () => {
+    setIsExporting(true);
+
+    try {
+      const firstResponse = await getReportLeads({
+        page: 1,
+        limit: pagination.total || limit,
+      });
+      const firstData = unwrapResponse(
+        firstResponse as LeadsWithStatsResponse | { value?: LeadsWithStatsResponse },
+      );
+      const firstLeads = Array.isArray(firstData?.leads) ? firstData.leads : [];
+      const totalPages = firstData?.pagination?.totalPages ?? 1;
+
+      let allLeads = firstLeads;
+
+      if (totalPages > 1) {
+        const remainingResponses = await Promise.all(
+          Array.from({ length: totalPages - 1 }, (_, index) =>
+            getReportLeads({ page: index + 2, limit }),
+          ),
+        );
+
+        allLeads = [
+          ...allLeads,
+          ...remainingResponses.flatMap((response) => {
+            const data = unwrapResponse(
+              response as LeadsWithStatsResponse | { value?: LeadsWithStatsResponse },
+            );
+
+            return Array.isArray(data?.leads) ? data.leads : [];
+          }),
+        ];
+      }
+
+      const rows = allLeads.map(mapLead);
+
+      if (!rows.length) return;
+
+      const headers = ["S.No", "Lead Name", "Status", "Source", "Assigned By"];
+
+      downloadCsv(
+        "ExecutiveLeadsReport",
+        headers,
+        rows.map((lead, index) => [
+          index + 1,
+          lead.leadName,
+          lead.status,
+          lead.source,
+          lead.assignedBy,
+        ]),
+      );
+    } catch {
+      toast.error("Failed to export leads");
+    } finally {
+      setIsExporting(false);
+    }
+  }, [limit, pagination.total]);
 
   useEffect(() => {
     const syncUser = () => setCurrentUser(getUser());
@@ -330,11 +421,11 @@ export default function ExecutiveReportsPage() {
             type="button"
             variant="outline"
             onClick={handleExport}
-            disabled={leads.length === 0}
+            disabled={leads.length === 0 || isExporting}
             className="flex h-9 w-full items-center justify-center gap-1.5 rounded-full px-4 sm:w-auto"
           >
             <Download className="h-4 w-4" />
-            Export
+            {isExporting ? "Exporting..." : "Export"}
           </Button>
         )}
       </div>

@@ -17,6 +17,7 @@ export default function LeadHeader({
   showExport,
   showCreate = true,
   showBulkAssign = true,
+  exportDisabled = false,
 }: LeadHeaderProps) {
   const [isImportOpen, setImportOpen] = useState(false);
 
@@ -43,10 +44,11 @@ export default function LeadHeader({
             type="button"
             variant="outline"
             onClick={onExport}
+            disabled={exportDisabled}
             className="flex h-9 w-full items-center justify-center gap-1.5 rounded-full px-4 sm:w-auto"
           >
             <Download className="h-4 w-4" />
-            Export
+            {exportDisabled ? "Exporting..." : "Export"}
           </Button>
         )}
 

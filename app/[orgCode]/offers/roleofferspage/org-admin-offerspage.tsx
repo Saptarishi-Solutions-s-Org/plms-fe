@@ -10,7 +10,6 @@ import { OfferFilters } from "@/components/commoncomponents/offers/offerfilter";
 import { OffersTable } from "@/components/commoncomponents/offers/offertable";
 import { CreateOfferDialog } from "@/components/commoncomponents/offers/createoffer";
 import { Button } from "@/components/ui/button";
-import { useOfferExport } from "@/hooks/export";
 import { useUrlPagination } from "@/hooks/use-url-pagination";
 import { useUrlOfferFilters } from "@/hooks/useurloffer";
 import { type AuthUser, getUser } from "@/lib/auth";
@@ -23,6 +22,7 @@ import {
   toggleOfferStatus,
   updateOffer,
 } from "@/services/offers";
+import { formatDate, formatStatusLabel } from "@/types/org-manager";
 import { OFFER_LIST_CHANGED } from "@/types/realtime";
 
 import type { OfferPayload } from "@/lib/validators/offervalidation";
@@ -41,6 +41,107 @@ const DEFAULT_FILTERS: OfferFiltersType = {
   discountType: [],
   scope: [],
 };
+
+const DISCOUNT_TYPE_LABELS: Record<string, string> = {
+  Fixed_Amount: "Fixed Amount",
+  Percentage: "Percentage",
+  Combo_Offer: "Combo Offer",
+  Buy_One_Get_One_Free: "Buy One Get One",
+  Conditional_Discount: "Conditional",
+  Flag_Discount: "Flag Discount",
+};
+
+const getDiscountTypeLabel = (type?: string) =>
+  DISCOUNT_TYPE_LABELS[type ?? ""] ?? type?.replace(/_/g, " ") ?? "-";
+
+const getOfferDiscountValue = (offer: Offer) => {
+  switch (offer.discountType) {
+    case "Fixed_Amount":
+      return `₹${offer.discountAmount}`;
+
+    case "Percentage":
+      return `${offer.discountPercentage}%`;
+
+    case "Combo_Offer":
+      return offer.comboDescription || "—";
+
+    case "Buy_One_Get_One_Free":
+      return `Buy ${offer.buyQuantity} Get ${offer.getQuantity}`;
+
+    case "Conditional_Discount":
+      return `₹${offer.conditionalDiscountValue}`;
+
+    case "Flag_Discount":
+      return `₹${offer.flagDiscountAmount}`;
+
+    default:
+      return "—";
+  }
+};
+
+const getExportFilename = (prefix: string) => {
+  const now = new Date();
+  const pad = (value: number) => String(value).padStart(2, "0");
+  const stamp = `${now.getFullYear()}${pad(now.getMonth() + 1)}${pad(now.getDate())}-${pad(now.getHours())}${pad(now.getMinutes())}${pad(now.getSeconds())}`;
+
+  return `${prefix}_${stamp}.csv`;
+};
+
+const downloadOffersCsv = (
+  filenamePrefix: string,
+  headers: string[],
+  rows: (string | number)[][],
+) => {
+  const escapeCsvValue = (value: unknown) => {
+    const text = String(value ?? "").replace(/"/g, '""');
+    return /[",\n]/.test(text) ? `"${text}"` : text;
+  };
+
+  const csvContent = [headers, ...rows]
+    .map((row) => row.map(escapeCsvValue).join(","))
+    .join("\n");
+
+  const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = getExportFilename(filenamePrefix);
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(url);
+};
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const formatAdminOffers = (items: any[] = []): Offer[] =>
+  items.map((item) => ({
+    id: item.id,
+    title: item.title,
+    code: item.code,
+    description: item.description,
+    assignedUsers:
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      item.managers?.map((manager: any) => manager.name).join(", ") || "",
+    isGlobal: item.is_global,
+    status: item.status?.toLowerCase() || "inactive",
+    discountType: item.discount_type ?? "-",
+    discountAmount: item.discount_amount ?? "-",
+    discountPercentage: item.discount_percentage ?? "-",
+    maxDiscountAmount: item.max_discount_amount ?? "-",
+    comboDescription: item.combo_description ?? "-",
+    buyQuantity: item.buy_quantity ?? "-",
+    getQuantity: item.get_quantity ?? "-",
+    minPurchaseAmount: item.min_purchase_amount ?? "-",
+    conditionalDiscountValue: item.discount_value ?? "-",
+    flagDiscountAmount: item.flag_discount_amount ?? "-",
+    validFrom: item.valid_from ?? "-",
+    validTo: item.valid_to ?? "-",
+    createdBy: "",
+    organization: item.organization_id
+      ? { id: item.organization_id, name: "" }
+      : null,
+    managers: item.managers || [],
+  }));
 
 export default function OrgAdminOffersPage() {
   const [user, setUser] = useState<AuthUser | null>(() => getUser());
@@ -68,7 +169,6 @@ export default function OrgAdminOffersPage() {
     [user]
   );
 
-  const { handleExport } = useOfferExport();
   const { page, limit, setPage, setLimit } = useUrlPagination();
   const [offers, setOffers] = useState<Offer[]>([]);
   const [totalCount, setTotalCount] = useState(0);
@@ -126,82 +226,7 @@ export default function OrgAdminOffersPage() {
             getOfferSummary(),
           ]);
 
-        const formattedOffers: Offer[] = (
-          offersResponse?.offers ||
-          []
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        ).map((item: any) => ({
-          id: item.id,
-
-          title: item.title,
-
-          code: item.code,
-
-          description: item.description,
-
-          assignedUsers:
-            item.managers
-              ?.map(
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                (manager: any) => manager.name
-              )
-              .join(", ") || "",
-
-          isGlobal: item.is_global,
-
-          status:
-            item.status?.toLowerCase() ||
-            "inactive",
-
-          discountType:
-            item.discount_type ?? "-",
-
-          discountAmount:
-            item.discount_amount ?? "-",
-
-          discountPercentage:
-            item.discount_percentage ?? "-",
-
-          maxDiscountAmount:
-            item.max_discount_amount ?? "-",
-
-          comboDescription:
-            item.combo_description ?? "-",
-
-          buyQuantity:
-            item.buy_quantity ?? "-",
-
-          getQuantity:
-            item.get_quantity ?? "-",
-
-          minPurchaseAmount:
-            item.min_purchase_amount ?? "-",
-
-          conditionalDiscountValue:
-            item.discount_value ?? "-",
-
-          flagDiscountAmount:
-            item.flag_discount_amount ?? "-",
-
-          validFrom:
-            item.valid_from ?? "-",
-
-          validTo:
-            item.valid_to ?? "-",
-
-          createdBy: "",
-
-          organization:
-            item.organization_id
-              ? {
-                id: item.organization_id,
-                name: "",
-              }
-              : null,
-
-          managers:
-            item.managers || [],
-        }));
+        const formattedOffers = formatAdminOffers(offersResponse?.offers);
 
         setOffers(formattedOffers);
 
@@ -461,6 +486,79 @@ export default function OrgAdminOffersPage() {
     }, [setFilters]);
 
   const rowOffset = (pagination.page - 1) * pagination.limit;
+  const [isExporting, setIsExporting] = useState(false);
+
+  const handleExport = useCallback(async () => {
+    setIsExporting(true);
+
+    try {
+      const params = {
+        search: filters.search,
+        status: filters.status.join(","),
+        discountType: filters.discountType.join(","),
+        scope: filters.scope.join(","),
+      };
+
+      const firstResponse = await getOffers({
+        ...params,
+        page: 1,
+        limit: pagination.total || limit,
+      });
+      const totalPages = firstResponse?.pagination?.totalPages ?? 1;
+
+      let allOfferItems = firstResponse?.offers ?? [];
+
+      if (totalPages > 1) {
+        const remainingResponses = await Promise.all(
+          Array.from({ length: totalPages - 1 }, (_, index) =>
+            getOffers({ ...params, page: index + 2, limit }),
+          ),
+        );
+
+        allOfferItems = [
+          ...allOfferItems,
+          ...remainingResponses.flatMap((response) => response?.offers ?? []),
+        ];
+      }
+
+      const allOffers = formatAdminOffers(allOfferItems);
+
+      if (!allOffers.length) return;
+
+      const headers = [
+        "S.No",
+        "Offer Name",
+        "Description",
+        "Assigned",
+        "Discount Type",
+        "Discount Value",
+        "Valid From",
+        "Valid To",
+        "Offer Type",
+        "Status",
+      ];
+
+      const rows = allOffers.map((offer, index) => [
+        index + 1,
+        offer.title,
+        offer.description || "—",
+        offer.isGlobal ? "All Users" : offer.assignedUsers || "—",
+        getDiscountTypeLabel(offer.discountType),
+        getOfferDiscountValue(offer),
+        formatDate(offer.validFrom),
+        formatDate(offer.validTo),
+        offer.isGlobal ? "Global Offer" : "Manager Scope",
+        formatStatusLabel(offer.status),
+      ]);
+
+      downloadOffersCsv("OffersReport", headers, rows);
+    } catch (error) {
+      console.error("Failed to export offers", error);
+    } finally {
+      setIsExporting(false);
+    }
+  }, [filters, pagination.total, limit]);
+
   const isInitialLoading = isLoading && !hasLoaded;
 
   if (isInitialLoading) {
@@ -493,10 +591,11 @@ export default function OrgAdminOffersPage() {
               type="button"
               variant="outline"
               onClick={handleExport}
+              disabled={isExporting}
               className="flex h-9 w-full items-center justify-center gap-1.5 rounded-full px-4 sm:w-auto"
             >
               <Download className="h-4 w-4" />
-              Export
+              {isExporting ? "Exporting..." : "Export"}
             </Button>
           )}
 

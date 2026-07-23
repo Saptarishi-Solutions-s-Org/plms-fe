@@ -12,7 +12,6 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardTitle } from "@/components/ui/card";
 import { DateRangeFilter } from "@/components/commoncomponents/daterange";
 import type { DateRange } from "@/components/commoncomponents/react-day-picker";
-import { useExecutiveLeadsExport } from "@/hooks/export";
 import { useUrlPagination } from "@/hooks/use-url-pagination";
 
 import {
@@ -39,6 +38,39 @@ const formatSource = (source?: string) => {
   }
 
   return source.replace(/_/g, " ");
+};
+
+const getExportFilename = (prefix: string) => {
+  const now = new Date();
+  const pad = (value: number) => String(value).padStart(2, "0");
+  const stamp = `${now.getFullYear()}${pad(now.getMonth() + 1)}${pad(now.getDate())}-${pad(now.getHours())}${pad(now.getMinutes())}${pad(now.getSeconds())}`;
+
+  return `${prefix}_${stamp}.csv`;
+};
+
+const downloadCsv = (
+  filenamePrefix: string,
+  headers: string[],
+  rows: (string | number)[][],
+) => {
+  const escapeCsvValue = (value: unknown) => {
+    const text = String(value ?? "").replace(/"/g, '""');
+    return /[",\n]/.test(text) ? `"${text}"` : text;
+  };
+
+  const csvContent = [headers, ...rows]
+    .map((row) => row.map(escapeCsvValue).join(","))
+    .join("\n");
+
+  const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = getExportFilename(filenamePrefix);
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(url);
 };
 
 const isWithinDateRange = (createdAt: string | undefined, range?: DateRange) => {
@@ -126,7 +158,6 @@ export default function ExecutiveLeadsPage({
     () => parseDateRange(searchParams),
     [searchParams],
   );
-  const { handleExport } = useExecutiveLeadsExport(leadRows);
 
   useEffect(() => {
     const syncUser = () => setCurrentUser(getUser());
@@ -149,6 +180,22 @@ export default function ExecutiveLeadsPage({
 
     return leadRows.slice(startIndex, startIndex + pagination.limit);
   }, [leadRows, pagination.limit, pagination.page]);
+
+  const handleExport = useCallback(() => {
+    if (!leadRows.length) return;
+
+    const headers = ["S.No", "Lead Name", "Status", "Source", "Assigned By"];
+
+    const rows = leadRows.map((lead, index) => [
+      index + 1,
+      lead.leadName,
+      lead.status,
+      lead.source,
+      lead.assignedBy,
+    ]);
+
+    downloadCsv("ExecutiveLeadsReport", headers, rows);
+  }, [leadRows]);
 
   const [leadSummary, setLeadSummary] = useState(
     summary || {

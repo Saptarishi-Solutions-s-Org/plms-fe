@@ -25,6 +25,7 @@ import {
 import { createLead, getLeadDetail, updateLead, getLeadsWithStats } from "@/services/leads";
 import type { LeadDetailResponse } from "@/types/leadActivity";
 import {
+  LEAD_SOURCE_OPTIONS,
   type Lead,
   type LeadFormData,
   type LeadOfferOption,
@@ -35,6 +36,52 @@ import {
   getOfferPagination,
 } from "@/types/leadoffer";
 import { DEFAULT_PAGE_LIMIT } from "@/types/pagination";
+
+const LEAD_SOURCE_LABELS: Record<string, string> = Object.fromEntries(
+  LEAD_SOURCE_OPTIONS.map((option) => [option.value, option.label]),
+);
+
+const getLeadSourceLabel = (source?: string) =>
+  LEAD_SOURCE_LABELS[source ?? ""] ?? source?.replace(/_/g, " ") ?? "-";
+
+function joinFilterValues(values?: string[]) {
+  const filteredValues = values?.filter(Boolean) ?? [];
+
+  return filteredValues.length ? filteredValues.join(",") : undefined;
+}
+
+const getExportFilename = (prefix: string) => {
+  const now = new Date();
+  const pad = (value: number) => String(value).padStart(2, "0");
+  const stamp = `${now.getFullYear()}${pad(now.getMonth() + 1)}${pad(now.getDate())}-${pad(now.getHours())}${pad(now.getMinutes())}${pad(now.getSeconds())}`;
+
+  return `${prefix}_${stamp}.csv`;
+};
+
+const downloadLeadsCsv = (
+  filenamePrefix: string,
+  headers: string[],
+  rows: (string | number)[][],
+) => {
+  const escapeCsvValue = (value: unknown) => {
+    const text = String(value ?? "").replace(/"/g, '""');
+    return /[",\n]/.test(text) ? `"${text}"` : text;
+  };
+
+  const csvContent = [headers, ...rows]
+    .map((row) => row.map(escapeCsvValue).join(","))
+    .join("\n");
+
+  const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = getExportFilename(filenamePrefix);
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(url);
+};
 
 export default function ExecutiveLeadsPage() {
   const { page, limit, setPage, setLimit } = useUrlPagination();
@@ -48,6 +95,72 @@ export default function ExecutiveLeadsPage() {
     sources: filters.sources,
     statsScope: "all",
   });
+  const [isExporting, setIsExporting] = useState(false);
+
+  const handleExport = useCallback(async () => {
+    setIsExporting(true);
+
+    try {
+      const params = {
+        search: filters.search,
+        status: joinFilterValues(filters.statuses),
+        priority: joinFilterValues(filters.priorities),
+        leadSource: joinFilterValues(filters.sources),
+      };
+
+      const firstResponse = await getLeadsWithStats({
+        ...params,
+        page: 1,
+        limit: pagination.total || limit,
+      });
+      const firstLeads: Lead[] = firstResponse.leads ?? [];
+      const totalPages = firstResponse.pagination?.totalPages ?? 1;
+
+      let allLeads = firstLeads;
+
+      if (totalPages > 1) {
+        const remainingResponses = await Promise.all(
+          Array.from({ length: totalPages - 1 }, (_, index) =>
+            getLeadsWithStats({ ...params, page: index + 2, limit }),
+          ),
+        );
+
+        allLeads = [
+          ...allLeads,
+          ...remainingResponses.flatMap((response) => response.leads ?? []),
+        ];
+      }
+
+      if (!allLeads.length) return;
+
+      const headers = [
+        "S.No",
+        "Lead Name",
+        "Email",
+        "Phone",
+        "Status",
+        "Priority",
+        "Source",
+      ];
+
+      const rows = allLeads.map((lead, index) => [
+        index + 1,
+        lead.name,
+        lead.email,
+        lead.phone,
+        lead.status,
+        lead.priority,
+        getLeadSourceLabel(lead.leadSource),
+      ]);
+
+      downloadLeadsCsv("LeadsReport", headers, rows);
+    } catch (error) {
+      console.error("Failed to export leads", error);
+      toast.error("Failed to export leads.");
+    } finally {
+      setIsExporting(false);
+    }
+  }, [filters, pagination.total, limit]);
   const [currentUser, setCurrentUser] = useState<AuthUser | null>(() =>
     getUser(),
   );
@@ -301,13 +414,14 @@ export default function ExecutiveLeadsPage() {
             </div>
 
             <LeadHeader
-              onExport={() => undefined}
+              onExport={handleExport}
               onAddLead={openAddForm}
               showImportExport={false}
               showImport={canImportLead}
               showExport={canExportLead}
               showCreate={canCreateLead}
               showBulkAssign={canUpdateLead}
+              exportDisabled={isExporting}
               onImportComplete={refetch}
               onBulkAssign={() => {
                 setIsBulkAssignOpen(true);

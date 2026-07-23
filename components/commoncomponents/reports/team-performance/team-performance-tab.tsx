@@ -12,6 +12,7 @@ import type {
 import {
   Award,
   CheckCircle,
+  Download,
   FileText,
   Percent,
   Search,
@@ -74,10 +75,44 @@ const sortByPerformance = (
   second.converted - first.converted ||
   second.leadsAssigned - first.leadsAssigned;
 
+const getExportFilename = (prefix: string) => {
+  const now = new Date();
+  const pad = (value: number) => String(value).padStart(2, "0");
+  const stamp = `${now.getFullYear()}${pad(now.getMonth() + 1)}${pad(now.getDate())}-${pad(now.getHours())}${pad(now.getMinutes())}${pad(now.getSeconds())}`;
+
+  return `${prefix}_${stamp}.csv`;
+};
+
+const downloadCsv = (
+  filenamePrefix: string,
+  headers: string[],
+  rows: (string | number)[][],
+) => {
+  const escapeCsvValue = (value: unknown) => {
+    const text = String(value ?? "").replace(/"/g, '""');
+    return /[",\n]/.test(text) ? `"${text}"` : text;
+  };
+
+  const csvContent = [headers, ...rows]
+    .map((row) => row.map(escapeCsvValue).join(","))
+    .join("\n");
+
+  const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = getExportFilename(filenamePrefix);
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(url);
+};
+
 export default function TeamPerformanceTab({
   stats,
   rows,
   orgCode,
+  canExport = false,
 }: TeamPerformanceProps) {
   const { page, limit, setPage, setLimit } = useUrlPagination();
   const searchParams = useSearchParams();
@@ -168,6 +203,28 @@ export default function TeamPerformanceTab({
 
     return performanceRows.slice(startIndex, startIndex + pagination.limit);
   }, [pagination.limit, pagination.page, performanceRows]);
+
+  const handleExport = useCallback(() => {
+    if (!performanceRows.length) return;
+
+    const headers = [
+      "S.No",
+      "Executive",
+      "Leads Assigned",
+      "Converted",
+      "Conversion Rate",
+    ];
+
+    const rows = performanceRows.map((row, index) => [
+      index + 1,
+      row.executiveName,
+      row.leadsAssigned,
+      row.converted,
+      `${row.conversionRate}%`,
+    ]);
+
+    downloadCsv("ExecutivesReport", headers, rows);
+  }, [performanceRows]);
 
   useEffect(() => {
     if (page > pagination.totalPages) {
@@ -305,6 +362,18 @@ export default function TeamPerformanceTab({
             >
               Clear
             </Button>
+            {canExport && (
+              <Button
+                type="button"
+                variant="outline"
+                onClick={handleExport}
+                disabled={performanceRows.length === 0}
+                className="flex h-10 items-center justify-center gap-1.5 rounded-md px-4"
+              >
+                <Download className="h-4 w-4" />
+                Export
+              </Button>
+            )}
             <Button
               type="button"
               onClick={handleApplySearch}

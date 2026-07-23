@@ -153,6 +153,7 @@ export type LeadHeaderProps = {
   showExport?: boolean;
   showCreate?: boolean;
   showBulkAssign?: boolean;
+  exportDisabled?: boolean;
 };
 
 export type LeadActionsProps = {

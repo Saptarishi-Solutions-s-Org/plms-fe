@@ -18,7 +18,6 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { MultiSelectCombobox } from "@/components/ui/multi-select-combobox";
-import { useExecutiveOfferExport } from "@/hooks/export";
 import { useUrlPagination } from "@/hooks/use-url-pagination";
 import { useUrlOfferFilters } from "@/hooks/useurloffer";
 import { type AuthUser, getUser } from "@/lib/auth";
@@ -138,6 +137,39 @@ const getDiscountValue = (offer: ExecutiveOfferRow) => {
     : `₹${offer.discountValue}`;
 };
 
+const getExportFilename = (prefix: string) => {
+  const now = new Date();
+  const pad = (value: number) => String(value).padStart(2, "0");
+  const stamp = `${now.getFullYear()}${pad(now.getMonth() + 1)}${pad(now.getDate())}-${pad(now.getHours())}${pad(now.getMinutes())}${pad(now.getSeconds())}`;
+
+  return `${prefix}_${stamp}.csv`;
+};
+
+const downloadOffersCsv = (
+  filenamePrefix: string,
+  headers: string[],
+  rows: (string | number)[][],
+) => {
+  const escapeCsvValue = (value: unknown) => {
+    const text = String(value ?? "").replace(/"/g, '""');
+    return /[",\n]/.test(text) ? `"${text}"` : text;
+  };
+
+  const csvContent = [headers, ...rows]
+    .map((row) => row.map(escapeCsvValue).join(","))
+    .join("\n");
+
+  const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = getExportFilename(filenamePrefix);
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(url);
+};
+
 export default function OrgExecutiveOffersPage() {
   const [user, setUser] = useState<AuthUser | null>(() => getUser());
 
@@ -156,7 +188,6 @@ export default function OrgExecutiveOffersPage() {
     [user],
   );
 
-  const { handleExport } = useExecutiveOfferExport();
   const { page, limit, setPage, setLimit } = useUrlPagination();
   const [offers, setOffers] = useState<ExecutiveOfferRow[]>([]);
   const [pagination, setPagination] = useState<PaginationMeta>(
@@ -257,6 +288,75 @@ export default function OrgExecutiveOffersPage() {
   }, [setFilters]);
 
   const rowOffset = (pagination.page - 1) * pagination.limit;
+  const [isExporting, setIsExporting] = useState(false);
+
+  const handleExport = useCallback(async () => {
+    setIsExporting(true);
+
+    try {
+      const params = {
+        search: filters.search,
+        status: selectedStatuses.join(","),
+        discountType: selectedDiscountTypes.join(","),
+      };
+
+      const firstResponse = await getExecutiveOffers({
+        ...params,
+        page: 1,
+        limit: pagination.total || limit,
+      });
+      const firstItems = getExecutiveOfferRows(firstResponse);
+      const totalPages =
+        getExecutiveOfferPagination(firstResponse)?.totalPages ?? 1;
+
+      let allItems = firstItems;
+
+      if (totalPages > 1) {
+        const remainingResponses = await Promise.all(
+          Array.from({ length: totalPages - 1 }, (_, index) =>
+            getExecutiveOffers({ ...params, page: index + 2, limit }),
+          ),
+        );
+
+        allItems = [
+          ...allItems,
+          ...remainingResponses.flatMap(getExecutiveOfferRows),
+        ];
+      }
+
+      const allOffers = allItems.map(mapExecutiveOffer);
+
+      if (!allOffers.length) return;
+
+      const headers = [
+        "S.No",
+        "Offer Name",
+        "Description",
+        "Discount Type",
+        "Discount Value",
+        "Valid From",
+        "Valid To",
+        "Status",
+      ];
+
+      const rows = allOffers.map((offer, index) => [
+        index + 1,
+        offer.title,
+        offer.description || "—",
+        DISCOUNT_TYPE_LABELS[offer.discountType] ?? offer.discountType,
+        getDiscountValue(offer),
+        formatDate(offer.validFrom),
+        formatDate(offer.validTo),
+        formatStatusLabel(offer.status),
+      ]);
+
+      downloadOffersCsv("OffersReport", headers, rows);
+    } catch (error) {
+      console.error("Failed to export offers", error);
+    } finally {
+      setIsExporting(false);
+    }
+  }, [filters.search, selectedStatuses, selectedDiscountTypes, pagination.total, limit]);
 
   const hasAppliedFilters =
     filters.search.trim() ||
@@ -300,10 +400,11 @@ export default function OrgExecutiveOffersPage() {
             type="button"
             variant="outline"
             onClick={handleExport}
+            disabled={isExporting}
             className="flex h-9 w-full items-center justify-center gap-1.5 rounded-full px-4 sm:w-auto"
           >
             <Download className="h-4 w-4" />
-            Export
+            {isExporting ? "Exporting..." : "Export"}
           </Button>
         )}
       </div>
