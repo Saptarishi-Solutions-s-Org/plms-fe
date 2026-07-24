@@ -1,6 +1,13 @@
 "use client";
 
-import { useCallback, useMemo, useState, useEffect } from "react";
+import {
+  forwardRef,
+  useCallback,
+  useEffect,
+  useImperativeHandle,
+  useMemo,
+  useState,
+} from "react";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import type {
@@ -8,11 +15,11 @@ import type {
   TeamPerformanceProps,
   TeamPerformanceRow,
   TeamPerformanceStatCard,
+  TeamPerformanceTabHandle,
 } from "@/types/org-reports";
 import {
   Award,
   CheckCircle,
-  Download,
   FileText,
   Percent,
   Search,
@@ -33,6 +40,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { useUrlPagination } from "@/hooks/use-url-pagination";
+import { downloadCsv } from "@/lib/csv-export";
 import { getReportExecutivePerformance } from "@/services/organizationreports";
 import { createPaginationMeta } from "@/types/pagination";
 
@@ -75,45 +83,11 @@ const sortByPerformance = (
   second.converted - first.converted ||
   second.leadsAssigned - first.leadsAssigned;
 
-const getExportFilename = (prefix: string) => {
-  const now = new Date();
-  const pad = (value: number) => String(value).padStart(2, "0");
-  const stamp = `${now.getFullYear()}${pad(now.getMonth() + 1)}${pad(now.getDate())}-${pad(now.getHours())}${pad(now.getMinutes())}${pad(now.getSeconds())}`;
-
-  return `${prefix}_${stamp}.csv`;
-};
-
-const downloadCsv = (
-  filenamePrefix: string,
-  headers: string[],
-  rows: (string | number)[][],
-) => {
-  const escapeCsvValue = (value: unknown) => {
-    const text = String(value ?? "").replace(/"/g, '""');
-    return /[",\n]/.test(text) ? `"${text}"` : text;
-  };
-
-  const csvContent = [headers, ...rows]
-    .map((row) => row.map(escapeCsvValue).join(","))
-    .join("\n");
-
-  const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement("a");
-  link.href = url;
-  link.download = getExportFilename(filenamePrefix);
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
-  URL.revokeObjectURL(url);
-};
-
-export default function TeamPerformanceTab({
-  stats,
-  rows,
-  orgCode,
-  canExport = false,
-}: TeamPerformanceProps) {
+const TeamPerformanceTab = forwardRef<TeamPerformanceTabHandle, TeamPerformanceProps>(
+  function TeamPerformanceTab(
+    { stats, rows, orgCode, onExportStateChange },
+    ref,
+  ) {
   const { page, limit, setPage, setLimit } = useUrlPagination();
   const searchParams = useSearchParams();
   const pathname = usePathname();
@@ -225,6 +199,12 @@ export default function TeamPerformanceTab({
 
     downloadCsv("ExecutivesReport", headers, rows);
   }, [performanceRows]);
+
+  useImperativeHandle(ref, () => ({ export: handleExport }), [handleExport]);
+
+  useEffect(() => {
+    onExportStateChange?.(performanceRows.length > 0);
+  }, [onExportStateChange, performanceRows.length]);
 
   useEffect(() => {
     if (page > pagination.totalPages) {
@@ -362,18 +342,6 @@ export default function TeamPerformanceTab({
             >
               Clear
             </Button>
-            {canExport && (
-              <Button
-                type="button"
-                variant="outline"
-                onClick={handleExport}
-                disabled={performanceRows.length === 0}
-                className="flex h-10 items-center justify-center gap-1.5 rounded-md px-4"
-              >
-                <Download className="h-4 w-4" />
-                Export
-              </Button>
-            )}
             <Button
               type="button"
               onClick={handleApplySearch}
@@ -502,4 +470,9 @@ export default function TeamPerformanceTab({
       </section>
     </div>
   );
-}
+  },
+);
+
+TeamPerformanceTab.displayName = "TeamPerformanceTab";
+
+export default TeamPerformanceTab;
