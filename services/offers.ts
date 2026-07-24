@@ -31,16 +31,6 @@ export const updateManagerOffer = (data: Record<string, unknown>) =>
     body: JSON.stringify(data),
   });
 
-export const exportOffersAdmin = () =>
-  api(`/odata/v4/offer/exportOffersAdmin`, { method: "POST" });
-
-export const exportOffersManager = () =>
-  api(`/odata/v4/offer/exportOffersManager`, { method: "POST" });
-
-export const exportOffersExecutive = () =>
-  api(`/odata/v4/offer/exportOffersExecutive`, { method: "POST" });
-
-
 export const toggleOfferStatus = (id: string) =>
   api(`/odata/v4/offer/toggleOfferStatus`, {
     method: "POST",

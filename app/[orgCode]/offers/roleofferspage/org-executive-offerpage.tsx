@@ -18,10 +18,11 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { MultiSelectCombobox } from "@/components/ui/multi-select-combobox";
-import { useExecutiveOfferExport } from "@/hooks/export";
 import { useUrlPagination } from "@/hooks/use-url-pagination";
 import { useUrlOfferFilters } from "@/hooks/useurloffer";
 import { type AuthUser, getUser } from "@/lib/auth";
+import { downloadCsv } from "@/lib/csv-export";
+import { fetchAllPages } from "@/lib/fetch-all-pages";
 import { canAccess } from "@/lib/permissions";
 import { subscribeRealtime } from "@/lib/socket";
 import { Download } from "lucide-react";
@@ -48,6 +49,7 @@ const DEFAULT_FILTERS: OfferFilters = {
   search: "",
   discountType: [],
   status: [],
+  scope: [],
 };
 
 const DISCOUNT_TYPE_LABELS: Record<string, string> = {
@@ -155,7 +157,6 @@ export default function OrgExecutiveOffersPage() {
     [user],
   );
 
-  const { handleExport } = useExecutiveOfferExport();
   const { page, limit, setPage, setLimit } = useUrlPagination();
   const [offers, setOffers] = useState<ExecutiveOfferRow[]>([]);
   const [pagination, setPagination] = useState<PaginationMeta>(
@@ -256,6 +257,60 @@ export default function OrgExecutiveOffersPage() {
   }, [setFilters]);
 
   const rowOffset = (pagination.page - 1) * pagination.limit;
+  const [isExporting, setIsExporting] = useState(false);
+
+  const handleExport = useCallback(async () => {
+    setIsExporting(true);
+
+    try {
+      const params = {
+        search: filters.search,
+        status: selectedStatuses.join(","),
+        discountType: selectedDiscountTypes.join(","),
+      };
+
+      const allItems = await fetchAllPages({
+        fetchFirstPage: () =>
+          getExecutiveOffers({ ...params, page: 1, limit: pagination.total || limit }),
+        fetchPage: (page) => getExecutiveOffers({ ...params, page, limit }),
+        getItems: getExecutiveOfferRows,
+        getTotalPages: (response) =>
+          getExecutiveOfferPagination(response)?.totalPages ?? 1,
+      });
+
+      const allOffers = allItems.map(mapExecutiveOffer);
+
+      if (!allOffers.length) return;
+
+      const headers = [
+        "S.No",
+        "Offer Name",
+        "Description",
+        "Discount Type",
+        "Discount Value",
+        "Valid From",
+        "Valid To",
+        "Status",
+      ];
+
+      const rows = allOffers.map((offer, index) => [
+        index + 1,
+        offer.title,
+        offer.description || "—",
+        DISCOUNT_TYPE_LABELS[offer.discountType] ?? offer.discountType,
+        getDiscountValue(offer),
+        formatDate(offer.validFrom),
+        formatDate(offer.validTo),
+        formatStatusLabel(offer.status),
+      ]);
+
+      downloadCsv("OffersReport", headers, rows);
+    } catch (error) {
+      console.error("Failed to export offers", error);
+    } finally {
+      setIsExporting(false);
+    }
+  }, [filters.search, selectedStatuses, selectedDiscountTypes, pagination.total, limit]);
 
   const hasAppliedFilters =
     filters.search.trim() ||
@@ -299,6 +354,7 @@ export default function OrgExecutiveOffersPage() {
             type="button"
             variant="outline"
             onClick={handleExport}
+            disabled={isExporting}
             className="flex h-9 w-full items-center justify-center gap-1.5 rounded-full px-4 sm:w-auto"
           >
             <Download className="h-4 w-4" />

@@ -6,13 +6,14 @@ import { endOfDay, format, startOfDay } from "date-fns";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { type AuthUser, getUser } from "@/lib/auth";
+import { downloadCsv } from "@/lib/csv-export";
+import { fetchAllPages } from "@/lib/fetch-all-pages";
 import { canAccess } from "@/lib/permissions";
 import TablePaginationFooter from "@/components/commoncomponents/table-pagination-footer";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardTitle } from "@/components/ui/card";
 import { DateRangeFilter } from "@/components/commoncomponents/daterange";
 import type { DateRange } from "@/components/commoncomponents/react-day-picker";
-import { useExecutiveLeadsExport } from "@/hooks/export";
 import { useUrlPagination } from "@/hooks/use-url-pagination";
 
 import {
@@ -126,7 +127,6 @@ export default function ExecutiveLeadsPage({
     () => parseDateRange(searchParams),
     [searchParams],
   );
-  const { handleExport } = useExecutiveLeadsExport(leadRows);
 
   useEffect(() => {
     const syncUser = () => setCurrentUser(getUser());
@@ -150,6 +150,22 @@ export default function ExecutiveLeadsPage({
     return leadRows.slice(startIndex, startIndex + pagination.limit);
   }, [leadRows, pagination.limit, pagination.page]);
 
+  const handleExport = useCallback(() => {
+    if (!leadRows.length) return;
+
+    const headers = ["S.No", "Lead Name", "Status", "Source", "Assigned By"];
+
+    const rows = leadRows.map((lead, index) => [
+      index + 1,
+      lead.leadName,
+      lead.status,
+      lead.source,
+      lead.assignedBy,
+    ]);
+
+    downloadCsv("ExecutiveLeadsReport", headers, rows);
+  }, [leadRows]);
+
   const [leadSummary, setLeadSummary] = useState(
     summary || {
       totalCreated: 0,
@@ -161,19 +177,27 @@ export default function ExecutiveLeadsPage({
   useEffect(() => {
     const fetchLeadStats = async () => {
       try {
-        const data = (await getReportLeads()) as LeadsWithStatsResponse;
-        const leads = data?.leads;
+        const pageLimit = 100;
+        const allLeads = await fetchAllPages({
+          fetchFirstPage: () =>
+            getReportLeads({
+              assignedTo: executiveId,
+              page: 1,
+              limit: pageLimit,
+            }) as Promise<LeadsWithStatsResponse>,
+          fetchPage: (page) =>
+            getReportLeads({
+              assignedTo: executiveId,
+              page,
+              limit: pageLimit,
+            }) as Promise<LeadsWithStatsResponse>,
+          getItems: (response) => (response?.leads ?? []) as LeadWithStatsApiRow[],
+          getTotalPages: (response) => response?.pagination?.totalPages ?? 1,
+        });
 
-        const filteredLeads = Array.isArray(leads)
-          ? leads.filter(
-            (lead) =>
-              lead.assignedTo === executiveId &&
-              isWithinDateRange(
-                lead.createdAt ?? lead.createdat,
-                appliedDateRange,
-              ),
-          )
-          : [];
+        const filteredLeads = allLeads.filter((lead) =>
+          isWithinDateRange(lead.createdAt ?? lead.createdat, appliedDateRange),
+        );
 
         const rows = filteredLeads.map(mapApiLeadToRow);
 

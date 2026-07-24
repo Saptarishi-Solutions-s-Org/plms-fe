@@ -1,6 +1,13 @@
 "use client";
 
-import { useCallback, useMemo, useState, useEffect } from "react";
+import {
+  forwardRef,
+  useCallback,
+  useEffect,
+  useImperativeHandle,
+  useMemo,
+  useState,
+} from "react";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import type {
@@ -8,6 +15,7 @@ import type {
   TeamPerformanceProps,
   TeamPerformanceRow,
   TeamPerformanceStatCard,
+  TeamPerformanceTabHandle,
 } from "@/types/org-reports";
 import {
   Award,
@@ -32,6 +40,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { useUrlPagination } from "@/hooks/use-url-pagination";
+import { downloadCsv } from "@/lib/csv-export";
 import { getReportExecutivePerformance } from "@/services/organizationreports";
 import { createPaginationMeta } from "@/types/pagination";
 
@@ -74,11 +83,11 @@ const sortByPerformance = (
   second.converted - first.converted ||
   second.leadsAssigned - first.leadsAssigned;
 
-export default function TeamPerformanceTab({
-  stats,
-  rows,
-  orgCode,
-}: TeamPerformanceProps) {
+const TeamPerformanceTab = forwardRef<TeamPerformanceTabHandle, TeamPerformanceProps>(
+  function TeamPerformanceTab(
+    { stats, rows, orgCode, onExportStateChange },
+    ref,
+  ) {
   const { page, limit, setPage, setLimit } = useUrlPagination();
   const searchParams = useSearchParams();
   const pathname = usePathname();
@@ -168,6 +177,34 @@ export default function TeamPerformanceTab({
 
     return performanceRows.slice(startIndex, startIndex + pagination.limit);
   }, [pagination.limit, pagination.page, performanceRows]);
+
+  const handleExport = useCallback(() => {
+    if (!performanceRows.length) return;
+
+    const headers = [
+      "S.No",
+      "Executive",
+      "Leads Assigned",
+      "Converted",
+      "Conversion Rate",
+    ];
+
+    const rows = performanceRows.map((row, index) => [
+      index + 1,
+      row.executiveName,
+      row.leadsAssigned,
+      row.converted,
+      `${row.conversionRate}%`,
+    ]);
+
+    downloadCsv("ExecutivesReport", headers, rows);
+  }, [performanceRows]);
+
+  useImperativeHandle(ref, () => ({ export: handleExport }), [handleExport]);
+
+  useEffect(() => {
+    onExportStateChange?.(performanceRows.length > 0);
+  }, [onExportStateChange, performanceRows.length]);
 
   useEffect(() => {
     if (page > pagination.totalPages) {
@@ -433,4 +470,9 @@ export default function TeamPerformanceTab({
       </section>
     </div>
   );
-}
+  },
+);
+
+TeamPerformanceTab.displayName = "TeamPerformanceTab";
+
+export default TeamPerformanceTab;

@@ -172,6 +172,7 @@ export function BulkLeadActionsDrawer({
                       <RadioGroupItem
                         value={executive.id}
                         aria-label={`Select ${executive.name}`}
+                        className="data-[state=checked]:border-blue-600 data-[state=checked]:text-blue-600 focus-visible:ring-blue-500"
                       />
                       <span className="min-w-0 flex-1 truncate font-medium text-gray-800">
                         {executive.name}

@@ -16,6 +16,8 @@ import { useLeads } from "@/hooks/use-leads";
 import { useUrlLeadFilters } from "@/hooks/useurllead-filters";
 import { useUrlPagination } from "@/hooks/use-url-pagination";
 import { type AuthUser, getUser } from "@/lib/auth";
+import { downloadCsv } from "@/lib/csv-export";
+import { fetchAllPages } from "@/lib/fetch-all-pages";
 import { canAccess } from "@/lib/permissions";
 import {
   assignOfferToLead,
@@ -25,6 +27,7 @@ import {
 import { createLead, getLeadDetail, updateLead, getLeadsWithStats } from "@/services/leads";
 import type { LeadDetailResponse } from "@/types/leadActivity";
 import {
+  LEAD_SOURCE_OPTIONS,
   type Lead,
   type LeadFormData,
   type LeadOfferOption,
@@ -35,6 +38,19 @@ import {
   getOfferPagination,
 } from "@/types/leadoffer";
 import { DEFAULT_PAGE_LIMIT } from "@/types/pagination";
+
+const LEAD_SOURCE_LABELS: Record<string, string> = Object.fromEntries(
+  LEAD_SOURCE_OPTIONS.map((option) => [option.value, option.label]),
+);
+
+const getLeadSourceLabel = (source?: string) =>
+  LEAD_SOURCE_LABELS[source ?? ""] ?? source?.replace(/_/g, " ") ?? "-";
+
+function joinFilterValues(values?: string[]) {
+  const filteredValues = values?.filter(Boolean) ?? [];
+
+  return filteredValues.length ? filteredValues.join(",") : undefined;
+}
 
 export default function ExecutiveLeadsPage() {
   const { page, limit, setPage, setLimit } = useUrlPagination();
@@ -48,6 +64,57 @@ export default function ExecutiveLeadsPage() {
     sources: filters.sources,
     statsScope: "all",
   });
+  const [isExporting, setIsExporting] = useState(false);
+
+  const handleExport = useCallback(async () => {
+    setIsExporting(true);
+
+    try {
+      const params = {
+        search: filters.search,
+        status: joinFilterValues(filters.statuses),
+        priority: joinFilterValues(filters.priorities),
+        leadSource: joinFilterValues(filters.sources),
+      };
+
+      const allLeads = await fetchAllPages({
+        fetchFirstPage: () =>
+          getLeadsWithStats({ ...params, page: 1, limit: pagination.total || limit }),
+        fetchPage: (page) => getLeadsWithStats({ ...params, page, limit }),
+        getItems: (response) => (response.leads ?? []) as Lead[],
+        getTotalPages: (response) => response.pagination?.totalPages ?? 1,
+      });
+
+      if (!allLeads.length) return;
+
+      const headers = [
+        "S.No",
+        "Lead Name",
+        "Email",
+        "Phone",
+        "Status",
+        "Priority",
+        "Source",
+      ];
+
+      const rows = allLeads.map((lead, index) => [
+        index + 1,
+        lead.name,
+        lead.email,
+        lead.phone,
+        lead.status,
+        lead.priority,
+        getLeadSourceLabel(lead.leadSource),
+      ]);
+
+      downloadCsv("LeadsReport", headers, rows);
+    } catch (error) {
+      console.error("Failed to export leads", error);
+      toast.error("Failed to export leads.");
+    } finally {
+      setIsExporting(false);
+    }
+  }, [filters, pagination.total, limit]);
   const [currentUser, setCurrentUser] = useState<AuthUser | null>(() =>
     getUser(),
   );
@@ -301,13 +368,14 @@ export default function ExecutiveLeadsPage() {
             </div>
 
             <LeadHeader
-              onExport={() => undefined}
+              onExport={handleExport}
               onAddLead={openAddForm}
               showImportExport={false}
               showImport={canImportLead}
               showExport={canExportLead}
               showCreate={canCreateLead}
               showBulkAssign={canUpdateLead}
+              exportDisabled={isExporting}
               onImportComplete={refetch}
               onBulkAssign={() => {
                 setIsBulkAssignOpen(true);

@@ -36,10 +36,11 @@ import {
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { useManagerOfferExport } from "@/hooks/export";
 import { useUrlPagination } from "@/hooks/use-url-pagination";
 import { useUrlOfferFilters } from "@/hooks/useurloffer";
 import { type AuthUser, getUser } from "@/lib/auth";
+import { downloadCsv } from "@/lib/csv-export";
+import { fetchAllPages } from "@/lib/fetch-all-pages";
 import { canAccess } from "@/lib/permissions";
 import { subscribeRealtime } from "@/lib/socket";
 import { MoreHorizontal, ListChecks, Download, Plus, Loader2 } from "lucide-react";
@@ -83,6 +84,7 @@ const DEFAULT_FILTERS: OfferFiltersType = {
   search: "",
   status: [],
   discountType: [],
+  scope: [],
 };
 
 const DISCOUNT_TYPE_LABELS: Record<string, string> = {
@@ -92,6 +94,31 @@ const DISCOUNT_TYPE_LABELS: Record<string, string> = {
   Buy_One_Get_One_Free: "Buy One Get One",
   Conditional_Discount: "Conditional",
   Flag_Discount: "Flag Discount",
+};
+
+const getOfferDiscountValue = (offer: Offer) => {
+  switch (offer.discountType) {
+    case "Fixed_Amount":
+      return `₹${offer.discountAmount}`;
+
+    case "Percentage":
+      return `${offer.discountPercentage}%`;
+
+    case "Combo_Offer":
+      return offer.comboDescription || "—";
+
+    case "Buy_One_Get_One_Free":
+      return `Buy ${offer.buyQuantity} Get ${offer.getQuantity}`;
+
+    case "Conditional_Discount":
+      return `₹${offer.conditionalDiscountValue}`;
+
+    case "Flag_Discount":
+      return `₹${offer.flagDiscountAmount}`;
+
+    default:
+      return "—";
+  }
 };
 
 const formatManagerOffers = (
@@ -175,7 +202,6 @@ export default function OrgManagerOffersPage() {
     [user],
   );
 
-  const { handleExport } = useManagerOfferExport();
   const { page, limit, setPage, setLimit } = useUrlPagination();
   const [offers, setOffers] = useState<ManagerOffer[]>([]);
   const [bulkOffers, setBulkOffers] = useState<ManagerOffer[]>([]);
@@ -196,6 +222,7 @@ export default function OrgManagerOffersPage() {
 
   const [assignDialogOpen, setAssignDialogOpen] = useState(false);
   const [offerToAssign, setOfferToAssign] = useState<ManagerOffer | null>(null);
+  const [assigningExecutiveId, setAssigningExecutiveId] = useState<string | null>(null);
 
   const [isBulkActionsOpen, setIsBulkActionsOpen] = useState(false);
   const [createOpen, setCreateOpen] = useState(false);
@@ -211,11 +238,8 @@ export default function OrgManagerOffersPage() {
   const [assignedExecutivesError, setAssignedExecutivesError] = useState("");
 
   const [totalCount, setTotalCount] = useState(0);
-
   const [activeCount, setActiveCount] = useState(0);
-
   const [inactiveCount, setInactiveCount] = useState(0);
-
   const [globalCount, setGlobalCount] = useState(0);
 
   const [isLoading, setIsLoading] = useState(true);
@@ -283,6 +307,7 @@ export default function OrgManagerOffersPage() {
           search: filters.search,
           status: filters.status.join(","),
           discountType: filters.discountType.join(","),
+          scope: filters.scope.join(","),
         }),
         getExecutiveOverview(),
       ]);
@@ -351,6 +376,7 @@ export default function OrgManagerOffersPage() {
         search: filters.search,
         status: filters.status.join(","),
         discountType: filters.discountType.join(","),
+        scope: filters.scope.join(","),
       };
       const firstResponse = await getManagerOfferOverview({
         ...params,
@@ -415,6 +441,80 @@ export default function OrgManagerOffersPage() {
   }, [setFilters]);
 
   const rowOffset = (pagination.page - 1) * pagination.limit;
+  const [isExporting, setIsExporting] = useState(false);
+
+  const handleExport = useCallback(async () => {
+    setIsExporting(true);
+
+    try {
+      const params = {
+        search: filters.search,
+        status: filters.status.join(","),
+        discountType: filters.discountType.join(","),
+        scope: filters.scope.join(","),
+      };
+
+      type ManagerOfferOverviewResponse = {
+        value?: {
+          offers?: ManagerOfferOverviewItem[];
+          pagination?: { totalPages?: number };
+        };
+        offers?: ManagerOfferOverviewItem[];
+        pagination?: { totalPages?: number };
+      };
+
+      const allOfferItems = await fetchAllPages<
+        ManagerOfferOverviewResponse,
+        ManagerOfferOverviewItem
+      >({
+        fetchFirstPage: () =>
+          getManagerOfferOverview({
+            ...params,
+            page: 1,
+            limit: pagination.total || limit,
+          }),
+        fetchPage: (page) => getManagerOfferOverview({ ...params, page, limit }),
+        getItems: (response) => (response?.value || response)?.offers ?? [],
+        getTotalPages: (response) =>
+          (response?.value || response)?.pagination?.totalPages ?? 1,
+      });
+
+      const allOffers = formatManagerOffers(allOfferItems);
+
+      if (!allOffers.length) return;
+
+      const headers = [
+        "S.No",
+        "Offer Name",
+        "Description",
+        "Discount Type",
+        "Discount Value",
+        "Valid From",
+        "Valid To",
+        "Status",
+        "Assign Status",
+      ];
+
+      const rows = allOffers.map((offer, index) => [
+        index + 1,
+        offer.title,
+        offer.description || "—",
+        DISCOUNT_TYPE_LABELS[offer.discountType] ?? offer.discountType,
+        getOfferDiscountValue(offer),
+        formatDate(offer.validFrom),
+        formatDate(offer.validTo),
+        formatStatusLabel(offer.status),
+        offer.assignStatus || "—",
+      ]);
+
+      downloadCsv("OffersReport", headers, rows);
+    } catch (error) {
+      console.error("Failed to export offers", error);
+      toast.error("Failed to export offers.");
+    } finally {
+      setIsExporting(false);
+    }
+  }, [filters, pagination.total, limit]);
 
   const getDiscountValue = (offer: Offer) => {
     switch (offer.discountType) {
@@ -442,6 +542,8 @@ export default function OrgManagerOffersPage() {
   };
 
   const handleAssignOffer = async (offerId: string, executiveId: string) => {
+    setAssigningExecutiveId(executiveId);
+
     try {
       const response = await assignOfferToExecutive({
         offerId,
@@ -458,12 +560,15 @@ export default function OrgManagerOffersPage() {
         ),
       }));
       fetchOffers();
+      setAssignDialogOpen(false);
     } catch (error) {
       toast.error(
         error instanceof Error
           ? error.message
           : "Failed to assign offer to executive",
       );
+    } finally {
+      setAssigningExecutiveId(null);
     }
   };
 
@@ -655,6 +760,7 @@ export default function OrgManagerOffersPage() {
               type="button"
               variant="outline"
               onClick={handleExport}
+              disabled={isExporting}
               className="flex h-9 w-full items-center justify-center gap-1.5 rounded-full border-blue-600 px-4 text-blue-600 hover:bg-blue-50 hover:text-blue-700 sm:w-auto"
             >
               <Download className="h-4 w-4" />
@@ -721,6 +827,7 @@ export default function OrgManagerOffersPage() {
             onFilterChange={handleFilterChange}
             onApply={handleApplyFilters}
             onClear={handleClearFilters}
+            showScope
           />
 
           {/* Table */}
@@ -763,13 +870,7 @@ export default function OrgManagerOffersPage() {
               </TableHeader>
 
               <TableBody>
-                {isLoading ? (
-                  <TableRow>
-                    <TableCell colSpan={canUpdate ? 11 : 10} className="py-10 text-center text-gray-500">
-                      Loading offers...
-                    </TableCell>
-                  </TableRow>
-                ) : offers.length === 0 ? (
+                {offers.length === 0 ? (
                   <TableRow>
                     <TableCell
                       colSpan={canUpdate ? 11 : 10}
@@ -1042,14 +1143,14 @@ export default function OrgManagerOffersPage() {
                       size="sm"
                       variant="default"
                       className="bg-blue-500 hover:bg-blue-600 text-white font-poppins h-6 px-3 text-[11px]"
+                      disabled={assigningExecutiveId === executive.id}
                       onClick={() => {
                         if (offerToAssign) {
                           handleAssignOffer(offerToAssign.id, executive.id);
-                          setAssignDialogOpen(false);
                         }
                       }}
                     >
-                      Assign
+                      {assigningExecutiveId === executive.id ? "Assigning..." : "Assign"}
                     </Button>
                   </div>
                 ))

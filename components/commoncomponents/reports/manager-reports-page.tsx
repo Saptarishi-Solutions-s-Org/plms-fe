@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
   usePathname,
   useParams,
@@ -12,10 +12,10 @@ import { Download } from "lucide-react";
 import type { ReportTab } from "@/types/org-reports";
 
 import GlobalLoader from "@/components/commoncomponents/globalloader";
-import { Button } from "@/components/ui/button";
 import OverviewTab from "@/components/commoncomponents/reports/Overview/overview-tab";
 import ExecutiveLeadsPage from "@/components/commoncomponents/reports/executive-leads/executive-leads-page";
 import TeamPerformanceTab from "@/components/commoncomponents/reports/team-performance/team-performance-tab";
+import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   getLeadSourceAnalytics,
@@ -25,7 +25,6 @@ import {
 import { subscribeRealtime } from "@/lib/socket";
 import { type AuthUser, getUser } from "@/lib/auth";
 import { canAccess } from "@/lib/permissions";
-import { useReportExecutivesExport } from "@/hooks/export";
 import { LEAD_SOURCE_OPTIONS } from "@/types/leadtypes";
 import type {
   LeadSourceAnalyticsRow,
@@ -34,6 +33,7 @@ import type {
   ExecutiveLeadSummary,
   OrganizationReportStats,
   SourceConversionRateRow,
+  TeamPerformanceTabHandle,
 } from "@/types/org-reports";
 import {
   LEAD_LIST_CHANGED,
@@ -153,8 +153,9 @@ export default function ManagerReportsPage() {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [currentUser, setCurrentUser] = useState<AuthUser | null>(() => getUser());
   const canExportReports = canAccess(currentUser, ["reports"], ["export"]);
-  const { handleExport } = useReportExecutivesExport();
   const [stats, setStats] = useState<OrganizationReportStats>(emptyStats);
+  const teamPerformanceRef = useRef<TeamPerformanceTabHandle>(null);
+  const [canExportTeamPerformance, setCanExportTeamPerformance] = useState(false);
 
   const [leadSourceDistributionData, setLeadSourceDistributionData] = useState<
     LeadSourceRow[]
@@ -262,11 +263,13 @@ export default function ManagerReportsPage() {
               Analyzing team performance for the current cycle
             </p>
           </div>
-          {canExportReports && activeTab === "team-performance" && (
+
+          {activeTab === "team-performance" && canExportReports && (
             <Button
               type="button"
               variant="outline"
-              onClick={handleExport}
+              onClick={() => teamPerformanceRef.current?.export()}
+              disabled={!canExportTeamPerformance}
               className="flex h-9 w-full items-center justify-center gap-1.5 rounded-full px-4 sm:w-auto"
             >
               <Download className="h-4 w-4" />
@@ -309,7 +312,13 @@ export default function ManagerReportsPage() {
           </TabsContent>
 
           <TabsContent value="team-performance" className="w-full">
-            <TeamPerformanceTab stats={[]} rows={[]} orgCode={orgCode} />
+            <TeamPerformanceTab
+              ref={teamPerformanceRef}
+              stats={[]}
+              rows={[]}
+              orgCode={orgCode}
+              onExportStateChange={setCanExportTeamPerformance}
+            />
           </TabsContent>
         </Tabs>
 

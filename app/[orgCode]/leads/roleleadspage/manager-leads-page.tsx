@@ -12,7 +12,6 @@ import LeadHeader from "@/components/commoncomponents/leads/leadheader";
 import LeadTableFilters from "@/components/commoncomponents/leads/leadtable-filters";
 import LeadTable from "@/components/commoncomponents/leads/leadtable";
 import TablePaginationFooter from "@/components/commoncomponents/table-pagination-footer";
-import { useLeadExport } from "@/hooks/export";
 import { useLeads } from "@/hooks/use-leads";
 import { useUrlLeadFilters } from "@/hooks/useurllead-filters";
 import { useUrlPagination } from "@/hooks/use-url-pagination";
@@ -25,17 +24,27 @@ import {
   updateLead,
 } from "@/services/leads";
 import type { LeadDetailResponse } from "@/types/leadActivity";
-import type {
-  ExecutiveOption,
-  Lead,
-  LeadFormData,
-  LeadPayload,
+import {
+  LEAD_SOURCE_OPTIONS,
+  type ExecutiveOption,
+  type Lead,
+  type LeadFormData,
+  type LeadPayload,
 } from "@/types/leadtypes";
 
 import { type AuthUser, getUser } from "@/lib/auth";
+import { downloadCsv } from "@/lib/csv-export";
+import { fetchAllPages } from "@/lib/fetch-all-pages";
 import { canAccess } from "@/lib/permissions";
 
 const BULK_ASSIGN_PAGE_LIMIT = 100;
+
+const LEAD_SOURCE_LABELS: Record<string, string> = Object.fromEntries(
+  LEAD_SOURCE_OPTIONS.map((option) => [option.value, option.label]),
+);
+
+const getLeadSourceLabel = (source?: string) =>
+  LEAD_SOURCE_LABELS[source ?? ""] ?? source?.replace(/_/g, " ") ?? "-";
 
 function joinFilterValues(values?: string[]) {
   const filteredValues = values?.filter(Boolean) ?? [];
@@ -74,10 +83,8 @@ export default function ManagerLeadsPage() {
   const canImportLead = useMemo(() => canAccess(user, ["lead"], ["import"]), [user]);
   const canUpdateLead = useMemo(() => canAccess(user, ["lead"], ["update"]), [user]);
 
-  console.log(canCreateLead,"hello")
   const { page, limit, setPage, setLimit } = useUrlPagination();
   const { filters, setFilters } = useUrlLeadFilters();
-  const { handleExport } = useLeadExport();
 
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingLead, setEditingLead] = useState<Lead | null>(null);
@@ -116,6 +123,64 @@ export default function ManagerLeadsPage() {
     assignedTo: assignedToIds,
     statsScope: "all",
   });
+
+  const [isExporting, setIsExporting] = useState(false);
+
+  const handleExport = useCallback(async () => {
+    setIsExporting(true);
+
+    try {
+      const params = {
+        search: filters.search,
+        status: joinFilterValues(filters.statuses),
+        priority: joinFilterValues(filters.priorities),
+        leadSource: joinFilterValues(filters.sources),
+        assignedTo: assignedToIds[0],
+      };
+
+      const allLeads = await fetchAllPages({
+        fetchFirstPage: () =>
+          getLeadsWithStats({ ...params, page: 1, limit: pagination.total || limit }),
+        fetchPage: (page) => getLeadsWithStats({ ...params, page, limit }),
+        getItems: (response) => (response.leads ?? []) as Lead[],
+        getTotalPages: (response) => response.pagination?.totalPages ?? 1,
+      });
+
+      if (!allLeads.length) return;
+
+      const headers = [
+        "S.No",
+        "Lead Name",
+        "Email",
+        "Phone",
+        "Status",
+        "Priority",
+        "Source",
+        "Assigned To",
+      ];
+
+      const rows = allLeads.map((lead, index) => [
+        index + 1,
+        lead.name,
+        lead.email,
+        lead.phone,
+        lead.status,
+        lead.priority,
+        getLeadSourceLabel(lead.leadSource),
+        executives.find((executive) => executive.id === lead.assignedTo)
+          ?.name ||
+          lead.assignedToName ||
+          "-",
+      ]);
+
+      downloadCsv("LeadsReport", headers, rows);
+    } catch (error) {
+      console.error("Failed to export leads", error);
+      toast.error("Failed to export leads.");
+    } finally {
+      setIsExporting(false);
+    }
+  }, [filters, assignedToIds, pagination.total, limit, executives]);
 
   const leadsById = useMemo(
     () =>
@@ -325,6 +390,7 @@ export default function ManagerLeadsPage() {
               showExport={canExportLead}
               showImport={canImportLead}
               showBulkAssign={canUpdateLead}
+              exportDisabled={isExporting}
             />
           </div>
 

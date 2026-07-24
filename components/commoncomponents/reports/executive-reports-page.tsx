@@ -12,8 +12,9 @@ import LeadsDetailsTab from "@/components/commoncomponents/reports/executive-lea
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { subscribeRealtime } from "@/lib/socket";
 import { type AuthUser, getUser } from "@/lib/auth";
+import { downloadCsv } from "@/lib/csv-export";
+import { fetchAllPages } from "@/lib/fetch-all-pages";
 import { canAccess } from "@/lib/permissions";
-import { useExecutiveLeadsExport } from "@/hooks/export";
 import { useUrlPagination } from "@/hooks/use-url-pagination";
 import {
   getLeadSourceAnalytics,
@@ -206,7 +207,52 @@ export default function ExecutiveReportsPage() {
   );
   const [currentUser, setCurrentUser] = useState<AuthUser | null>(() => getUser());
   const canExportReports = canAccess(currentUser, ["reports"], ["export"]);
-  const { handleExport } = useExecutiveLeadsExport(leads);
+  const [isExporting, setIsExporting] = useState(false);
+
+  const handleExport = useCallback(async () => {
+    setIsExporting(true);
+
+    try {
+      const unwrapLeadsResponse = (response: unknown) =>
+        unwrapResponse(
+          response as LeadsWithStatsResponse | { value?: LeadsWithStatsResponse },
+        );
+
+      const allLeads = await fetchAllPages({
+        fetchFirstPage: () =>
+          getReportLeads({ page: 1, limit: pagination.total || limit }),
+        fetchPage: (page) => getReportLeads({ page, limit }),
+        getItems: (response) => {
+          const data = unwrapLeadsResponse(response);
+          return Array.isArray(data?.leads) ? data.leads : [];
+        },
+        getTotalPages: (response) =>
+          unwrapLeadsResponse(response)?.pagination?.totalPages ?? 1,
+      });
+
+      const rows = allLeads.map(mapLead);
+
+      if (!rows.length) return;
+
+      const headers = ["S.No", "Lead Name", "Status", "Source", "Assigned By"];
+
+      downloadCsv(
+        "ExecutiveLeadsReport",
+        headers,
+        rows.map((lead, index) => [
+          index + 1,
+          lead.leadName,
+          lead.status,
+          lead.source,
+          lead.assignedBy,
+        ]),
+      );
+    } catch {
+      toast.error("Failed to export leads");
+    } finally {
+      setIsExporting(false);
+    }
+  }, [limit, pagination.total]);
 
   useEffect(() => {
     const syncUser = () => setCurrentUser(getUser());
@@ -330,7 +376,7 @@ export default function ExecutiveReportsPage() {
             type="button"
             variant="outline"
             onClick={handleExport}
-            disabled={leads.length === 0}
+            disabled={leads.length === 0 || isExporting}
             className="flex h-9 w-full items-center justify-center gap-1.5 rounded-full px-4 sm:w-auto"
           >
             <Download className="h-4 w-4" />

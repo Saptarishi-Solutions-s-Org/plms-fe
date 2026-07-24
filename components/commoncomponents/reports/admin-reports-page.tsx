@@ -6,6 +6,8 @@ import { ArrowLeft, Download } from "lucide-react";
 import { toast } from "sonner";
 
 import { type AuthUser, getUser } from "@/lib/auth";
+import { downloadCsv } from "@/lib/csv-export";
+import { fetchAllPages } from "@/lib/fetch-all-pages";
 import { canAccess } from "@/lib/permissions";
 import GlobalLoader from "@/components/commoncomponents/globalloader";
 import TablePaginationFooter from "@/components/commoncomponents/table-pagination-footer";
@@ -124,28 +126,30 @@ const getReportLeadRows = (response: unknown): LeadWithStatsApiRow[] => {
     : [];
 };
 
-const downloadCsv = (filename: string, headers: string[], rows: unknown[][]) => {
-  if (!rows.length) {
-    toast.info("There is no data to export");
-    return;
-  }
+const getReportLeadsTotalPages = (response: unknown): number => {
+  const data = unwrap(response);
+  const record = toRecord(data);
+  const pagination = toRecord(record.pagination);
+  const totalPages = Number(pagination.totalPages ?? 1);
 
-  const escape = (value: unknown) => {
-    const text = String(value ?? "").replace(/"/g, '""');
-    return /[,"\n]/.test(text) ? `"${text}"` : text;
-  };
-  const csv = [headers, ...rows]
-    .map((row) => row.map(escape).join(","))
-    .join("\n");
-  const url = URL.createObjectURL(
-    new Blob([csv], { type: "text/csv;charset=utf-8" }),
-  );
-  const link = document.createElement("a");
-  link.href = url;
-  link.download = `${filename}.csv`;
-  link.click();
-  URL.revokeObjectURL(url);
+  return Number.isFinite(totalPages) && totalPages > 0 ? totalPages : 1;
 };
+
+const fetchAllReportLeads = (assignedTo: string): Promise<LeadWithStatsApiRow[]> => {
+  const pageLimit = 100;
+
+  return fetchAllPages({
+    fetchFirstPage: () => getReportLeads({ assignedTo, page: 1, limit: pageLimit }),
+    fetchPage: (page) => getReportLeads({ assignedTo, page, limit: pageLimit }),
+    getItems: getReportLeadRows,
+    getTotalPages: getReportLeadsTotalPages,
+  });
+};
+
+const exportCsv = (filename: string, headers: string[], rows: unknown[][]) =>
+  downloadCsv(filename, headers, rows as (string | number)[][], {
+    onEmpty: () => toast.info("There is no data to export"),
+  });
 
 export default function AdminReportsPage() {
   const pathname = usePathname();
@@ -172,12 +176,18 @@ export default function AdminReportsPage() {
     () => canAccess(currentUser, ["reports"], ["export"]),
     [currentUser],
   );
+  const [tablePage, setTablePage] = useState(1);
+  const [tableLimit, setTableLimit] = useState(25);
 
   useEffect(() => {
     const syncUser = () => setCurrentUser(getUser());
     window.addEventListener("LMA-auth-changed", syncUser);
     return () => window.removeEventListener("LMA-auth-changed", syncUser);
   }, []);
+
+  useEffect(() => {
+    setTablePage(1);
+  }, [activeTab, selectedManagerId, selectedExecutiveId]);
 
   const replaceQuery = useCallback(
     (changes: Record<string, string | null>) => {
@@ -310,10 +320,10 @@ export default function AdminReportsPage() {
       try {
         const responses = await Promise.all(
           manager.executives.map((executive) =>
-            getReportLeads({ assignedTo: executive.id, limit: 100 }),
+            fetchAllReportLeads(executive.id),
           ),
         );
-        setLeads(responses.flatMap(getReportLeadRows));
+        setLeads(responses.flat());
       } catch {
         setLeads([]);
         toast.error("Failed to load executive performance");
@@ -331,11 +341,8 @@ export default function AdminReportsPage() {
 
     const loadExecutiveLeads = async () => {
       try {
-        const response = await getReportLeads({
-          assignedTo: selectedExecutiveId,
-          limit: 100,
-        });
-        setExecutiveLeads(getReportLeadRows(response));
+        const leads = await fetchAllReportLeads(selectedExecutiveId);
+        setExecutiveLeads(leads);
       } catch {
         setExecutiveLeads([]);
         toast.error("Failed to load executive leads");
@@ -371,16 +378,28 @@ export default function AdminReportsPage() {
       }),
     [leads, selectedManager],
   );
+  const activeRowsTotal = selectedExecutive
+    ? executiveLeads.length
+    : selectedManager
+      ? executiveRows.length
+      : managers.length;
+  const tablePagination = createPaginationMeta({
+    page: tablePage,
+    limit: tableLimit,
+    total: activeRowsTotal,
+  });
+  const currentTablePage = Math.min(tablePage, tablePagination.totalPages);
+
   const handleHeaderExport = () => {
     if (selectedExecutive) {
-      downloadCsv(
+      exportCsv(
         "ExecutiveLeadsReport",
-        ["S.NO", "Lead", "Status", "Source", "Assigned By"],
+        ["S.No", "Lead", "Status", "Source", "Assigned By"],
         executiveLeads.map((lead, index) => [
           index + 1,
           lead.name,
           lead.status,
-          lead.leadSource ?? lead.source,
+          (lead.leadSource ?? lead.source ?? "-").replace(/_/g, " "),
           lead.createdByName,
         ]),
       );
@@ -388,9 +407,9 @@ export default function AdminReportsPage() {
     }
 
     if (selectedManager) {
-      downloadCsv(
+      exportCsv(
         "ManagerExecutivesReport",
-        ["S.NO", "Executive", "Leads", "Converted", "Conversion Rate"],
+        ["S.No", "Executive", "Leads", "Converted", "Conversion Rate"],
         executiveRows.map((row, index) => [
           index + 1,
           row.name,
@@ -402,9 +421,9 @@ export default function AdminReportsPage() {
       return;
     }
 
-    downloadCsv(
+    exportCsv(
       "OrganizationManagersReport",
-      ["S.NO", "Manager", "Executives", "Leads", "Conversion Rate"],
+      ["S.No", "Manager", "Executives", "Leads", "Conversion Rate"],
       managers.map((manager, index) => [
         index + 1,
         manager.name,
@@ -492,6 +511,13 @@ export default function AdminReportsPage() {
                 title={`${selectedExecutive.name} Leads`}
                 totalLabel="leads"
                 onBack={() => replaceQuery({ executiveId: null })}
+                page={currentTablePage}
+                limit={tableLimit}
+                onPageChange={setTablePage}
+                onLimitChange={(nextLimit) => {
+                  setTableLimit(nextLimit);
+                  setTablePage(1);
+                }}
                 headers={["Lead", "Status", "Source", "Assigned By"]}
                 rows={executiveLeads.map((lead) => [
                   lead.name ?? "-",
@@ -506,6 +532,13 @@ export default function AdminReportsPage() {
                 title={`${selectedManager.name} Executives`}
                 totalLabel="executives"
                 onBack={() => replaceQuery({ managerId: null })}
+                page={currentTablePage}
+                limit={tableLimit}
+                onPageChange={setTablePage}
+                onLimitChange={(nextLimit) => {
+                  setTableLimit(nextLimit);
+                  setTablePage(1);
+                }}
                 headers={[
                   "Executive",
                   "Leads Assigned",
@@ -529,6 +562,13 @@ export default function AdminReportsPage() {
                 key="managers"
                 title="Managers"
                 totalLabel="managers"
+                page={currentTablePage}
+                limit={tableLimit}
+                onPageChange={setTablePage}
+                onLimitChange={(nextLimit) => {
+                  setTableLimit(nextLimit);
+                  setTablePage(1);
+                }}
                 headers={[
                   "Manager",
                   "Executives",
@@ -589,15 +629,21 @@ function PerformanceTable({
   rows,
   onBack,
   totalLabel,
+  page,
+  limit,
+  onPageChange,
+  onLimitChange,
 }: {
   title: string;
   headers: string[];
   rows: React.ReactNode[][];
   onBack?: () => void;
   totalLabel: string;
+  page: number;
+  limit: number;
+  onPageChange: (page: number) => void;
+  onLimitChange: (limit: number) => void;
 }) {
-  const [page, setPage] = useState(1);
-  const [limit, setLimit] = useState(25);
   const pagination = createPaginationMeta({ page, limit, total: rows.length });
   const currentPage = Math.min(page, pagination.totalPages);
   const currentPagination =
@@ -637,7 +683,7 @@ function PerformanceTable({
           <TableHeader className="border-b border-gray-200 bg-[#7677F41A]">
             <TableRow>
               <TableHead className="w-20 whitespace-nowrap text-sm font-semibold sm:text-base">
-                S.NO
+                S.No
               </TableHead>
               {headers.map((header) => (
                 <TableHead
@@ -680,11 +726,8 @@ function PerformanceTable({
       </div>
       <TablePaginationFooter
         pagination={currentPagination}
-        onPageChange={setPage}
-        onLimitChange={(nextLimit) => {
-          setLimit(nextLimit);
-          setPage(1);
-        }}
+        onPageChange={onPageChange}
+        onLimitChange={onLimitChange}
         totalLabel={totalLabel}
       />
     </section>
