@@ -208,19 +208,36 @@ export default function ExecutiveLeadsPage({
   useEffect(() => {
     const fetchLeadStats = async () => {
       try {
-        const data = (await getReportLeads()) as LeadsWithStatsResponse;
-        const leads = data?.leads;
+        const pageLimit = 100;
+        const firstResponse = (await getReportLeads({
+          assignedTo: executiveId,
+          page: 1,
+          limit: pageLimit,
+        })) as LeadsWithStatsResponse;
+        const totalPages = firstResponse?.pagination?.totalPages ?? 1;
 
-        const filteredLeads = Array.isArray(leads)
-          ? leads.filter(
-            (lead) =>
-              lead.assignedTo === executiveId &&
-              isWithinDateRange(
-                lead.createdAt ?? lead.createdat,
-                appliedDateRange,
-              ),
-          )
-          : [];
+        let allLeads: LeadWithStatsApiRow[] = firstResponse?.leads ?? [];
+
+        if (totalPages > 1) {
+          const remainingResponses = await Promise.all(
+            Array.from({ length: totalPages - 1 }, (_, index) =>
+              getReportLeads({
+                assignedTo: executiveId,
+                page: index + 2,
+                limit: pageLimit,
+              }) as Promise<LeadsWithStatsResponse>,
+            ),
+          );
+
+          allLeads = [
+            ...allLeads,
+            ...remainingResponses.flatMap((response) => response?.leads ?? []),
+          ];
+        }
+
+        const filteredLeads = allLeads.filter((lead) =>
+          isWithinDateRange(lead.createdAt ?? lead.createdat, appliedDateRange),
+        );
 
         const rows = filteredLeads.map(mapApiLeadToRow);
 
