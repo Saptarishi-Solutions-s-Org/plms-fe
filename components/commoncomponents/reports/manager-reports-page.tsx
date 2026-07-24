@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
   usePathname,
   useParams,
@@ -8,12 +8,14 @@ import {
   useSearchParams,
 } from "next/navigation";
 import { toast } from "sonner";
+import { Download } from "lucide-react";
 import type { ReportTab } from "@/types/org-reports";
 
 import GlobalLoader from "@/components/commoncomponents/globalloader";
 import OverviewTab from "@/components/commoncomponents/reports/Overview/overview-tab";
 import ExecutiveLeadsPage from "@/components/commoncomponents/reports/executive-leads/executive-leads-page";
 import TeamPerformanceTab from "@/components/commoncomponents/reports/team-performance/team-performance-tab";
+import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   getLeadSourceAnalytics,
@@ -31,6 +33,7 @@ import type {
   ExecutiveLeadSummary,
   OrganizationReportStats,
   SourceConversionRateRow,
+  TeamPerformanceTabHandle,
 } from "@/types/org-reports";
 import {
   LEAD_LIST_CHANGED,
@@ -151,6 +154,8 @@ export default function ManagerReportsPage() {
   const [currentUser, setCurrentUser] = useState<AuthUser | null>(() => getUser());
   const canExportReports = canAccess(currentUser, ["reports"], ["export"]);
   const [stats, setStats] = useState<OrganizationReportStats>(emptyStats);
+  const teamPerformanceRef = useRef<TeamPerformanceTabHandle>(null);
+  const [canExportTeamPerformance, setCanExportTeamPerformance] = useState(false);
 
   const [leadSourceDistributionData, setLeadSourceDistributionData] = useState<
     LeadSourceRow[]
@@ -258,6 +263,19 @@ export default function ManagerReportsPage() {
               Analyzing team performance for the current cycle
             </p>
           </div>
+
+          {activeTab === "team-performance" && canExportReports && (
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => teamPerformanceRef.current?.export()}
+              disabled={!canExportTeamPerformance}
+              className="flex h-9 w-full items-center justify-center gap-1.5 rounded-full px-4 sm:w-auto"
+            >
+              <Download className="h-4 w-4" />
+              Export
+            </Button>
+          )}
         </div>
 
         <Tabs
@@ -295,10 +313,11 @@ export default function ManagerReportsPage() {
 
           <TabsContent value="team-performance" className="w-full">
             <TeamPerformanceTab
+              ref={teamPerformanceRef}
               stats={[]}
               rows={[]}
               orgCode={orgCode}
-              canExport={canExportReports}
+              onExportStateChange={setCanExportTeamPerformance}
             />
           </TabsContent>
         </Tabs>

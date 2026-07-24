@@ -39,6 +39,8 @@ import { Button } from "@/components/ui/button";
 import { useUrlPagination } from "@/hooks/use-url-pagination";
 import { useUrlOfferFilters } from "@/hooks/useurloffer";
 import { type AuthUser, getUser } from "@/lib/auth";
+import { downloadCsv } from "@/lib/csv-export";
+import { fetchAllPages } from "@/lib/fetch-all-pages";
 import { canAccess } from "@/lib/permissions";
 import { subscribeRealtime } from "@/lib/socket";
 import { MoreHorizontal, ListChecks, Download, Plus, Loader2 } from "lucide-react";
@@ -117,39 +119,6 @@ const getOfferDiscountValue = (offer: Offer) => {
     default:
       return "—";
   }
-};
-
-const getExportFilename = (prefix: string) => {
-  const now = new Date();
-  const pad = (value: number) => String(value).padStart(2, "0");
-  const stamp = `${now.getFullYear()}${pad(now.getMonth() + 1)}${pad(now.getDate())}-${pad(now.getHours())}${pad(now.getMinutes())}${pad(now.getSeconds())}`;
-
-  return `${prefix}_${stamp}.csv`;
-};
-
-const downloadOffersCsv = (
-  filenamePrefix: string,
-  headers: string[],
-  rows: (string | number)[][],
-) => {
-  const escapeCsvValue = (value: unknown) => {
-    const text = String(value ?? "").replace(/"/g, '""');
-    return /[",\n]/.test(text) ? `"${text}"` : text;
-  };
-
-  const csvContent = [headers, ...rows]
-    .map((row) => row.map(escapeCsvValue).join(","))
-    .join("\n");
-
-  const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement("a");
-  link.href = url;
-  link.download = getExportFilename(filenamePrefix);
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
-  URL.revokeObjectURL(url);
 };
 
 const formatManagerOffers = (
@@ -485,31 +454,30 @@ export default function OrgManagerOffersPage() {
         scope: filters.scope.join(","),
       };
 
-      const firstResponse = await getManagerOfferOverview({
-        ...params,
-        page: 1,
-        limit: pagination.total || limit,
-      });
-      const firstPage = firstResponse?.value || firstResponse;
-      const totalPages = firstPage?.pagination?.totalPages ?? 1;
+      type ManagerOfferOverviewResponse = {
+        value?: {
+          offers?: ManagerOfferOverviewItem[];
+          pagination?: { totalPages?: number };
+        };
+        offers?: ManagerOfferOverviewItem[];
+        pagination?: { totalPages?: number };
+      };
 
-      let allOfferItems = firstPage?.offers ?? [];
-
-      if (totalPages > 1) {
-        const remainingResponses = await Promise.all(
-          Array.from({ length: totalPages - 1 }, (_, index) =>
-            getManagerOfferOverview({ ...params, page: index + 2, limit }),
-          ),
-        );
-
-        allOfferItems = [
-          ...allOfferItems,
-          ...remainingResponses.flatMap((response) => {
-            const pageData = response?.value || response;
-            return pageData?.offers ?? [];
+      const allOfferItems = await fetchAllPages<
+        ManagerOfferOverviewResponse,
+        ManagerOfferOverviewItem
+      >({
+        fetchFirstPage: () =>
+          getManagerOfferOverview({
+            ...params,
+            page: 1,
+            limit: pagination.total || limit,
           }),
-        ];
-      }
+        fetchPage: (page) => getManagerOfferOverview({ ...params, page, limit }),
+        getItems: (response) => (response?.value || response)?.offers ?? [],
+        getTotalPages: (response) =>
+          (response?.value || response)?.pagination?.totalPages ?? 1,
+      });
 
       const allOffers = formatManagerOffers(allOfferItems);
 
@@ -539,7 +507,7 @@ export default function OrgManagerOffersPage() {
         offer.assignStatus || "—",
       ]);
 
-      downloadOffersCsv("OffersReport", headers, rows);
+      downloadCsv("OffersReport", headers, rows);
     } catch (error) {
       console.error("Failed to export offers", error);
       toast.error("Failed to export offers.");

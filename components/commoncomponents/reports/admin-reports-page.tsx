@@ -6,6 +6,8 @@ import { ArrowLeft, Download } from "lucide-react";
 import { toast } from "sonner";
 
 import { type AuthUser, getUser } from "@/lib/auth";
+import { downloadCsv } from "@/lib/csv-export";
+import { fetchAllPages } from "@/lib/fetch-all-pages";
 import { canAccess } from "@/lib/permissions";
 import GlobalLoader from "@/components/commoncomponents/globalloader";
 import TablePaginationFooter from "@/components/commoncomponents/table-pagination-footer";
@@ -133,54 +135,21 @@ const getReportLeadsTotalPages = (response: unknown): number => {
   return Number.isFinite(totalPages) && totalPages > 0 ? totalPages : 1;
 };
 
-const fetchAllReportLeads = async (
-  assignedTo: string,
-): Promise<LeadWithStatsApiRow[]> => {
+const fetchAllReportLeads = (assignedTo: string): Promise<LeadWithStatsApiRow[]> => {
   const pageLimit = 100;
-  const firstResponse = await getReportLeads({
-    assignedTo,
-    page: 1,
-    limit: pageLimit,
+
+  return fetchAllPages({
+    fetchFirstPage: () => getReportLeads({ assignedTo, page: 1, limit: pageLimit }),
+    fetchPage: (page) => getReportLeads({ assignedTo, page, limit: pageLimit }),
+    getItems: getReportLeadRows,
+    getTotalPages: getReportLeadsTotalPages,
   });
-  const totalPages = getReportLeadsTotalPages(firstResponse);
-
-  let allLeads = getReportLeadRows(firstResponse);
-
-  if (totalPages > 1) {
-    const remainingResponses = await Promise.all(
-      Array.from({ length: totalPages - 1 }, (_, index) =>
-        getReportLeads({ assignedTo, page: index + 2, limit: pageLimit }),
-      ),
-    );
-
-    allLeads = [...allLeads, ...remainingResponses.flatMap(getReportLeadRows)];
-  }
-
-  return allLeads;
 };
 
-const downloadCsv = (filename: string, headers: string[], rows: unknown[][]) => {
-  if (!rows.length) {
-    toast.info("There is no data to export");
-    return;
-  }
-
-  const escape = (value: unknown) => {
-    const text = String(value ?? "").replace(/"/g, '""');
-    return /[,"\n]/.test(text) ? `"${text}"` : text;
-  };
-  const csv = [headers, ...rows]
-    .map((row) => row.map(escape).join(","))
-    .join("\n");
-  const url = URL.createObjectURL(
-    new Blob([csv], { type: "text/csv;charset=utf-8" }),
-  );
-  const link = document.createElement("a");
-  link.href = url;
-  link.download = `${filename}.csv`;
-  link.click();
-  URL.revokeObjectURL(url);
-};
+const exportCsv = (filename: string, headers: string[], rows: unknown[][]) =>
+  downloadCsv(filename, headers, rows as (string | number)[][], {
+    onEmpty: () => toast.info("There is no data to export"),
+  });
 
 export default function AdminReportsPage() {
   const pathname = usePathname();
@@ -423,14 +392,14 @@ export default function AdminReportsPage() {
 
   const handleHeaderExport = () => {
     if (selectedExecutive) {
-      downloadCsv(
+      exportCsv(
         "ExecutiveLeadsReport",
         ["S.No", "Lead", "Status", "Source", "Assigned By"],
         executiveLeads.map((lead, index) => [
           index + 1,
           lead.name,
           lead.status,
-          lead.leadSource ?? lead.source,
+          (lead.leadSource ?? lead.source ?? "-").replace(/_/g, " "),
           lead.createdByName,
         ]),
       );
@@ -438,7 +407,7 @@ export default function AdminReportsPage() {
     }
 
     if (selectedManager) {
-      downloadCsv(
+      exportCsv(
         "ManagerExecutivesReport",
         ["S.No", "Executive", "Leads", "Converted", "Conversion Rate"],
         executiveRows.map((row, index) => [
@@ -452,7 +421,7 @@ export default function AdminReportsPage() {
       return;
     }
 
-    downloadCsv(
+    exportCsv(
       "OrganizationManagersReport",
       ["S.No", "Manager", "Executives", "Leads", "Conversion Rate"],
       managers.map((manager, index) => [

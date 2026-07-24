@@ -107,7 +107,11 @@ export interface TeamPerformanceProps {
   stats: TeamPerformanceStat[];
   rows: TeamPerformanceRow[];
   orgCode: string;
-  canExport?: boolean;
+  onExportStateChange?: (canExport: boolean) => void;
+}
+
+export interface TeamPerformanceTabHandle {
+  export: () => void;
 }
 
 export interface ExecutiveLeadSummary {

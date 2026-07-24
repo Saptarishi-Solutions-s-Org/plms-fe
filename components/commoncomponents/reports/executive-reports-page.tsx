@@ -12,6 +12,8 @@ import LeadsDetailsTab from "@/components/commoncomponents/reports/executive-lea
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { subscribeRealtime } from "@/lib/socket";
 import { type AuthUser, getUser } from "@/lib/auth";
+import { downloadCsv } from "@/lib/csv-export";
+import { fetchAllPages } from "@/lib/fetch-all-pages";
 import { canAccess } from "@/lib/permissions";
 import { useUrlPagination } from "@/hooks/use-url-pagination";
 import {
@@ -53,39 +55,6 @@ const isExecutiveReportTab = (
   value: string | null,
 ): value is ExecutiveReportTab =>
   value === "overview" || value === "leads-details";
-
-const getExportFilename = (prefix: string) => {
-  const now = new Date();
-  const pad = (value: number) => String(value).padStart(2, "0");
-  const stamp = `${now.getFullYear()}${pad(now.getMonth() + 1)}${pad(now.getDate())}-${pad(now.getHours())}${pad(now.getMinutes())}${pad(now.getSeconds())}`;
-
-  return `${prefix}_${stamp}.csv`;
-};
-
-const downloadCsv = (
-  filenamePrefix: string,
-  headers: string[],
-  rows: (string | number)[][],
-) => {
-  const escapeCsvValue = (value: unknown) => {
-    const text = String(value ?? "").replace(/"/g, '""');
-    return /[",\n]/.test(text) ? `"${text}"` : text;
-  };
-
-  const csvContent = [headers, ...rows]
-    .map((row) => row.map(escapeCsvValue).join(","))
-    .join("\n");
-
-  const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement("a");
-  link.href = url;
-  link.download = getExportFilename(filenamePrefix);
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
-  URL.revokeObjectURL(url);
-};
 
 const formatSource = (source?: string) =>
   source ? source.replace(/_/g, " ") : "-";
@@ -244,36 +213,22 @@ export default function ExecutiveReportsPage() {
     setIsExporting(true);
 
     try {
-      const firstResponse = await getReportLeads({
-        page: 1,
-        limit: pagination.total || limit,
-      });
-      const firstData = unwrapResponse(
-        firstResponse as LeadsWithStatsResponse | { value?: LeadsWithStatsResponse },
-      );
-      const firstLeads = Array.isArray(firstData?.leads) ? firstData.leads : [];
-      const totalPages = firstData?.pagination?.totalPages ?? 1;
-
-      let allLeads = firstLeads;
-
-      if (totalPages > 1) {
-        const remainingResponses = await Promise.all(
-          Array.from({ length: totalPages - 1 }, (_, index) =>
-            getReportLeads({ page: index + 2, limit }),
-          ),
+      const unwrapLeadsResponse = (response: unknown) =>
+        unwrapResponse(
+          response as LeadsWithStatsResponse | { value?: LeadsWithStatsResponse },
         );
 
-        allLeads = [
-          ...allLeads,
-          ...remainingResponses.flatMap((response) => {
-            const data = unwrapResponse(
-              response as LeadsWithStatsResponse | { value?: LeadsWithStatsResponse },
-            );
-
-            return Array.isArray(data?.leads) ? data.leads : [];
-          }),
-        ];
-      }
+      const allLeads = await fetchAllPages({
+        fetchFirstPage: () =>
+          getReportLeads({ page: 1, limit: pagination.total || limit }),
+        fetchPage: (page) => getReportLeads({ page, limit }),
+        getItems: (response) => {
+          const data = unwrapLeadsResponse(response);
+          return Array.isArray(data?.leads) ? data.leads : [];
+        },
+        getTotalPages: (response) =>
+          unwrapLeadsResponse(response)?.pagination?.totalPages ?? 1,
+      });
 
       const rows = allLeads.map(mapLead);
 

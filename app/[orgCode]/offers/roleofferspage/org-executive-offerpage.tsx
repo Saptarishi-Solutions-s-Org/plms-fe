@@ -21,6 +21,8 @@ import { MultiSelectCombobox } from "@/components/ui/multi-select-combobox";
 import { useUrlPagination } from "@/hooks/use-url-pagination";
 import { useUrlOfferFilters } from "@/hooks/useurloffer";
 import { type AuthUser, getUser } from "@/lib/auth";
+import { downloadCsv } from "@/lib/csv-export";
+import { fetchAllPages } from "@/lib/fetch-all-pages";
 import { canAccess } from "@/lib/permissions";
 import { subscribeRealtime } from "@/lib/socket";
 import { Download } from "lucide-react";
@@ -135,39 +137,6 @@ const getDiscountValue = (offer: ExecutiveOfferRow) => {
   return offer.discountType === "Percentage"
     ? `${offer.discountValue}%`
     : `₹${offer.discountValue}`;
-};
-
-const getExportFilename = (prefix: string) => {
-  const now = new Date();
-  const pad = (value: number) => String(value).padStart(2, "0");
-  const stamp = `${now.getFullYear()}${pad(now.getMonth() + 1)}${pad(now.getDate())}-${pad(now.getHours())}${pad(now.getMinutes())}${pad(now.getSeconds())}`;
-
-  return `${prefix}_${stamp}.csv`;
-};
-
-const downloadOffersCsv = (
-  filenamePrefix: string,
-  headers: string[],
-  rows: (string | number)[][],
-) => {
-  const escapeCsvValue = (value: unknown) => {
-    const text = String(value ?? "").replace(/"/g, '""');
-    return /[",\n]/.test(text) ? `"${text}"` : text;
-  };
-
-  const csvContent = [headers, ...rows]
-    .map((row) => row.map(escapeCsvValue).join(","))
-    .join("\n");
-
-  const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement("a");
-  link.href = url;
-  link.download = getExportFilename(filenamePrefix);
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
-  URL.revokeObjectURL(url);
 };
 
 export default function OrgExecutiveOffersPage() {
@@ -300,29 +269,14 @@ export default function OrgExecutiveOffersPage() {
         discountType: selectedDiscountTypes.join(","),
       };
 
-      const firstResponse = await getExecutiveOffers({
-        ...params,
-        page: 1,
-        limit: pagination.total || limit,
+      const allItems = await fetchAllPages({
+        fetchFirstPage: () =>
+          getExecutiveOffers({ ...params, page: 1, limit: pagination.total || limit }),
+        fetchPage: (page) => getExecutiveOffers({ ...params, page, limit }),
+        getItems: getExecutiveOfferRows,
+        getTotalPages: (response) =>
+          getExecutiveOfferPagination(response)?.totalPages ?? 1,
       });
-      const firstItems = getExecutiveOfferRows(firstResponse);
-      const totalPages =
-        getExecutiveOfferPagination(firstResponse)?.totalPages ?? 1;
-
-      let allItems = firstItems;
-
-      if (totalPages > 1) {
-        const remainingResponses = await Promise.all(
-          Array.from({ length: totalPages - 1 }, (_, index) =>
-            getExecutiveOffers({ ...params, page: index + 2, limit }),
-          ),
-        );
-
-        allItems = [
-          ...allItems,
-          ...remainingResponses.flatMap(getExecutiveOfferRows),
-        ];
-      }
 
       const allOffers = allItems.map(mapExecutiveOffer);
 
@@ -350,7 +304,7 @@ export default function OrgExecutiveOffersPage() {
         formatStatusLabel(offer.status),
       ]);
 
-      downloadOffersCsv("OffersReport", headers, rows);
+      downloadCsv("OffersReport", headers, rows);
     } catch (error) {
       console.error("Failed to export offers", error);
     } finally {

@@ -6,6 +6,8 @@ import { endOfDay, format, startOfDay } from "date-fns";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { type AuthUser, getUser } from "@/lib/auth";
+import { downloadCsv } from "@/lib/csv-export";
+import { fetchAllPages } from "@/lib/fetch-all-pages";
 import { canAccess } from "@/lib/permissions";
 import TablePaginationFooter from "@/components/commoncomponents/table-pagination-footer";
 import { Button } from "@/components/ui/button";
@@ -38,39 +40,6 @@ const formatSource = (source?: string) => {
   }
 
   return source.replace(/_/g, " ");
-};
-
-const getExportFilename = (prefix: string) => {
-  const now = new Date();
-  const pad = (value: number) => String(value).padStart(2, "0");
-  const stamp = `${now.getFullYear()}${pad(now.getMonth() + 1)}${pad(now.getDate())}-${pad(now.getHours())}${pad(now.getMinutes())}${pad(now.getSeconds())}`;
-
-  return `${prefix}_${stamp}.csv`;
-};
-
-const downloadCsv = (
-  filenamePrefix: string,
-  headers: string[],
-  rows: (string | number)[][],
-) => {
-  const escapeCsvValue = (value: unknown) => {
-    const text = String(value ?? "").replace(/"/g, '""');
-    return /[",\n]/.test(text) ? `"${text}"` : text;
-  };
-
-  const csvContent = [headers, ...rows]
-    .map((row) => row.map(escapeCsvValue).join(","))
-    .join("\n");
-
-  const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement("a");
-  link.href = url;
-  link.download = getExportFilename(filenamePrefix);
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
-  URL.revokeObjectURL(url);
 };
 
 const isWithinDateRange = (createdAt: string | undefined, range?: DateRange) => {
@@ -209,31 +178,22 @@ export default function ExecutiveLeadsPage({
     const fetchLeadStats = async () => {
       try {
         const pageLimit = 100;
-        const firstResponse = (await getReportLeads({
-          assignedTo: executiveId,
-          page: 1,
-          limit: pageLimit,
-        })) as LeadsWithStatsResponse;
-        const totalPages = firstResponse?.pagination?.totalPages ?? 1;
-
-        let allLeads: LeadWithStatsApiRow[] = firstResponse?.leads ?? [];
-
-        if (totalPages > 1) {
-          const remainingResponses = await Promise.all(
-            Array.from({ length: totalPages - 1 }, (_, index) =>
-              getReportLeads({
-                assignedTo: executiveId,
-                page: index + 2,
-                limit: pageLimit,
-              }) as Promise<LeadsWithStatsResponse>,
-            ),
-          );
-
-          allLeads = [
-            ...allLeads,
-            ...remainingResponses.flatMap((response) => response?.leads ?? []),
-          ];
-        }
+        const allLeads = await fetchAllPages({
+          fetchFirstPage: () =>
+            getReportLeads({
+              assignedTo: executiveId,
+              page: 1,
+              limit: pageLimit,
+            }) as Promise<LeadsWithStatsResponse>,
+          fetchPage: (page) =>
+            getReportLeads({
+              assignedTo: executiveId,
+              page,
+              limit: pageLimit,
+            }) as Promise<LeadsWithStatsResponse>,
+          getItems: (response) => (response?.leads ?? []) as LeadWithStatsApiRow[],
+          getTotalPages: (response) => response?.pagination?.totalPages ?? 1,
+        });
 
         const filteredLeads = allLeads.filter((lead) =>
           isWithinDateRange(lead.createdAt ?? lead.createdat, appliedDateRange),

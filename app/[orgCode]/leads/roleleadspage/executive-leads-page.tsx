@@ -16,6 +16,8 @@ import { useLeads } from "@/hooks/use-leads";
 import { useUrlLeadFilters } from "@/hooks/useurllead-filters";
 import { useUrlPagination } from "@/hooks/use-url-pagination";
 import { type AuthUser, getUser } from "@/lib/auth";
+import { downloadCsv } from "@/lib/csv-export";
+import { fetchAllPages } from "@/lib/fetch-all-pages";
 import { canAccess } from "@/lib/permissions";
 import {
   assignOfferToLead,
@@ -50,39 +52,6 @@ function joinFilterValues(values?: string[]) {
   return filteredValues.length ? filteredValues.join(",") : undefined;
 }
 
-const getExportFilename = (prefix: string) => {
-  const now = new Date();
-  const pad = (value: number) => String(value).padStart(2, "0");
-  const stamp = `${now.getFullYear()}${pad(now.getMonth() + 1)}${pad(now.getDate())}-${pad(now.getHours())}${pad(now.getMinutes())}${pad(now.getSeconds())}`;
-
-  return `${prefix}_${stamp}.csv`;
-};
-
-const downloadLeadsCsv = (
-  filenamePrefix: string,
-  headers: string[],
-  rows: (string | number)[][],
-) => {
-  const escapeCsvValue = (value: unknown) => {
-    const text = String(value ?? "").replace(/"/g, '""');
-    return /[",\n]/.test(text) ? `"${text}"` : text;
-  };
-
-  const csvContent = [headers, ...rows]
-    .map((row) => row.map(escapeCsvValue).join(","))
-    .join("\n");
-
-  const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement("a");
-  link.href = url;
-  link.download = getExportFilename(filenamePrefix);
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
-  URL.revokeObjectURL(url);
-};
-
 export default function ExecutiveLeadsPage() {
   const { page, limit, setPage, setLimit } = useUrlPagination();
   const { filters, setFilters } = useUrlLeadFilters();
@@ -108,28 +77,13 @@ export default function ExecutiveLeadsPage() {
         leadSource: joinFilterValues(filters.sources),
       };
 
-      const firstResponse = await getLeadsWithStats({
-        ...params,
-        page: 1,
-        limit: pagination.total || limit,
+      const allLeads = await fetchAllPages({
+        fetchFirstPage: () =>
+          getLeadsWithStats({ ...params, page: 1, limit: pagination.total || limit }),
+        fetchPage: (page) => getLeadsWithStats({ ...params, page, limit }),
+        getItems: (response) => (response.leads ?? []) as Lead[],
+        getTotalPages: (response) => response.pagination?.totalPages ?? 1,
       });
-      const firstLeads: Lead[] = firstResponse.leads ?? [];
-      const totalPages = firstResponse.pagination?.totalPages ?? 1;
-
-      let allLeads = firstLeads;
-
-      if (totalPages > 1) {
-        const remainingResponses = await Promise.all(
-          Array.from({ length: totalPages - 1 }, (_, index) =>
-            getLeadsWithStats({ ...params, page: index + 2, limit }),
-          ),
-        );
-
-        allLeads = [
-          ...allLeads,
-          ...remainingResponses.flatMap((response) => response.leads ?? []),
-        ];
-      }
 
       if (!allLeads.length) return;
 
@@ -153,7 +107,7 @@ export default function ExecutiveLeadsPage() {
         getLeadSourceLabel(lead.leadSource),
       ]);
 
-      downloadLeadsCsv("LeadsReport", headers, rows);
+      downloadCsv("LeadsReport", headers, rows);
     } catch (error) {
       console.error("Failed to export leads", error);
       toast.error("Failed to export leads.");
