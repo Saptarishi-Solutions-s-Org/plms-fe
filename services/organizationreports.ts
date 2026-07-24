@@ -74,5 +74,3 @@ export const getReportExecutivesForManager = (managerId: string) =>
       { managerId, limit: 100 },
     ),
   );
-export const exportExecutives = () =>
-  api("/odata/v4/report-dashboard/exportExecutives", { method: "POST" });

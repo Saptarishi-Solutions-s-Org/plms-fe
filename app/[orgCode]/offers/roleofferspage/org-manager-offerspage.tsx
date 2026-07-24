@@ -790,7 +790,7 @@ export default function OrgManagerOffersPage() {
               className="flex h-9 w-full items-center justify-center gap-1.5 rounded-full border-blue-600 px-4 text-blue-600 hover:bg-blue-50 hover:text-blue-700 sm:w-auto"
             >
               <Download className="h-4 w-4" />
-              {isExporting ? "Exporting..." : "Export"}
+              Export
             </Button>
           )}
 

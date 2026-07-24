@@ -7,7 +7,6 @@ import {
   ArrowLeft,
   Edit3,
   Trash2,
-  Users,
   Calendar,
   Layers,
   Sparkles,
@@ -36,6 +35,87 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+
+const parseCsv = (text: string): string[][] => {
+  const rows: string[][] = [];
+  let row: string[] = [];
+  let field = "";
+  let inQuotes = false;
+
+  for (let i = 0; i < text.length; i++) {
+    const char = text[i];
+
+    if (inQuotes) {
+      if (char === '"') {
+        if (text[i + 1] === '"') {
+          field += '"';
+          i++;
+        } else {
+          inQuotes = false;
+        }
+      } else {
+        field += char;
+      }
+      continue;
+    }
+
+    if (char === '"') {
+      inQuotes = true;
+    } else if (char === ",") {
+      row.push(field);
+      field = "";
+    } else if (char === "\n") {
+      row.push(field);
+      rows.push(row);
+      row = [];
+      field = "";
+    } else if (char !== "\r") {
+      field += char;
+    }
+  }
+
+  if (field.length || row.length) {
+    row.push(field);
+    rows.push(row);
+  }
+
+  return rows.filter((cells) => cells.some((cell) => cell !== ""));
+};
+
+const escapeCsvValue = (value: unknown) => {
+  const text = String(value ?? "").replace(/"/g, '""');
+  return /[",\n]/.test(text) ? `"${text}"` : text;
+};
+
+const cleanSegmentExportCsv = (csvContent: string): string => {
+  const rows = parseCsv(csvContent);
+
+  if (!rows.length) return csvContent;
+
+  const [headerRow, ...dataRows] = rows;
+  const leadCodeIndex = headerRow.findIndex((header) =>
+    /^leadcode$/i.test(header.replace(/[_\s]/g, "")),
+  );
+
+  const stripLeadCode = (row: string[]) =>
+    leadCodeIndex === -1
+      ? row
+      : row.filter((_, index) => index !== leadCodeIndex);
+
+  const newHeader = [
+    "S.No",
+    ...stripLeadCode(headerRow).map((header) => header.replace(/_/g, " ")),
+  ];
+
+  const newRows = dataRows.map((row, index) => [
+    String(index + 1),
+    ...stripLeadCode(row).map((cell) => cell.replace(/_/g, " ")),
+  ]);
+
+  return [newHeader, ...newRows]
+    .map((row) => row.map(escapeCsvValue).join(","))
+    .join("\n");
+};
 
 export default function SegmentDetailPage() {
   const router = useRouter();
@@ -280,8 +360,8 @@ export default function SegmentDetailPage() {
     try {
       const loadId = toast.loading(`Exporting leads for Segment "${segment.name}"...`);
       const res = await exportSegment(segment.code);
-      
-      const blob = new Blob([res.csvContent], { type: "text/csv;charset=utf-8;" });
+
+      const blob = new Blob([cleanSegmentExportCsv(res.csvContent)], { type: "text/csv;charset=utf-8;" });
       const url = URL.createObjectURL(blob);
       const link = document.createElement("a");
       link.setAttribute("href", url);
