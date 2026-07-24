@@ -219,46 +219,95 @@ export default function ExecutivesPage() {
   }, [setFilters]);
 
   const paginatedExecutives = executives;
+  const [isExporting, setIsExporting] = useState(false);
 
-  const handleExport = useCallback(() => {
-    if (!executives.length) return;
+  const mapExecutiveRow = (item: ExecutiveRow): ExecutiveRow => ({
+    id: item.id,
+    name: item.name,
+    email: item.email,
+    phone: item.phone,
+    status: item.status,
+    leadCount: item.leadCount,
+    offerCount: item.offerCount,
+  });
 
-    const headers = ["S.No", "Executive Name", "Email", "Phone", "Status", "Leads", "Assigned Offers"];
+  const handleExport = useCallback(async () => {
+    setIsExporting(true);
 
-    const rows = executives.map((executive, index) => [
-      (pagination.page - 1) * pagination.limit + index + 1,
-      executive.name,
-      executive.email,
-      executive.phone,
-      executive.status,
-      executive.leadCount,
-      executive.offerCount,
-    ]);
+    try {
+      const params = { search: filters.search, status: filters.status.join(",") };
 
-    const csvContent = [
-      headers.join(","),
-      ...rows.map((row) =>
-        row
-          .map((value) => {
-            const stringValue = String(value ?? "");
-            return /[",\n]/.test(stringValue)
-              ? `"${stringValue.replace(/"/g, '""')}"`
-              : stringValue;
-          })
-          .join(",")
-      ),
-    ].join("\n");
+      const firstResponse = await getExecutiveOverview({
+        ...params,
+        page: 1,
+        limit: pagination.total || limit,
+      });
+      const firstData = firstResponse?.value || firstResponse;
+      const totalPages = firstData?.pagination?.totalPages ?? 1;
 
-    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = `executives-export-${new Date().toISOString().slice(0, 10)}.csv`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
-  }, [executives, pagination.page, pagination.limit]);
+      let allItems: ExecutiveRow[] = firstData?.executives || [];
+
+      if (totalPages > 1) {
+        const remainingResponses = await Promise.all(
+          Array.from({ length: totalPages - 1 }, (_, index) =>
+            getExecutiveOverview({ ...params, page: index + 2, limit }),
+          ),
+        );
+
+        allItems = [
+          ...allItems,
+          ...remainingResponses.flatMap((response) => {
+            const data = response?.value || response;
+            return data?.executives || [];
+          }),
+        ];
+      }
+
+      const allExecutives = allItems.map(mapExecutiveRow);
+
+      if (!allExecutives.length) return;
+
+      const headers = ["S.No", "Executive Name", "Email", "Phone", "Status", "Leads", "Assigned Offers"];
+
+      const rows = allExecutives.map((executive, index) => [
+        index + 1,
+        executive.name,
+        executive.email,
+        executive.phone,
+        executive.status,
+        executive.leadCount,
+        executive.offerCount,
+      ]);
+
+      const csvContent = [
+        headers.join(","),
+        ...rows.map((row) =>
+          row
+            .map((value) => {
+              const stringValue = String(value ?? "");
+              return /[",\n]/.test(stringValue)
+                ? `"${stringValue.replace(/"/g, '""')}"`
+                : stringValue;
+            })
+            .join(",")
+        ),
+      ].join("\n");
+
+      const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `executives-export-${new Date().toISOString().slice(0, 10)}.csv`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error("Failed to export executives", error);
+    } finally {
+      setIsExporting(false);
+    }
+  }, [filters, pagination.total, limit]);
 
   useEffect(() => {
     if (pagination.totalPages > 0 && page > pagination.totalPages) {
@@ -289,7 +338,7 @@ export default function ExecutivesPage() {
               type="button"
               variant="outline"
               onClick={handleExport}
-              disabled={!executives.length}
+              disabled={!executives.length || isExporting}
               className="flex h-9 w-full items-center justify-center gap-1.5 rounded-full px-4 sm:w-auto"
             >
               <Download className="h-4 w-4" />

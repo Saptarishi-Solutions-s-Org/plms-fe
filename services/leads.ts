@@ -46,9 +46,6 @@ export const bulkAssignLeads = (payload: {
     body: JSON.stringify(payload),
   });
 
-export const exportLeads = () =>
-  api("/odata/v4/lead/exportLeads", { method: "POST" });
-
 export const getLeadDetail = (leadCode: string) =>
   api(`/odata/v4/lead/getLeadDetail(leadCode='${leadCode}')`);
 

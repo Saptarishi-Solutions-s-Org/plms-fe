@@ -124,6 +124,41 @@ const getReportLeadRows = (response: unknown): LeadWithStatsApiRow[] => {
     : [];
 };
 
+const getReportLeadsTotalPages = (response: unknown): number => {
+  const data = unwrap(response);
+  const record = toRecord(data);
+  const pagination = toRecord(record.pagination);
+  const totalPages = Number(pagination.totalPages ?? 1);
+
+  return Number.isFinite(totalPages) && totalPages > 0 ? totalPages : 1;
+};
+
+const fetchAllReportLeads = async (
+  assignedTo: string,
+): Promise<LeadWithStatsApiRow[]> => {
+  const pageLimit = 100;
+  const firstResponse = await getReportLeads({
+    assignedTo,
+    page: 1,
+    limit: pageLimit,
+  });
+  const totalPages = getReportLeadsTotalPages(firstResponse);
+
+  let allLeads = getReportLeadRows(firstResponse);
+
+  if (totalPages > 1) {
+    const remainingResponses = await Promise.all(
+      Array.from({ length: totalPages - 1 }, (_, index) =>
+        getReportLeads({ assignedTo, page: index + 2, limit: pageLimit }),
+      ),
+    );
+
+    allLeads = [...allLeads, ...remainingResponses.flatMap(getReportLeadRows)];
+  }
+
+  return allLeads;
+};
+
 const downloadCsv = (filename: string, headers: string[], rows: unknown[][]) => {
   if (!rows.length) {
     toast.info("There is no data to export");
@@ -316,10 +351,10 @@ export default function AdminReportsPage() {
       try {
         const responses = await Promise.all(
           manager.executives.map((executive) =>
-            getReportLeads({ assignedTo: executive.id, limit: 100 }),
+            fetchAllReportLeads(executive.id),
           ),
         );
-        setLeads(responses.flatMap(getReportLeadRows));
+        setLeads(responses.flat());
       } catch {
         setLeads([]);
         toast.error("Failed to load executive performance");
@@ -337,11 +372,8 @@ export default function AdminReportsPage() {
 
     const loadExecutiveLeads = async () => {
       try {
-        const response = await getReportLeads({
-          assignedTo: selectedExecutiveId,
-          limit: 100,
-        });
-        setExecutiveLeads(getReportLeadRows(response));
+        const leads = await fetchAllReportLeads(selectedExecutiveId);
+        setExecutiveLeads(leads);
       } catch {
         setExecutiveLeads([]);
         toast.error("Failed to load executive leads");

@@ -253,6 +253,7 @@ export default function OrgManagerOffersPage() {
 
   const [assignDialogOpen, setAssignDialogOpen] = useState(false);
   const [offerToAssign, setOfferToAssign] = useState<ManagerOffer | null>(null);
+  const [assigningExecutiveId, setAssigningExecutiveId] = useState<string | null>(null);
 
   const [isBulkActionsOpen, setIsBulkActionsOpen] = useState(false);
   const [createOpen, setCreateOpen] = useState(false);
@@ -573,6 +574,8 @@ export default function OrgManagerOffersPage() {
   };
 
   const handleAssignOffer = async (offerId: string, executiveId: string) => {
+    setAssigningExecutiveId(executiveId);
+
     try {
       const response = await assignOfferToExecutive({
         offerId,
@@ -589,12 +592,15 @@ export default function OrgManagerOffersPage() {
         ),
       }));
       fetchOffers();
+      setAssignDialogOpen(false);
     } catch (error) {
       toast.error(
         error instanceof Error
           ? error.message
           : "Failed to assign offer to executive",
       );
+    } finally {
+      setAssigningExecutiveId(null);
     }
   };
 
@@ -790,7 +796,7 @@ export default function OrgManagerOffersPage() {
               className="flex h-9 w-full items-center justify-center gap-1.5 rounded-full border-blue-600 px-4 text-blue-600 hover:bg-blue-50 hover:text-blue-700 sm:w-auto"
             >
               <Download className="h-4 w-4" />
-              {isExporting ? "Exporting..." : "Export"}
+              Export
             </Button>
           )}
 
@@ -896,13 +902,7 @@ export default function OrgManagerOffersPage() {
               </TableHeader>
 
               <TableBody>
-                {isLoading ? (
-                  <TableRow>
-                    <TableCell colSpan={canUpdate ? 11 : 10} className="py-10 text-center text-gray-500">
-                      Loading offers...
-                    </TableCell>
-                  </TableRow>
-                ) : offers.length === 0 ? (
+                {offers.length === 0 ? (
                   <TableRow>
                     <TableCell
                       colSpan={canUpdate ? 11 : 10}
@@ -1175,14 +1175,14 @@ export default function OrgManagerOffersPage() {
                       size="sm"
                       variant="default"
                       className="bg-blue-500 hover:bg-blue-600 text-white font-poppins h-6 px-3 text-[11px]"
+                      disabled={assigningExecutiveId === executive.id}
                       onClick={() => {
                         if (offerToAssign) {
                           handleAssignOffer(offerToAssign.id, executive.id);
-                          setAssignDialogOpen(false);
                         }
                       }}
                     >
-                      Assign
+                      {assigningExecutiveId === executive.id ? "Assigning..." : "Assign"}
                     </Button>
                   </div>
                 ))
