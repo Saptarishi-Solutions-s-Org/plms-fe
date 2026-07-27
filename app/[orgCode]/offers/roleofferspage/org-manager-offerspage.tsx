@@ -43,7 +43,7 @@ import { downloadCsv } from "@/lib/csv-export";
 import { fetchAllPages } from "@/lib/fetch-all-pages";
 import { canAccess } from "@/lib/permissions";
 import { subscribeRealtime } from "@/lib/socket";
-import { MoreHorizontal, ListChecks, Download, Plus, Pencil } from "lucide-react";
+import { MoreHorizontal, ListChecks, Download, Plus, Loader2 } from "lucide-react";
 import Image from "next/image";
 
 import {
@@ -988,7 +988,6 @@ export default function OrgManagerOffersPage() {
                         <DropdownMenuItem
                           onClick={() => handleEditOffer(offer)}
                         >
-                          <Pencil className="mr-2 h-4 w-4" />
                           Edit
                         </DropdownMenuItem>
 
