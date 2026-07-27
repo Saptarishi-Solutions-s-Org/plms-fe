@@ -761,7 +761,7 @@ export default function OrgManagerOffersPage() {
               variant="outline"
               onClick={handleExport}
               disabled={isExporting}
-              className="flex h-9 w-full items-center justify-center gap-1.5 rounded-full border-blue-600 px-4 text-blue-600 hover:bg-blue-50 hover:text-blue-700 sm:w-auto"
+              className="flex h-9 w-full items-center justify-center gap-1.5 rounded-full border-black-600 px-4 text-black-600 hover:bg-black-50 hover:text-black-700 sm:w-auto"
             >
               <Download className="h-4 w-4" />
               Export
