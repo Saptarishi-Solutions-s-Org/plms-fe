@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { CheckIcon, ChevronDownIcon, ChevronUpIcon } from "lucide-react";
+import { CheckIcon, ChevronDownIcon, ChevronUpIcon, Search } from "lucide-react";
 import { Select as SelectPrimitive } from "radix-ui";
 
 import { cn } from "@/lib/utils";
@@ -50,13 +50,44 @@ function SelectTrigger({
   );
 }
 
+const SelectContentContext = React.createContext<{
+  searchTerm: string;
+} | null>(null);
+
 function SelectContent({
   className,
   children,
   position = "popper",
   align = "center",
+  showSearch = true,
+  searchPlaceholder = "Search...",
   ...props
-}: React.ComponentProps<typeof SelectPrimitive.Content>) {
+}: React.ComponentProps<typeof SelectPrimitive.Content> & {
+  showSearch?: boolean;
+  searchPlaceholder?: string;
+}) {
+  const [searchTerm, setSearchTerm] = React.useState("");
+
+  const itemsCount = React.useMemo(() => {
+    let count = 0;
+    const countItems = (node: React.ReactNode) => {
+      React.Children.forEach(node, (child) => {
+        if (React.isValidElement(child)) {
+          const props = child.props as { "data-slot"?: string; children?: React.ReactNode };
+          if (props["data-slot"] === "select-item" || (child.type as any)?.name === "SelectItem") {
+            count++;
+          } else if (props.children) {
+            countItems(props.children);
+          }
+        }
+      });
+    };
+    countItems(children);
+    return count;
+  }, [children]);
+
+  const shouldDisplaySearch = showSearch && itemsCount > 5;
+
   return (
     <SelectPrimitive.Portal>
       <SelectPrimitive.Content
@@ -64,7 +95,7 @@ function SelectContent({
         className={cn(
           "bg-popover text-popover-foreground data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 relative z-50 max-h-(--radix-select-content-available-height) min-w-[8rem] origin-(--radix-select-content-transform-origin) overflow-x-hidden overflow-y-auto rounded-md border shadow-md",
           position === "popper" &&
-            "data-[side=bottom]:translate-y-1 data-[side=left]:-translate-x-1 data-[side=right]:translate-x-1 data-[side=top]:-translate-y-1",
+            "data-[side=bottom]:translate-y-1 data-[side=left]:-translate-x-1 data-[side=right]:translate-x-1 data-[side=top]:-translate-y-1 w-[var(--radix-select-trigger-width)]",
           className,
         )}
         position={position}
@@ -72,15 +103,37 @@ function SelectContent({
         {...props}
       >
         <SelectScrollUpButton />
-        <SelectPrimitive.Viewport
-          className={cn(
-            "p-1",
-            position === "popper" &&
-              "h-[var(--radix-select-trigger-height)] w-full min-w-[var(--radix-select-trigger-width)] scroll-my-1",
-          )}
-        >
-          {children}
-        </SelectPrimitive.Viewport>
+        {shouldDisplaySearch && (
+          <div className="p-2 border-b border-gray-100 sticky top-0 bg-popover z-10">
+            <div className="relative flex items-center">
+              <Search className="absolute left-2.5 size-3.5 text-muted-foreground pointer-events-none" />
+              <input
+                type="text"
+                placeholder={searchPlaceholder}
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                onKeyDown={(e) => e.stopPropagation()}
+                onKeyUp={(e) => e.stopPropagation()}
+                onKeyPress={(e) => e.stopPropagation()}
+                onPointerDown={(e) => e.stopPropagation()}
+                onMouseDown={(e) => e.stopPropagation()}
+                onClick={(e) => e.stopPropagation()}
+                className="w-full text-xs h-8 pl-8 pr-2 border border-gray-200 rounded-md focus:outline-none focus:ring-1 focus:ring-purple-600 bg-white text-gray-900"
+              />
+            </div>
+          </div>
+        )}
+        <SelectContentContext.Provider value={{ searchTerm }}>
+          <SelectPrimitive.Viewport
+            className={cn(
+              "p-1",
+              position === "popper" &&
+                "h-[var(--radix-select-trigger-height)] w-full min-w-[var(--radix-select-trigger-width)] scroll-my-1",
+            )}
+          >
+            {children}
+          </SelectPrimitive.Viewport>
+        </SelectContentContext.Provider>
         <SelectScrollDownButton />
       </SelectPrimitive.Content>
     </SelectPrimitive.Portal>
@@ -100,11 +153,36 @@ function SelectLabel({
   );
 }
 
+const getSelectTextContent = (children: React.ReactNode): string => {
+  let text = "";
+  React.Children.forEach(children, (child) => {
+    if (typeof child === "string" || typeof child === "number") {
+      text += child;
+    } else if (React.isValidElement(child)) {
+      const props = child.props as { children?: React.ReactNode };
+      if (props && props.children) {
+        text += getSelectTextContent(props.children);
+      }
+    }
+  });
+  return text;
+};
+
 function SelectItem({
   className,
   children,
   ...props
 }: React.ComponentProps<typeof SelectPrimitive.Item>) {
+  const context = React.useContext(SelectContentContext);
+
+  const matches = React.useMemo(() => {
+    if (!context || !context.searchTerm) return true;
+    const text = getSelectTextContent(children);
+    return text.toLowerCase().includes(context.searchTerm.toLowerCase());
+  }, [context?.searchTerm, children]);
+
+  if (!matches) return null;
+
   return (
     <SelectPrimitive.Item
       data-slot="select-item"
