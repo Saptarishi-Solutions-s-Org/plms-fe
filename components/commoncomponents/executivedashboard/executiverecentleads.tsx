@@ -53,16 +53,16 @@ const RecentLeadsCard = ({ title, leads, onViewAll }: RecentLeadsProps) => {
       <CardContent className="flex-1 overflow-hidden px-5 pb-5">
         <div className="h-full overflow-hidden rounded-lg border border-gray-200 bg-white">
           <div className="h-full overflow-y-auto custom-scrollbar">
-            <Table className="table-fixed">
+            <Table>
               <TableHeader className="bg-[#7677F41A]">
                 <TableRow className="hover:bg-transparent">
-                  <TableHead className="w-[60px] text-sm font-semibold text-slate-900">
+                  <TableHead className="w-[50px] text-sm font-semibold text-slate-900">
                     S.No
                   </TableHead>
-                  <TableHead className="w-[250px] text-sm font-semibold text-slate-900">
+                  <TableHead className="text-sm font-semibold text-slate-900">
                     Lead Name
                   </TableHead>
-                  <TableHead className="w-[150px] text-sm font-semibold text-slate-900">
+                  <TableHead className="w-[100px] text-sm font-semibold text-slate-900">
                     Status
                   </TableHead>
                 </TableRow>
@@ -81,11 +81,11 @@ const RecentLeadsCard = ({ title, leads, onViewAll }: RecentLeadsProps) => {
                 ) : (
                   leads.slice(0, 10).map((lead, idx) => (
                     <TableRow key={lead.leadId}>
-                      <TableCell className="w-[60px] text-gray-600">
+                      <TableCell className="w-[50px] text-gray-600">
                         {idx + 1}
                       </TableCell>
 
-                      <TableCell className="w-[250px] font-medium text-gray-800 truncate">
+                      <TableCell className="font-medium text-gray-800 max-w-[150px] sm:max-w-[200px] truncate">
                         <TooltipProvider>
                           <Tooltip>
                             <TooltipTrigger asChild>
@@ -101,7 +101,7 @@ const RecentLeadsCard = ({ title, leads, onViewAll }: RecentLeadsProps) => {
                         </TooltipProvider>
                       </TableCell>
 
-                      <TableCell className="w-[150px]">
+                      <TableCell className="w-[100px]">
                         <span
                           className={`font-medium ${STATUS_BADGE[lead.status] ?? "text-gray-500"}`}
                         >
@@ -112,7 +112,7 @@ const RecentLeadsCard = ({ title, leads, onViewAll }: RecentLeadsProps) => {
                   ))
                 )}
               </TableBody>
-          </Table>
+            </Table>
           </div>
         </div>
       </CardContent>

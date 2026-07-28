@@ -594,12 +594,25 @@ export default function SegmentsPage() {
                 </div>
 
                 {/* Linked Campaign */}
-                {segment.offer_titles && (
-                  <div className="text-[10px] bg-purple-50/50 p-2.5 rounded-xl border border-purple-100/50 text-purple-900 font-medium line-clamp-1 mt-2">
-                    <span className="font-bold text-purple-700 mr-1">Offers:</span>
-                    {segment.offer_titles}
-                  </div>
-                )}
+                {segment.offer_titles && segment.offer_titles !== "None" && (() => {
+                  const offers = segment.offer_titles.split(",").map((o: any) => o.trim()).filter(Boolean);
+                  if (offers.length === 0) return null;
+                  return (
+                    <div className="text-[10px] bg-purple-50/50 p-2.5 rounded-xl border border-purple-100/50 text-purple-900 font-medium mt-2 flex items-center gap-1.5">
+                      <span className="font-bold text-purple-700">Offers:</span>
+                      {offers.length <= 2 ? (
+                        <span className="truncate flex-1">{offers.join(", ")}</span>
+                      ) : (
+                        <div className="flex items-center gap-1.5 flex-1 min-w-0">
+                          <span className="truncate flex-1">{offers[0]}</span>
+                          <span className="bg-purple-100 text-purple-800 px-1.5 py-0.5 rounded-full font-bold text-[9px] shrink-0">
+                            +{offers.length - 1}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })()}
               </div>
 
               {/* Action Buttons Footer */}

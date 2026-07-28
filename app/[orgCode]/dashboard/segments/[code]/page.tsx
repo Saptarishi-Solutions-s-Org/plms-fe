@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useMemo } from "react";
-import { useRouter, useParams } from "next/navigation";
+import { useRouter, useParams, usePathname, useSearchParams } from "next/navigation";
 import { toast } from "sonner";
 import {
   ArrowLeft,
@@ -35,6 +35,14 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+  DialogClose,
+} from "@/components/ui/dialog";
 
 const parseCsv = (text: string): string[][] => {
   const rows: string[][] = [];
@@ -117,6 +125,20 @@ const cleanSegmentExportCsv = (csvContent: string): string => {
     .join("\n");
 };
 
+const isOfferExpired = (offer: any) => {
+  if (!offer) return false;
+  if (offer.status?.toLowerCase() === "expired") return true;
+
+  const expiryDateStr = offer.validTo || offer.valid_to || offer.valid_To || offer.endDate || offer.end_date;
+  if (expiryDateStr) {
+    const expiryDate = new Date(expiryDateStr);
+    if (!isNaN(expiryDate.getTime()) && expiryDate < new Date()) {
+      return true;
+    }
+  }
+  return false;
+};
+
 export default function SegmentDetailPage() {
   const router = useRouter();
   const params = useParams<{ orgCode: string; code: string }>();
@@ -144,8 +166,17 @@ export default function SegmentDetailPage() {
   const canDelete = useMemo(() => canAccess(user, ["segmentation"], ["delete"]), [user]);
   const canExport = useMemo(() => canAccess(user, ["segmentation"], ["export"]), [user]);
 
-  // Tab state
-  const [activeTab, setActiveTab] = useState<"overview" | "offers" | "audit">("overview");
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+
+  const tabParam = searchParams.get("tab");
+  const activeTab = (tabParam === "offers" || tabParam === "audit") ? tabParam : "overview";
+
+  const setActiveTab = (tab: "overview" | "offers" | "audit") => {
+    const currentParams = new URLSearchParams(searchParams.toString());
+    currentParams.set("tab", tab);
+    router.replace(`${pathname}?${currentParams.toString()}`, { scroll: false });
+  };
 
   // Segment State
   const [segment, setSegment] = useState<any>(null);
@@ -161,21 +192,26 @@ export default function SegmentDetailPage() {
   // Offers Mapping Modal State
   const [offersModalOpen, setOffersModalOpen] = useState(false);
   const [allOffers, setAllOffers] = useState<any[]>([]);
-  const [selectedOfferIds, setSelectedOfferIds] = useState<string[]>([]);
+  const [modalSelectedOfferIds, setModalSelectedOfferIds] = useState<string[]>([]);
   const [isLinkingOffers, setIsLinkingOffers] = useState(false);
+  const [isOffersLoading, setIsOffersLoading] = useState(false);
+
+  const filteredAvailableOffers = useMemo(() => {
+    const assignedIds = segment?.assigned_offers?.map((o: any) => o.id) || [];
+    return allOffers.filter((o) => !assignedIds.includes(o.id));
+  }, [allOffers, segment?.assigned_offers]);
 
   // Deletion Modal State
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
 
   // 1. Fetch Segment Details
-  const fetchSegmentDetails = async () => {
+  const fetchSegmentDetails = async (silent = false) => {
     if (!hasViewAccess) return;
-    setIsLoadingSegment(true);
+    if (!silent) setIsLoadingSegment(true);
     try {
       const detail = await getSegmentByCode(segmentCode);
       setSegment(detail);
-      setSelectedOfferIds(detail.assigned_offers?.map((o: any) => o.id) || []);
 
       // Trigger matching stats calculation using segment preview action (with exact current settings)
       const previewPayload = {
@@ -197,7 +233,7 @@ export default function SegmentDetailPage() {
         toast.error("Failed to load segment details.");
       }
     } finally {
-      setIsLoadingSegment(false);
+      if (!silent) setIsLoadingSegment(false);
     }
   };
 
@@ -246,7 +282,7 @@ export default function SegmentDetailPage() {
           toast.warning("This segment has been deleted.");
           router.push(`/${orgCode}/dashboard/segments`);
         } else {
-          fetchSegmentDetails();
+          fetchSegmentDetails(true);
           fetchAuditLogs();
         }
       }
@@ -256,6 +292,7 @@ export default function SegmentDetailPage() {
 
   // 3. Fetch Active Offers list for linking modal
   const fetchActiveOffers = async () => {
+    setIsOffersLoading(true);
     try {
       const res = await getOffers({ page: 1, limit: 100 });
       if (res && res.offers) {
@@ -265,10 +302,13 @@ export default function SegmentDetailPage() {
     } catch (err) {
       console.error(err);
       toast.error("Failed to load available offer campaigns.");
+    } finally {
+      setIsOffersLoading(false);
     }
   };
 
   const handleOpenLinkOffers = () => {
+    setModalSelectedOfferIds([]);
     fetchActiveOffers();
     setOffersModalOpen(true);
   };
@@ -277,13 +317,15 @@ export default function SegmentDetailPage() {
     if (!segment) return;
     setIsLinkingOffers(true);
     try {
+      const assignedIds = segment.assigned_offers?.map((o: any) => o.id) || [];
+      const finalOfferIds = [...assignedIds, ...modalSelectedOfferIds];
       await assignOffersToSegment({
         segmentId: segment.id,
-        offerIds: selectedOfferIds
+        offerIds: finalOfferIds
       });
       toast.success("Offers assigned to segment successfully!");
       setOffersModalOpen(false);
-      fetchSegmentDetails(); // Reload mappings
+      fetchSegmentDetails(true); // Reload mappings
     } catch (err) {
       console.error(err);
       toast.error("Failed to assign offers.");
@@ -294,7 +336,7 @@ export default function SegmentDetailPage() {
 
   // Toggle checklist inside Link offers popup
   const handleToggleOfferSelect = (offerId: string) => {
-    setSelectedOfferIds(prev => 
+    setModalSelectedOfferIds(prev => 
       prev.includes(offerId) ? prev.filter(id => id !== offerId) : [...prev, offerId]
     );
   };
@@ -312,19 +354,19 @@ export default function SegmentDetailPage() {
     if (!segment || !unlinkTargetOffer) return;
     setIsLinkingOffers(true);
     try {
-      const remainingIds = selectedOfferIds.filter(id => id !== unlinkTargetOffer.id);
+      const assignedIds = segment.assigned_offers?.map((o: any) => o.id) || [];
+      const remainingIds = assignedIds.filter((id: string) => id !== unlinkTargetOffer.id);
       await assignOffersToSegment({
         segmentId: segment.id,
         offerIds: remainingIds
       });
       toast.success(`Removed offer campaign "${unlinkTargetOffer.title}" from segment.`);
       setUnlinkDialogOpen(false);
-      setSelectedOfferIds(remainingIds);
       setSegment((prev: any) => ({
         ...prev,
         assigned_offers: prev.assigned_offers.filter((o: any) => o.id !== unlinkTargetOffer.id)
       }));
-      fetchSegmentDetails();
+      fetchSegmentDetails(true);
     } catch (err) {
       console.error(err);
       toast.error("Failed to remove offer.");
@@ -687,30 +729,47 @@ export default function SegmentDetailPage() {
               </div>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {segment.assigned_offers?.map((offer: any) => (
-                  <div key={offer.id} className="bg-gray-50 border border-gray-100 rounded-2xl p-4 flex items-start justify-between hover:border-purple-200 transition group relative">
-                    <div className="flex items-start gap-3">
-                      <div className="p-2.5 bg-purple-100 rounded-xl text-purple-600">
-                        <Gift className="w-4 h-4" />
+                {segment.assigned_offers?.map((offer: any) => {
+                  const expired = isOfferExpired(offer);
+                  return (
+                    <div
+                      key={offer.id}
+                      className={`p-4 flex items-start justify-between rounded-2xl border transition group relative ${
+                        expired
+                          ? "bg-red-50/10 border-red-200 hover:border-red-300 shadow-sm shadow-red-50"
+                          : "bg-gray-50 border-gray-100 hover:border-purple-200"
+                      }`}
+                    >
+                      <div className="flex items-start gap-3">
+                        <div className={`p-2.5 rounded-xl ${expired ? "bg-red-100 text-red-600" : "bg-purple-100 text-purple-600"}`}>
+                          <Gift className="w-4 h-4" />
+                        </div>
+                        <div>
+                          <div className="flex items-center gap-1.5 flex-wrap">
+                            <h4 className="font-bold text-gray-900 text-xs truncate max-w-[120px]" title={offer.title}>
+                              {offer.title}
+                            </h4>
+                            {expired && (
+                              <span className="shrink-0 px-1.5 py-0.5 rounded text-[8px] font-bold bg-red-100 text-red-800 uppercase tracking-wide">
+                                Expired
+                              </span>
+                            )}
+                          </div>
+                          <code className="text-[10px] text-gray-400 font-mono block mt-0.5">{offer.code}</code>
+                        </div>
                       </div>
-                      <div>
-                        <h4 className="font-bold text-gray-900 text-xs truncate max-w-[140px]" title={offer.title}>
-                          {offer.title}
-                        </h4>
-                        <code className="text-[10px] text-gray-400 font-mono block mt-0.5">{offer.code}</code>
-                      </div>
+                      {canUpdate && (
+                        <button
+                          onClick={() => handleUnlinkOfferClick(offer)}
+                          className="text-gray-400 hover:text-red-500 p-1.5 hover:bg-red-50 rounded-xl transition"
+                          title="Remove Offer Campaign"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      )}
                     </div>
-                    {canUpdate && (
-                      <button
-                        onClick={() => handleUnlinkOfferClick(offer)}
-                        className="text-gray-400 hover:text-red-500 p-1.5 hover:bg-red-50 rounded-xl transition"
-                        title="Remove Offer Campaign"
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </button>
-                    )}
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             )}
           </div>
@@ -801,68 +860,67 @@ export default function SegmentDetailPage() {
       />
 
       {/* Offer Linking Modal popup */}
-      {offersModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900/40 backdrop-blur-sm">
-          <div className="bg-white rounded-3xl w-full max-w-md shadow-2xl p-5 border border-gray-100 animate-scale-up space-y-4">
-            <div className="flex items-center justify-between border-b border-gray-50 pb-2">
-              <h3 className="text-sm font-extrabold text-gray-900 uppercase tracking-wide">
-                Link Offer Campaigns
-              </h3>
-              <button 
-                onClick={() => setOffersModalOpen(false)}
-                className="text-gray-400 hover:text-gray-600 text-xs font-semibold"
-              >
-                Close
-              </button>
-            </div>
+      <Dialog open={offersModalOpen} onOpenChange={setOffersModalOpen}>
+        <DialogContent className="max-w-md bg-white rounded-3xl p-5 border border-gray-100 shadow-2xl gap-4">
+          <DialogHeader className="border-b border-gray-50 pb-2">
+            <DialogTitle className="text-sm font-extrabold text-gray-900 uppercase tracking-wide text-left">
+              Link Offer Campaigns
+            </DialogTitle>
+          </DialogHeader>
 
-            <div className="max-h-64 overflow-y-auto space-y-1.5 pr-1 py-1">
-              {allOffers.length === 0 ? (
-                <div className="py-6 text-center text-xs text-gray-400">No active offers available to map.</div>
-              ) : (
-                allOffers.map((offer) => {
-                  const isSelected = selectedOfferIds.includes(offer.id);
-                  return (
-                    <div
-                      key={offer.id}
-                      onClick={() => handleToggleOfferSelect(offer.id)}
-                      className={`flex items-center justify-between p-2.5 border rounded-xl cursor-pointer hover:bg-purple-50/10 transition ${
-                        isSelected ? "border-purple-400 bg-purple-50/10" : "border-gray-100"
-                      }`}
-                    >
-                      <div className="flex items-start gap-2.5">
-                        <div className={`p-1 rounded ${isSelected ? "text-purple-600" : "text-gray-300"}`}>
-                          <Check className={`w-4 h-4 border rounded ${isSelected ? "bg-purple-600 text-white" : "border-gray-300"}`} />
-                        </div>
-                        <div>
-                          <h5 className="text-xs font-bold text-gray-900 truncate max-w-[200px]">{offer.title}</h5>
-                          <span className="text-[10px] text-gray-400 font-mono block mt-0.5">{offer.code}</span>
-                        </div>
+          <div className="max-h-64 overflow-y-auto space-y-1.5 pr-1 py-1">
+            {isOffersLoading ? (
+              <div className="py-10 text-center text-xs text-gray-400 flex items-center justify-center gap-2">
+                <span className="w-4 h-4 border-2 border-purple-600 border-t-transparent rounded-full animate-spin"></span>
+                <span>Loading campaigns...</span>
+              </div>
+            ) : filteredAvailableOffers.length === 0 ? (
+              <div className="py-6 text-center text-xs text-gray-400">No active offers available to assign.</div>
+            ) : (
+              filteredAvailableOffers.map((offer) => {
+                const isSelected = modalSelectedOfferIds.includes(offer.id);
+                return (
+                  <div
+                    key={offer.id}
+                    onClick={() => handleToggleOfferSelect(offer.id)}
+                    className={`flex items-center justify-between p-2.5 border rounded-xl cursor-pointer hover:bg-purple-50/10 transition ${
+                      isSelected ? "border-purple-400 bg-purple-50/10" : "border-gray-100"
+                    }`}
+                  >
+                    <div className="flex items-start gap-2.5">
+                      <div className={`p-1 rounded ${isSelected ? "text-purple-600" : "text-gray-300"}`}>
+                        <Check className={`w-4 h-4 border rounded ${isSelected ? "bg-purple-600 text-white" : "border-gray-300"}`} />
+                      </div>
+                      <div>
+                        <h5 className="text-xs font-bold text-gray-900 truncate max-w-[200px]">{offer.title}</h5>
+                        <span className="text-[10px] text-gray-400 font-mono block mt-0.5">{offer.code}</span>
                       </div>
                     </div>
-                  );
-                })
-              )}
-            </div>
+                  </div>
+                );
+              })
+            )}
+          </div>
 
-            <div className="flex items-center gap-3 pt-2">
+          <DialogFooter className="flex items-center gap-3 pt-2 sm:justify-between flex-row">
+            <DialogClose asChild>
               <button
-                onClick={() => setOffersModalOpen(false)}
+                type="button"
                 className="flex-1 py-2 text-xs font-semibold text-gray-500 hover:text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-xl transition"
               >
                 Cancel
               </button>
-              <button
-                onClick={handleLinkOffersConfirm}
-                disabled={isLinkingOffers}
-                className="flex-1 py-2 text-xs font-semibold text-white bg-purple-600 hover:bg-purple-700 rounded-xl transition shadow disabled:opacity-50"
-              >
-                {isLinkingOffers ? "Linking..." : "Save Assignments"}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+            </DialogClose>
+            <button
+              onClick={handleLinkOffersConfirm}
+              disabled={isLinkingOffers}
+              className="flex-1 py-2 text-xs font-semibold text-white bg-purple-600 hover:bg-purple-700 rounded-xl transition shadow disabled:opacity-50"
+            >
+              {isLinkingOffers ? "Linking..." : "Save Assignments"}
+            </button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
     </div>
   );
