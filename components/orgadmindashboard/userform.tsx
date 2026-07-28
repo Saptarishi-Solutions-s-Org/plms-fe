@@ -462,7 +462,7 @@ const AddLeadForm = ({
                                                     selectedCountry ? "Select state" : "Select country first"
                                                 } />
                                             </SelectTrigger>
-                                            <SelectContent className="w-full  max-h-60 overflow-y-auto">
+                                            <SelectContent>
                                                 {states.map((s) => (
                                                     <SelectItem key={s.id} value={s.id}>
                                                         {s.name}
