@@ -82,10 +82,13 @@ function SelectContent({
             "data-slot"?: string;
             children?: React.ReactNode;
           };
-          if (
+          const isSelItem =
+            child.type === SelectItem ||
+            (child.type as any)?.isSelectItem === true ||
             props["data-slot"] === "select-item" ||
-            (child.type as any)?.name === "SelectItem"
-          ) {
+            (child.type as any)?.name === "SelectItem";
+
+          if (isSelItem) {
             count++;
           } else if (props.children) {
             countItems(props.children);
@@ -106,7 +109,7 @@ function SelectContent({
         className={cn(
           "bg-popover text-popover-foreground data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:-translate-y-1 relative z-50 max-h-[260px] min-w-[8rem] origin-(--radix-select-content-transform-origin) overflow-x-hidden overflow-y-auto rounded-md border shadow-md",
           position === "popper" &&
-            "data-[side=bottom]:translate-y-1 data-[side=left]:-ntranslate-x-1 data-[side=right]:translate-x-1 data-[side=top]:-translate-y-1 w-[var(--radix-select-trigger-width)]",
+            "data-[side=bottom]:translate-y-1 data-[side=left]:-translate-x-1 data-[side=right]:translate-x-1 data-[side=top]:-translate-y-1 w-[var(--radix-select-trigger-width)]",
           className,
         )}
         position={position}
@@ -213,6 +216,8 @@ function SelectItem({
     </SelectPrimitive.Item>
   );
 }
+
+SelectItem.isSelectItem = true;
 
 function SelectSeparator({
   className,
