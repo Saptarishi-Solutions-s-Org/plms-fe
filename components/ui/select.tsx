@@ -1,7 +1,12 @@
 "use client";
 
 import * as React from "react";
-import { CheckIcon, ChevronDownIcon, ChevronUpIcon, Search } from "lucide-react";
+import {
+  CheckIcon,
+  ChevronDownIcon,
+  ChevronUpIcon,
+  Search,
+} from "lucide-react";
 import { Select as SelectPrimitive } from "radix-ui";
 
 import { cn } from "@/lib/utils";
@@ -73,8 +78,14 @@ function SelectContent({
     const countItems = (node: React.ReactNode) => {
       React.Children.forEach(node, (child) => {
         if (React.isValidElement(child)) {
-          const props = child.props as { "data-slot"?: string; children?: React.ReactNode };
-          if (props["data-slot"] === "select-item" || (child.type as any)?.name === "SelectItem") {
+          const props = child.props as {
+            "data-slot"?: string;
+            children?: React.ReactNode;
+          };
+          if (
+            props["data-slot"] === "select-item" ||
+            (child.type as any)?.name === "SelectItem"
+          ) {
             count++;
           } else if (props.children) {
             countItems(props.children);
