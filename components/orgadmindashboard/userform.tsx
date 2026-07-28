@@ -224,7 +224,7 @@ const AddLeadForm = ({
                                 <Label htmlFor="firstName" required>
                                     First Name
                                 </Label>
-                                <Input id="firstName" type="text" {...register("name")} placeholder="Enter Name" className={`border-2 w-full ${errors.name ? "border-red-500" : "border-gray-300"}`} />
+                                 <Input id="firstName" type="text" {...register("name")} placeholder="Enter Name" className={`w-full ${errors.name ? "border-2 border-red-500" : ""}`} />
                                 <span className="text-sm text-red-500 ">{errors.name?.message}</span>
                             </div>
                         </div>
@@ -241,11 +241,11 @@ const AddLeadForm = ({
                                         return (
                                             <Popover>
                                                 <PopoverTrigger asChild>
-                                                    <Button
-                                                        variant="outline"
-                                                        className={`w-full justify-start text-left font-normal border-2 ${errors.dob ? "border-red-500" : "border-gray-300"
-                                                            }`}
-                                                    >
+                                                     <Button
+                                                         variant="outline"
+                                                         className={`w-full justify-start text-left font-normal border ${errors.dob ? "border-2 border-red-500" : "border-gray-300"
+                                                             }`}
+                                                     >
                                                         <CalendarIcon className="mr-2 h-4 w-4" />
 
                                                         {field.value ? (
@@ -371,8 +371,8 @@ const AddLeadForm = ({
                                     name="gender"
                                     control={control}
                                     render={({ field }) => (
-                                        <Select onValueChange={field.onChange} value={field.value}  >
-                                            <SelectTrigger className={`w-full border-2 ${errors.gender ? "border-red-500" : "border-gray-300"}`} >
+                                         <Select onValueChange={field.onChange} value={field.value}  >
+                                             <SelectTrigger className={`w-full ${errors.gender ? "border-2 border-red-500" : ""}`} >
                                                 <SelectValue placeholder="Select gender" />
                                             </SelectTrigger>
                                             <SelectContent>
@@ -403,7 +403,7 @@ const AddLeadForm = ({
                                 <Label htmlFor="email" required>
                                     Email
                                 </Label>
-                                <Input id="email" type="email" placeholder="Enter email"  {...register("email")} className={`border-2 ${errors.email ? "border-red-500" : "border-gray-300"}`} />
+                                 <Input id="email" type="email" placeholder="Enter email"  {...register("email")} className={`${errors.email ? "border-2 border-red-500" : ""}`} />
                                 <span className="text-sm text-red-500 ">{errors.email?.message}</span>
                             </div>
 
@@ -411,9 +411,8 @@ const AddLeadForm = ({
                                 <Label htmlFor="phone" required>
                                     Phone Number
                                 </Label>
-                                <Input id="phone" type="text"
-                                    placeholder="Enter phone number" {...register("phone")} className={`border-2 ${errors.phone ? "border-red-500" : "border-gray-300"
-                                        }`} />
+                                 <Input id="phone" type="text"
+                                     placeholder="Enter phone number" {...register("phone")} className={`${errors.phone ? "border-2 border-red-500" : ""}`} />
                                 <span className="text-sm text-red-500 ">{errors.phone?.message}</span>
                             </div>
                         </div>
@@ -427,8 +426,15 @@ const AddLeadForm = ({
                                     name="country"
                                     control={control}
                                     render={({ field }) => (
-                                        <Select onValueChange={field.onChange} value={field.value}  >
-                                            <SelectTrigger className={`w-full border-2 ${errors.country ? "border-red-500" : "border-gray-300"}`} >
+                                        <Select
+                                            value={field.value}
+                                            onValueChange={(val) => {
+                                                field.onChange(val);
+                                                setValue("state", "");
+                                                setStates([]);
+                                            }}
+                                        >
+                                             <SelectTrigger className={`w-full ${errors.country ? "border-2 border-red-500" : ""}`} >
                                                 <SelectValue placeholder="Select country" />
                                             </SelectTrigger>
                                             <SelectContent>
@@ -457,7 +463,7 @@ const AddLeadForm = ({
                                             value={field.value}
                                             disabled={!selectedCountry}
                                         >
-                                            <SelectTrigger className={`w-full border-2 ${errors.state ? "border-red-500" : "border-gray-300"} `} >
+                                             <SelectTrigger className={`w-full ${errors.state ? "border-2 border-red-500" : ""} `} >
                                                 <SelectValue placeholder={
                                                     selectedCountry ? "Select state" : "Select country first"
                                                 } />
@@ -481,7 +487,7 @@ const AddLeadForm = ({
                                 <Label htmlFor="city" required>
                                     City
                                 </Label>
-                                <Input id="city" type="text" placeholder="Enter city" {...register("city")} className={`border-2 ${errors.city ? "border-red-500" : "border-gray-300"}`} />
+                                 <Input id="city" type="text" placeholder="Enter city" {...register("city")} className={`${errors.city ? "border-2 border-red-500" : ""}`} />
                                 <span className="text-sm text-red-500 ">{errors.city?.message}</span>
                             </div>
                         </div>
@@ -506,7 +512,7 @@ const AddLeadForm = ({
                                     control={control}
                                     render={({ field }) => (
                                         <Select onValueChange={field.onChange} value={field.value}  >
-                                            <SelectTrigger className={`w-full border-2 ${errors.userRole ? "border-red-500" : "border-gray-300"}`}>
+                                             <SelectTrigger className={`w-full ${errors.userRole ? "border-2 border-red-500" : ""}`}>
                                                 <SelectValue placeholder="Select user role" />
                                             </SelectTrigger>
                                             <SelectContent>
@@ -525,7 +531,7 @@ const AddLeadForm = ({
                             </div>
 
                             <div className="flex flex-col gap-1 w-full">
-                                <Label htmlFor="reportingManager" required>
+                                <Label htmlFor="reportingManager">
                                     Reporting Manager
                                 </Label>
                                 <Controller
@@ -535,8 +541,7 @@ const AddLeadForm = ({
                                         <Select onValueChange={field.onChange} value={field.value}  >
                                             <SelectTrigger
                                                 disabled={selectedRole !== "Executive"}
-                                                className={`w-full border-2 ${errors.reportingManager ? "border-red-500" : "border-gray-300"
-                                                    }`}
+                                                className={`w-full ${errors.reportingManager ? "border-2 border-red-500" : ""}`}
                                             >
                                                 <SelectValue placeholder="Select manager" />
                                             </SelectTrigger>

@@ -394,9 +394,10 @@ export default function UserModal({
             <Label required>Country</Label>
             <Select
               value={form.country}
-              onValueChange={(v) =>
-                setForm((current) => ({ ...current, country: v, state: "" }))
-              }
+              onValueChange={(v) => {
+                setForm((current) => ({ ...current, country: v, state: "" }));
+                setStates([]);
+              }}
             >
               <SelectTrigger
                 className={`w-full ${errors.country ? "border-red-500" : ""}`}
