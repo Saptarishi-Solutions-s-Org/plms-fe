@@ -500,12 +500,13 @@ export default function ExecutivesPage() {
         <AlertDialogContent className="w-[360px] max-w-[calc(100vw-2rem)] rounded-3xl border-0 bg-white p-4 shadow-2xl">
           <AlertDialogHeader className="flex flex-col items-center space-y-1 text-center">
             <Image
-              src="/saptarishi.png"
-              alt="SAPtarishi"
+              src="/samricha.png"
+              alt="Samricha"
               width={90}
               height={32}
               priority
               className="h-auto w-[90px] object-contain mb-0.5"
+              style={{ width: "auto", height: "auto" }}
             />
 
             <AlertDialogTitle className="text-base font-semibold text-slate-900">

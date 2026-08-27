@@ -11,7 +11,7 @@ const lastUpdated = "May 11, 2026";
 const termsSections = [
   {
     title: "Authorized Use",
-    body: "LMA is intended for authorized Saptarishi and customer-organization users managing project lead operations. Credentials must not be shared.",
+    body: "Samricha is intended for authorized Saptarishi and customer-organization users managing project lead operations. Credentials must not be shared.",
   },
   {
     title: "Data Accuracy",
@@ -23,7 +23,7 @@ const termsSections = [
   },
   {
     title: "System Availability",
-    body: "LMA may enter maintenance mode for upgrades, fixes, or administrative work. Access can be limited during these windows.",
+    body: "Samricha may enter maintenance mode for upgrades, fixes, or administrative work. Access can be limited during these windows.",
   },
   {
     title: "Credential Security",
@@ -39,7 +39,7 @@ const termsSections = [
   },
   {
     title: "Changes To Terms",
-    body: "These terms may be updated as LMA evolves. Continued use of the portal after updates means the user accepts the revised operating terms.",
+    body: "These terms may be updated as Samricha evolves. Continued use of the portal after updates means the user accepts the revised operating terms.",
   },
 ];
 
@@ -60,7 +60,7 @@ export default function TermsAndConditionsPage() {
         <div className="pointer-events-none absolute right-[-220px] top-[-170px] h-[620px] w-[620px] rounded-full border border-emerald-900/10" />
         <div className="pointer-events-none absolute right-[-80px] top-[-50px] h-[360px] w-[360px] rounded-full border border-emerald-900/10" />
         <div className="pointer-events-none absolute bottom-4 right-10 select-none text-[88px] font-bold leading-none text-emerald-950/[0.04] md:text-[130px]">
-          LMA
+          Samricha
         </div>
 
         <div className="relative z-10 mx-auto max-w-7xl">
@@ -83,7 +83,7 @@ export default function TermsAndConditionsPage() {
               transition={{ duration: 0.85, delay: 0.1, ease: [0.16, 1, 0.3, 1] }}
             >
               <h1 className="text-[clamp(42px,6vw,78px)] font-bold leading-[1.07] text-[#0b1713]">
-                Operating terms for LMA users.
+                Operating terms for Samricha users.
               </h1>
               <p className="mt-6 max-w-3xl text-base leading-8 text-slate-600">
                 These terms define authorized use, account responsibilities,
@@ -107,7 +107,7 @@ export default function TermsAndConditionsPage() {
                 {lastUpdated}
               </p>
               <p className="mt-4 text-sm leading-7 text-slate-600">
-                This document applies to LMA public access, login flow, and
+                This document applies to Samricha public access, login flow, and
                 authenticated organization workflows.
               </p>
             </motion.div>

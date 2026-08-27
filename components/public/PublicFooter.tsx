@@ -7,7 +7,7 @@ const publicNavLinks = [
   { label: "Services", href: "/services" },
   { label: "Features", href: "/features" },
   { label: "Use Cases", href: "/use-cases" },
-  { label: "Why LMA", href: "/why-LMA" },
+  { label: "Why Samricha", href: "/why-plms" },
 ];
 
 const legalLinks = [
@@ -47,14 +47,15 @@ export default function PublicFooter() {
           <div>
             <div className="mb-5 flex items-center gap-3">
               <Image
-                src="/saptarishi.png"
-                alt="Saptarishi Solutions"
+                src="/samricha.png"
+                alt="Samricha"
                 width={130}
                 height={42}
                 className="brightness-0 invert"
+                style={{ width: "auto", height: "auto" }}
               />
               <span className="rounded-full border border-emerald-300/20 bg-emerald-300/10 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.18em] text-emerald-200">
-                LMA
+                Samricha
               </span>
             </div>
             <p className="max-w-sm text-sm leading-7 text-white/58">

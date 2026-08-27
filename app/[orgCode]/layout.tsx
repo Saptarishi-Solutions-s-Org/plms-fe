@@ -4,6 +4,7 @@ import { ReactNode, useState, useEffect, useRef, useCallback } from "react";
 import Image from "next/image";
 import { usePathname, useRouter, useParams } from "next/navigation";
 import { toast } from "sonner";
+import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
 
 import {
   Sidebar,
@@ -80,20 +81,48 @@ function SidebarBrand() {
   return (
     <SidebarMenu>
       <SidebarMenuItem>
-        <SidebarMenuButton size="lg" className="flex justify-center">
-          {open ? (
-            <Image
-              src="/saptarishi.png"
-              alt="Logo"
-              width={100}
-              height={40}
-              priority
-              style={{ width: "auto", height: "auto" }}
-            />
-          ) : (
-            <Image src="/sap.png" alt="Logo" width={32} height={32} priority />
-          )}
-        </SidebarMenuButton>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <SidebarMenuButton size="lg" className="flex justify-center">
+              {open ? (
+                <Image
+                  src="/samricha.png"
+                  alt="Logo"
+                  width={100}
+                  height={40}
+                  priority
+                  style={{ width: "auto", height: "auto" }}
+                />
+              ) : (
+                <Image src="/sap.png" alt="Logo" width={32} height={32} priority />
+              )}
+            </SidebarMenuButton>
+          </TooltipTrigger>
+          <TooltipContent
+            side="right"
+            align="start"
+            className="max-w-[280px] bg-slate-900 border border-slate-800 text-slate-100 p-4 rounded-xl shadow-xl z-[100]"
+          >
+            <div className="space-y-2 text-xs">
+              <p className="font-bold text-sm text-white">
+                <span className="text-violet-400">Sam</span>
+                <span className="text-emerald-400">ri</span>
+                <span className="text-amber-400">cha</span>
+              </p>
+              <div className="space-y-1.5 leading-relaxed text-slate-300">
+                <p>
+                  <strong className="text-violet-400 font-semibold">SAM:</strong> Smart, Structured, and Strategic management
+                </p>
+                <p>
+                  <strong className="text-emerald-400 font-semibold">RI:</strong> Relationships and Intelligence
+                </p>
+                <p>
+                  <strong className="text-amber-400 font-semibold">CHA:</strong> Customer Handling and Advancement
+                </p>
+              </div>
+            </div>
+          </TooltipContent>
+        </Tooltip>
       </SidebarMenuItem>
     </SidebarMenu>
   );
@@ -369,7 +398,7 @@ export default function Layout({ children }: { children: ReactNode }) {
           <div className="flex items-center gap-2 sm:gap-4 min-w-0">
             <SidebarTrigger />
             <h1 className="text-xs sm:text-sm md:text-base font-semibold text-gray-700 truncate max-w-[70vw]">
-              <span className="block sm:hidden">LMA</span>
+              <span className="block sm:hidden">Samricha</span>
               <span className="hidden sm:block">{quote}</span>
             </h1>
           </div>

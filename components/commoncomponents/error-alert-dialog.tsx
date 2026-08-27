@@ -24,7 +24,7 @@ export function ErrorAlertDialog({
         <AlertDialogHeader className="text-center">
           <div className="flex justify-center">
             <Image
-              src="/saptarishi.png"
+              src="/samricha.png"
               alt="Logo"
               width={100}
               height={100}

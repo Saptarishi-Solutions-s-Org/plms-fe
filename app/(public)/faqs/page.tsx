@@ -7,15 +7,15 @@ import { useMemo, useState } from "react";
 const faqs = [
   {
     category: "Getting Started",
-    question: "What is LMA?",
+    question: "What is Samricha?",
     answer:
-      "LMA is the Project Lead Management System used to manage organizations, users, leads, follow-up activities, offers, permissions, locations, and dashboard visibility.",
+      "Samricha is the Project Lead Management System used to manage organizations, users, leads, follow-up activities, offers, permissions, locations, and dashboard visibility.",
   },
   {
     category: "Getting Started",
-    question: "Who should use LMA?",
+    question: "Who should use Samricha?",
     answer:
-      "System admins, organization admins, managers, and executives use LMA to keep project lead operations structured from capture to follow-up and outcome.",
+      "System admins, organization admins, managers, and executives use Samricha to keep project lead operations structured from capture to follow-up and outcome.",
   },
   {
     category: "Access",
@@ -27,13 +27,13 @@ const faqs = [
     category: "Access",
     question: "What happens if I open /login while already signed in?",
     answer:
-      "The proxy reads the LMA refresh cookie and organization hint, then redirects you to your organization dashboard.",
+      "The proxy reads the Samricha refresh cookie and organization hint, then redirects you to your organization dashboard.",
   },
   {
     category: "Access",
     question: "Why am I redirected to home when opening a dashboard link?",
     answer:
-      "Dashboard routes require the LMA refresh cookie. If it is missing or expired, the app sends you to the public home page.",
+      "Dashboard routes require the Samricha refresh cookie. If it is missing or expired, the app sends you to the public home page.",
   },
   {
     category: "Roles",
@@ -63,13 +63,13 @@ const faqs = [
     category: "Leads",
     question: "Can leads be imported?",
     answer:
-      "Yes. LMA distinguishes manual entry and imported leads, so teams can track how records entered the system.",
+      "Yes. Samricha distinguishes manual entry and imported leads, so teams can track how records entered the system.",
   },
   {
     category: "Activities",
     question: "What activity types can be tracked?",
     answer:
-      "LMA supports call, SMS, email, in-person, and other activity types. Notes, call status, free text, and next follow-up date can be attached to a lead activity.",
+      "Samricha supports call, SMS, email, in-person, and other activity types. Notes, call status, free text, and next follow-up date can be attached to a lead activity.",
   },
   {
     category: "Activities",
@@ -79,9 +79,9 @@ const faqs = [
   },
   {
     category: "Offers",
-    question: "What kinds of offers can LMA manage?",
+    question: "What kinds of offers can Samricha manage?",
     answer:
-      "LMA supports fixed amount, percentage, combo, buy-one-get-one, conditional, and flag discount models with validity windows and statuses.",
+      "Samricha supports fixed amount, percentage, combo, buy-one-get-one, conditional, and flag discount models with validity windows and statuses.",
   },
   {
     category: "Offers",
@@ -91,13 +91,13 @@ const faqs = [
   },
   {
     category: "Organizations",
-    question: "Does LMA support multiple organizations?",
+    question: "Does Samricha support multiple organizations?",
     answer:
       "Yes. The schema supports organizations with code, contact details, active status, country, state, trial dates, users, roles, modules, and permission overrides.",
   },
   {
     category: "Security",
-    question: "How does LMA protect access?",
+    question: "How does Samricha protect access?",
     answer:
       "The app uses session cookies, refresh tokens, password reset tokens, role mappings, module permissions, and organization-specific permission overrides.",
   },
@@ -172,7 +172,7 @@ export default function FaqsPage() {
                 Answers before the pipeline slows down.
               </h1>
               <p className="mt-6 max-w-2xl text-base leading-8 text-slate-600">
-                Search common LMA questions across access, roles, leads,
+                Search common Samricha questions across access, roles, leads,
                 activities, offers, organizations, security, and support.
               </p>
             </motion.div>

@@ -364,8 +364,8 @@ export default function NotAuthorizedPage() {
         <div className="flex justify-center mb-10">
           <div className="relative h-[38px] w-[130px]">
             <Image
-              src="/saptarishi.png"
-              alt="Saptarishi Solutions"
+              src="/samricha.png"
+              alt="Samricha"
               fill
               className="object-contain"
               priority

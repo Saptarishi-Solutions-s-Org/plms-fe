@@ -9,6 +9,7 @@ import {
   Layers3,
   LineChart,
 } from "lucide-react";
+import Image from "next/image";
 import Link from "next/link";
 
 import { Reveal } from "@/components/public/Reveal";
@@ -64,7 +65,7 @@ export default function AboutPage() {
             >
               <span className="h-[1.5px] w-8 bg-emerald-600" />
               <span className="text-xs font-semibold uppercase text-emerald-700">
-                About LMA
+                About Samricha
               </span>
             </motion.div>
 
@@ -83,7 +84,7 @@ export default function AboutPage() {
                 transition={{ duration: 0.7, delay: 0.28 }}
                 className="text-base leading-8 text-slate-600"
               >
-                LMA connects organizations, roles, users, leads, activities,
+                Samricha connects organizations, roles, users, leads, activities,
                 offers, and location data into one governed workflow. It keeps
                 executives focused, managers informed, and admins in control.
               </motion.p>
@@ -106,7 +107,7 @@ export default function AboutPage() {
                 <p>
                   Lead work breaks down when data is scattered: one person has
                   the phone call, another has the offer context, and managers
-                  see the issue too late. LMA keeps the story of each lead in
+                  see the issue too late. Samricha keeps the story of each lead in
                   one place.
                 </p>
                 <p>
@@ -128,6 +129,91 @@ export default function AboutPage() {
                 ))}
               </div>
             </Reveal>
+          </div>
+        </section>
+
+        <section className="border-b border-emerald-950/10 bg-[#f7fbf7] px-5 py-20 md:px-8">
+          <div className="mx-auto max-w-7xl">
+            <div className="grid gap-12 lg:grid-cols-[0.9fr_1.1fr] lg:items-center">
+              <Reveal>
+                <div className="rounded-[2.5rem] border border-emerald-950/10 bg-white p-8 md:p-10 shadow-[0_24px_70px_rgba(6,78,59,0.06)] relative overflow-hidden">
+                  <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-50 rounded-full blur-3xl -z-10" />
+                  <div className="absolute bottom-0 left-0 w-32 h-32 bg-violet-50 rounded-full blur-3xl -z-10" />
+                  
+                  <div className="flex justify-center mb-8">
+                    <Image
+                      src="/samricha.png"
+                      alt="Samricha Logo"
+                      width={160}
+                      height={55}
+                      priority
+                      className="h-12 w-auto object-contain"
+                      style={{ width: "auto", height: "auto" }}
+                    />
+                  </div>
+
+                  <div className="space-y-6">
+                    <div className="flex gap-4 items-start p-4 rounded-2xl bg-violet-50/50 border border-violet-100/50">
+                      <span className="flex h-10 w-16 shrink-0 items-center justify-center rounded-xl bg-violet-600 text-sm font-bold tracking-wider text-white">
+                        SAM
+                      </span>
+                      <div>
+                        <h4 className="text-sm font-bold text-violet-950">Smart, Structured & Strategic</h4>
+                        <p className="mt-1 text-xs leading-5 text-violet-800/80">
+                          Reflecting the platform&apos;s ability to organize leads, teams, and customer relationships efficiently.
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="flex gap-4 items-start p-4 rounded-2xl bg-emerald-50/50 border border-emerald-100/50">
+                      <span className="flex h-10 w-16 shrink-0 items-center justify-center rounded-xl bg-emerald-600 text-sm font-bold tracking-wider text-white">
+                        RI
+                      </span>
+                      <div>
+                        <h4 className="text-sm font-bold text-emerald-950">Relationships & Intelligence</h4>
+                        <p className="mt-1 text-xs leading-5 text-emerald-800/80">
+                          Highlighting the CRM&apos;s focus on building meaningful customer connections while using data-driven insights.
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="flex gap-4 items-start p-4 rounded-2xl bg-amber-50/50 border border-amber-100/50">
+                      <span className="flex h-10 w-16 shrink-0 items-center justify-center rounded-xl bg-amber-600 text-sm font-bold tracking-wider text-white">
+                        CHA
+                      </span>
+                      <div>
+                        <h4 className="text-sm font-bold text-amber-950">Customer Handling & Advancement</h4>
+                        <p className="mt-1 text-xs leading-5 text-amber-800/80">
+                          Symbolizing the complete journey from lead acquisition to conversion and long-term engagement.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </Reveal>
+
+              <Reveal delay={0.1}>
+                <div className="space-y-6">
+                  <p className="text-xs font-semibold uppercase tracking-wider text-emerald-700">
+                    Brand Evolution
+                  </p>
+                  <h2 className="text-[clamp(28px,4vw,44px)] font-bold leading-tight text-[#0b1713]">
+                    The Meaning of Samricha.
+                  </h2>
+                  <div className="space-y-4 text-sm leading-8 text-slate-600">
+                    <p>
+                      As part of our commitment to continuous growth, modern design, and operational excellence, we evolved the platform branding from <strong>LMA</strong> to <strong>Samricha</strong>.
+                    </p>
+                    <p>
+                      This brand represents a massive leap forward in our engineering and customer focus. It carries a tri-fold philosophy that guides every product decision, module layout, and reporting feature we build.
+                    </p>
+                    <p>
+                      Together, the three pillars of <strong>SAM-RI-CHA</strong> form a unified methodology for capturing, nurturing, and converting business pipelines with absolute discipline.
+                    </p>
+                  </div>
+                </div>
+              </Reveal>
+            </div>
           </div>
         </section>
 
@@ -185,7 +271,7 @@ export default function AboutPage() {
           <Reveal className="mx-auto flex max-w-7xl flex-col gap-6 md:flex-row md:items-center md:justify-between">
             <div>
               <p className="mb-2 text-xs font-semibold uppercase text-emerald-300">
-                LMA Portal
+                Samricha Portal
               </p>
               <h2 className="text-3xl font-bold">Work the pipeline with context.</h2>
             </div>

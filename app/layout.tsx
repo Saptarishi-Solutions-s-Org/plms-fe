@@ -13,7 +13,7 @@ const poppins = Poppins({
 });
 
 export const metadata: Metadata = {
-  title: "SRS-LMA",
+  title: "Samricha",
   description: "Developed by Team SRS",
 };
 

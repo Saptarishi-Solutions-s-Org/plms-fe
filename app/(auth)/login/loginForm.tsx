@@ -195,14 +195,14 @@ export default function LoginForm() {
             <div className="mb-4 flex items-center gap-3">
               <Image
                 src="/sap.png"
-                alt="Saptarishi"
+                alt="Samricha"
                 width={36}
                 height={36}
                 priority
                 className="h-9 w-9"
               />
               <span className="text-sm font-bold uppercase text-[#0b1713]">
-                SRS-LMA
+                Samricha
               </span>
             </div>
             <h2 className="text-2xl font-bold text-[#0b1713]">Welcome back</h2>

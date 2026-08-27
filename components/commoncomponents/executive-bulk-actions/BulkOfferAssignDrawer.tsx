@@ -509,12 +509,13 @@ export function BulkOfferAssignDrawer({
         <AlertDialogContent className="w-[380px] max-w-[calc(100vw-2rem)] rounded-3xl border-0 bg-white p-5 shadow-2xl z-[9999]">
           <AlertDialogHeader className="flex flex-col items-center space-y-1 text-center">
             <Image
-              src="/saptarishi.png"
-              alt="SAPtarishi"
+              src="/samricha.png"
+              alt="Samricha"
               width={90}
               height={32}
               priority
               className="h-auto w-[90px] object-contain mb-1"
+              style={{ width: "auto", height: "auto" }}
             />
             <AlertDialogTitle className="text-base font-semibold text-slate-900">
               {alertContent?.title}

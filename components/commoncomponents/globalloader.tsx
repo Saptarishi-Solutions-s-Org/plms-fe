@@ -6,12 +6,13 @@ export default function GlobalLoader() {
   return (
     <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-white">
       <Image
-        src="/saptarishi.png"
+        src="/samricha.png"
         alt="loader"
         width={140}
         height={140}
         className="breath"
         priority
+        style={{ width: "auto", height: "auto" }}
       />
     </div>
   );

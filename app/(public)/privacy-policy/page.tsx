@@ -10,8 +10,8 @@ const lastUpdated = "May 11, 2026";
 
 const privacySections = [
   {
-    title: "What LMA Stores",
-    body: "LMA stores account details, organization metadata, role and permission settings, lead records, lead activities, offer assignments, and location references required to run project lead workflows.",
+    title: "What Samricha Stores",
+    body: "Samricha stores account details, organization metadata, role and permission settings, lead records, lead activities, offer assignments, and location references required to run project lead workflows.",
   },
   {
     title: "How Data Is Used",
@@ -35,7 +35,7 @@ const privacySections = [
   },
   {
     title: "Retention And Review",
-    body: "LMA data is retained for business continuity, support, audit, and reporting needs. Administrators may review records when investigating access issues, lead ownership, offer assignment, or workflow errors.",
+    body: "Samricha data is retained for business continuity, support, audit, and reporting needs. Administrators may review records when investigating access issues, lead ownership, offer assignment, or workflow errors.",
   },
   {
     title: "Support Requests",
@@ -60,7 +60,7 @@ export default function PrivacyPolicyPage() {
         <div className="pointer-events-none absolute right-[-220px] top-[-170px] h-[620px] w-[620px] rounded-full border border-emerald-900/10" />
         <div className="pointer-events-none absolute right-[-80px] top-[-50px] h-[360px] w-[360px] rounded-full border border-emerald-900/10" />
         <div className="pointer-events-none absolute bottom-4 right-10 select-none text-[88px] font-bold leading-none text-emerald-950/[0.04] md:text-[130px]">
-          LMA
+          Samricha
         </div>
 
         <div className="relative z-10 mx-auto max-w-7xl">
@@ -83,7 +83,7 @@ export default function PrivacyPolicyPage() {
               transition={{ duration: 0.85, delay: 0.1, ease: [0.16, 1, 0.3, 1] }}
             >
               <h1 className="text-[clamp(42px,6vw,78px)] font-bold leading-[1.07] text-[#0b1713]">
-                How LMA protects workflow data.
+                How Samricha protects workflow data.
               </h1>
               <p className="mt-6 max-w-3xl text-base leading-8 text-slate-600">
                 This policy explains how Project Lead Management System data is
@@ -107,7 +107,7 @@ export default function PrivacyPolicyPage() {
                 {lastUpdated}
               </p>
               <p className="mt-4 text-sm leading-7 text-slate-600">
-                This document applies to LMA public access, login flow, and
+                This document applies to Samricha public access, login flow, and
                 authenticated organization workflows.
               </p>
             </motion.div>

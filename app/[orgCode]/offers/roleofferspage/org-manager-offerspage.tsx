@@ -1037,12 +1037,13 @@ export default function OrgManagerOffersPage() {
         <AlertDialogContent className="w-[420px] max-w-[calc(100vw-2rem)] rounded-[2rem] border-0 bg-white px-5 py-6 shadow-2xl sm:px-6">
           <AlertDialogHeader className="items-center gap-2 text-center">
             <Image
-              src="/saptarishi.png"
-              alt="SAPtarishi"
+              src="/samricha.png"
+              alt="Samricha"
               width={150}
               height={54}
               priority
               className="h-auto w-[150px] object-contain"
+              style={{ width: "auto", height: "auto" }}
             />
 
             <AlertDialogTitle className="text-center text-xl font-poppins text-gray-950">
@@ -1107,12 +1108,13 @@ export default function OrgManagerOffersPage() {
         <AlertDialogContent className="w-[420px] max-w-[calc(100vw-2rem)] rounded-3xl border-0 bg-white p-4 shadow-2xl">
           <AlertDialogHeader className="flex flex-col items-center space-y-1 text-center">
             <Image
-              src="/saptarishi.png"
-              alt="SAPtarishi"
+              src="/samricha.png"
+              alt="Samricha"
               width={90}
               height={32}
               priority
               className="h-auto w-[90px] object-contain mb-0.5"
+              style={{ width: "auto", height: "auto" }}
             />
 
             <AlertDialogTitle className="text-base font-semibold text-slate-900">

@@ -9,13 +9,13 @@ const demoContacts = [
   {
     label: "Email",
     value: "info@saptarishi.tech",
-    href: "mailto:info@saptarishi.tech?subject=LMA%20Demo%20Request",
+    href: "mailto:info@saptarishi.tech?subject=Samricha%20Demo%20Request",
     icon: Mail,
   },
   {
     label: "Support",
     value: "system.admin@saptarishi.tech",
-    href: "mailto:system.admin@saptarishi.tech?subject=LMA%20Demo%20Request",
+    href: "mailto:system.admin@saptarishi.tech?subject=Samricha%20Demo%20Request",
     icon: ShieldCheck,
   },
   {
@@ -51,11 +51,11 @@ export default function RequestDemoPage() {
               </span>
             </div>
             <h1 className="text-[clamp(42px,6vw,78px)] font-bold leading-[1.07] text-[#0b1713]">
-              See how LMA can organize your lead workflow.
+              See how Samricha can organize your lead workflow.
             </h1>
             <p className="mt-6 max-w-2xl text-base leading-8 text-slate-600">
               Share your organization context, current lead process, and the
-              roles you want to support. The team will help map LMA to your
+              roles you want to support. The team will help map Samricha to your
               workflow.
             </p>
           </motion.div>
@@ -101,7 +101,7 @@ export default function RequestDemoPage() {
               Demo Prep
             </p>
             <h2 className="text-[clamp(30px,5vw,54px)] font-bold leading-tight text-[#0b1713]">
-              Bring the current workflow. LMA maps around it.
+              Bring the current workflow. Samricha maps around it.
             </h2>
           </Reveal>
           <div className="grid gap-3 sm:grid-cols-2">

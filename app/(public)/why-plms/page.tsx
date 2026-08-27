@@ -17,7 +17,7 @@ const comparisons = [
   {
     icon: FileSpreadsheet,
     title: "Beyond spreadsheets",
-    desc: "Spreadsheets show rows. LMA shows ownership, activity, status, priority, and next action.",
+    desc: "Spreadsheets show rows. Samricha shows ownership, activity, status, priority, and next action.",
   },
   {
     icon: MessagesSquare,
@@ -27,7 +27,7 @@ const comparisons = [
   {
     icon: Workflow,
     title: "Beyond generic CRM overhead",
-    desc: "LMA focuses on project lead workflows, organization roles, managers, executives, and offers without unnecessary noise.",
+    desc: "Samricha focuses on project lead workflows, organization roles, managers, executives, and offers without unnecessary noise.",
   },
 ];
 
@@ -56,7 +56,7 @@ const painPoints = [
   "Managers only notice stalled leads after the opportunity cools down.",
 ];
 
-export default function WhyLMAPage() {
+export default function WhySamrichaPage() {
   return (
     <div className="overflow-hidden">
       <section className="relative px-5 pb-20 pt-36 md:px-8">
@@ -70,7 +70,7 @@ export default function WhyLMAPage() {
           >
             <span className="h-[1.5px] w-8 bg-emerald-600" />
             <span className="text-xs font-semibold uppercase text-emerald-700">
-              Why LMA
+              Why Samricha
             </span>
           </motion.div>
           <motion.h1
@@ -102,13 +102,13 @@ export default function WhyLMAPage() {
         <div className="mx-auto grid max-w-7xl gap-10 lg:grid-cols-[0.85fr_1.15fr]">
           <Reveal>
             <p className="mb-3 text-xs font-semibold uppercase text-emerald-700">
-              What LMA Solves
+              What Samricha Solves
             </p>
             <h2 className="text-[clamp(30px,5vw,54px)] font-bold leading-tight text-[#0b1713]">
               It replaces the quiet leakage in lead operations.
             </h2>
             <p className="mt-5 text-sm leading-8 text-slate-600">
-              LMA is not trying to be everything. It focuses on keeping project
+              Samricha is not trying to be everything. It focuses on keeping project
               leads structured enough for executives to act and managers to
               inspect.
             </p>
@@ -144,7 +144,7 @@ export default function WhyLMAPage() {
         <Reveal className="mx-auto max-w-5xl">
           <CheckCircle2 className="mb-6 h-9 w-9 text-emerald-300" />
           <h2 className="text-[clamp(30px,5vw,56px)] font-bold leading-tight">
-            LMA keeps every lead tied to an owner, an action, and an outcome.
+            Samricha keeps every lead tied to an owner, an action, and an outcome.
           </h2>
         </Reveal>
       </section>

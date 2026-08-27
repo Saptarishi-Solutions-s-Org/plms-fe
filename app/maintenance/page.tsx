@@ -11,7 +11,7 @@ export default function MaintenancePage() {
     <div className="min-h-screen flex flex-col items-center justify-center bg-[#f6f7fb] px-6 text-center">
       <div className="mb-5">
         <Image
-          src="/saptarishi.png"
+          src="/samricha.png"
           alt="Logo"
           width={100}
           height={90}
@@ -25,7 +25,7 @@ export default function MaintenancePage() {
       </h1>
 
       <p className="text-gray-600 max-w-full mb-10">
-        We are enhancing the LMA system with new features just for you. We will
+        We are enhancing the Samricha system with new features just for you. We will
         be back soon!
       </p>
 

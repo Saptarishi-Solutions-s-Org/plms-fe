@@ -121,7 +121,7 @@ export default function SetPasswordPage() {
           <div className="mb-6 flex items-center gap-3">
             <span className="h-[1.5px] w-8 bg-emerald-600" />
             <span className="text-xs font-semibold uppercase text-emerald-700">
-              Secure LMA Access
+              Secure Samricha Access
             </span>
           </div>
           <h1 className="max-w-3xl text-[clamp(42px,6vw,76px)] font-bold leading-[1.06] text-[#0b1713]">
@@ -155,14 +155,14 @@ export default function SetPasswordPage() {
             <div className="mb-4 flex items-center gap-3">
               <Image
                 src="/sap.png"
-                alt="Saptarishi"
+                alt="Samricha"
                 width={36}
                 height={36}
                 priority
                 className="h-9 w-9"
               />
               <span className="text-sm font-bold uppercase text-[#0b1713]">
-                SRS-LMA
+                Samricha
               </span>
             </div>
             <h2 className="text-2xl font-bold text-[#0b1713]">Set Password</h2>

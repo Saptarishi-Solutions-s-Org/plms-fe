@@ -7,6 +7,7 @@ import { useEffect, useState } from "react";
 import { LogIn, Menu, X } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
+import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
 
 const publicNavLinks = [
   { label: "Home", href: "/" },
@@ -35,23 +36,49 @@ export default function PublicHeader() {
       }`}
     >
       <div className="mx-auto flex h-[58px] max-w-7xl items-center justify-between px-5 md:px-8">
-        <Link
-          href="/"
-          className="flex items-center gap-3"
-          aria-label="LMA home"
-        >
-          <Image
-            src="/sap.png"
-            alt="Saptarishi"
-            width={34}
-            height={34}
-            priority
-            className="h-8 w-8"
-          />
-          <span className="text-sm font-bold tracking-[0.14em] text-[#0b1713]">
-            SRS-LMA
-          </span>
-        </Link>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Link
+              href="/"
+              className="flex items-center gap-3"
+              aria-label="Samricha home"
+            >
+              <Image
+                src="/samricha.png"
+                alt="Samricha Logo"
+                width={120}
+                height={38}
+                priority
+                className="h-9 w-auto object-contain"
+                style={{ width: "auto", height: "auto" }}
+              />
+            </Link>
+          </TooltipTrigger>
+          <TooltipContent
+            side="bottom"
+            align="start"
+            className="max-w-[280px] bg-slate-900 border border-slate-800 text-slate-100 p-4 rounded-xl shadow-xl z-[100]"
+          >
+            <div className="space-y-2 text-xs">
+              <p className="font-bold text-sm text-white">
+                <span className="text-violet-400">Sam</span>
+                <span className="text-emerald-400">ri</span>
+                <span className="text-amber-400">cha</span>
+              </p>
+              <div className="space-y-1.5 leading-relaxed text-slate-300">
+                <p>
+                  <strong className="text-violet-400 font-semibold">SAM:</strong> Smart, Structured, and Strategic management
+                </p>
+                <p>
+                  <strong className="text-emerald-400 font-semibold">RI:</strong> Relationships and Intelligence
+                </p>
+                <p>
+                  <strong className="text-amber-400 font-semibold">CHA:</strong> Customer Handling and Advancement
+                </p>
+              </div>
+            </div>
+          </TooltipContent>
+        </Tooltip>
 
         <nav className="hidden items-center gap-1 md:flex">
           {publicNavLinks.map((link) => {

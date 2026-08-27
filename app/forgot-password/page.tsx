@@ -61,12 +61,13 @@ export default function ForgotPasswordPage() {
           Back to login
         </Link>
         <Image
-          src="/saptarishi.png"
-          alt="Saptarishi Solutions"
+          src="/samricha.png"
+          alt="Samricha"
           width={100}
           height={30}
           priority
           className="hidden md:block"
+          style={{ width: "auto", height: "auto" }}
         />
       </div>
 

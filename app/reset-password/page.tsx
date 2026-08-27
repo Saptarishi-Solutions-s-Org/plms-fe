@@ -219,7 +219,7 @@ function ResetPasswordContent() {
           </div>
 
           <p className="mt-6 text-center text-xs text-gray-400">
-            This portal is for registered LMA users only.
+            This portal is for registered Samricha users only.
             <br />
             Having issues?{" "}
             <Link href="/contact" className="text-violet-500 hover:underline">
@@ -243,12 +243,13 @@ function ResetPasswordHeader() {
         Back to login
       </Link>
       <Image
-        src="/saptarishi.png"
-        alt="Saptarishi Solutions"
+        src="/samricha.png"
+        alt="Samricha"
         width={100}
         height={30}
         priority
         className="hidden md:block"
+        style={{ width: "auto", height: "auto" }}
       />
     </div>
   );
